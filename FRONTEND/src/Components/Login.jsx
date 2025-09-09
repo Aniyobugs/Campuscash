@@ -27,7 +27,7 @@ const Login = () => {
           if(res.data.user.role=='admin'){
             navigate('/admin')
           }else{
-            navigate('/employee')
+            navigate('/user')
         }
       }
     

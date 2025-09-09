@@ -5,6 +5,7 @@ import './App.css'
 import { Route, Routes } from 'react-router-dom'
 import Signup from './Components/Signup'
 import Login from './Components/Login'
+import Home from './Components/Home'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -12,7 +13,8 @@ function App() {
   return (
     <>
    <Routes>
-    <Route path ='/' element={<Signup/>}/>
+    <Route path ='/' element={<Home/>}/>
+    <Route path ='/s' element={<Signup/>}/>
      <Route path ='/L' element={<Login/>}/>
    </Routes>
     </>

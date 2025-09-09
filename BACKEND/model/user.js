@@ -9,8 +9,8 @@
 // module.exports=userModel;
 var mongoose = require("mongoose");
 var userSchema = mongoose.Schema({
-    fullname: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
+    fname: { type: String, required: true },
+    ename: { type: String, required: true, unique: true },
     studentId: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     yearClassDept: { type: String, required: true },

@@ -158,7 +158,7 @@ const Signup = () => {
           sx={{
             mb: 2,
             fontWeight: 600,
-            color: 'purple',
+             color: "#152fc5ff",
             fontFamily: "italian",
             letterSpacing: "2px"
           }}
@@ -168,7 +168,7 @@ const Signup = () => {
         <Typography
           variant="h6"
           align="center"
-          sx={{ color: "#432371", mb: 3, fontFamily: "italian", fontWeight: 300 }}>
+          sx={{ color: "#84889eff", mb: 3, fontFamily: "italian", fontWeight: 300 }}>
           Signup Form
         </Typography>
 
@@ -177,7 +177,7 @@ const Signup = () => {
           label="Full Name"
           variant="filled"
           margin="normal"
-          name="fullname"
+          name="fname"
           onChange={inpuHandler}
           sx={{mb:2}}
         />
@@ -186,7 +186,7 @@ const Signup = () => {
           label="College Email"
           variant="filled"
           margin="normal"
-          name="email"
+          name="ename"
           onChange={inpuHandler}
           sx={{mb:2}}
         />
@@ -236,7 +236,7 @@ const Signup = () => {
               onChange={inpuHandler}
             />
           }
-          label={<span style={{ color: "#432371", fontFamily: "italian" }}>I agree to the Campus Cash Terms of Service</span>}
+          label={<span style={{ color: "#512194ff", fontFamily: "italian" }}>I agree to the Campus Cash Terms of Service</span>}
         />
 
         <Button
@@ -245,7 +245,7 @@ const Signup = () => {
           variant="contained"
           sx={{
             mt: 1,
-            background: 'linear-gradient(90deg, #6a2cff 0%, #c471f5 100%)',
+            background: 'linear-gradient(90deg, #4501e4ff 0%, #4d3bb4ff 100%)',
             color: "#fff",
             fontWeight: 500,
             fontFamily: "italian",
@@ -253,7 +253,7 @@ const Signup = () => {
             fontSize: "1.1rem",
             boxShadow: "0 4px 20px rgba(132, 50, 255, 0.09)",
             "&:hover": {
-              background: 'linear-gradient(90deg, #c471f5 0%, #6a2cff 100%)'
+              background: 'linear-gradient(90deg, #2b16ebff 0%, #5a65c2ff 100%)'
             },
           }}
         >
