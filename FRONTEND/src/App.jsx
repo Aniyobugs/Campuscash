@@ -6,7 +6,8 @@ import { Route, Routes } from 'react-router-dom'
 import Signup from './Components/Signup'
 import Login from './Components/Login'
 import Home from './Components/Home'
-import { Dashboard } from '@mui/icons-material'
+import Userdash from './Userdash'
+
 
 function App() {
   const [count, setCount] = useState(0)
@@ -17,7 +18,7 @@ function App() {
     <Route path ='/' element={<Home/>}/>
     <Route path ='/s' element={<Signup/>}/>
      <Route path ='/L' element={<Login/>}/>
-     <Route path ='/user' element={<Dashboard/>}/>
+     <Route path ='/user' element={<Userdash/>}/>
    </Routes>
     </>
     //test
