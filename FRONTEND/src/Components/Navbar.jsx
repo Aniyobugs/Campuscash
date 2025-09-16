@@ -17,7 +17,7 @@ export default function Navbar() {
             </Button>
             
         ))}
-           <Button><Link to={'/L'} style={{textDecoration:'none',color:'white'}}>LOGIN</Link></Button>
+           <Button><Link to={'/L'} style={{textDecoration:'none',color:'white'}}>Login</Link></Button>
           <Button
             variant="contained"
             color="success"
