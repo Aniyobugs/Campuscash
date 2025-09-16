@@ -6,7 +6,10 @@ import { Route, Routes } from 'react-router-dom'
 import Signup from './Components/Signup'
 import Login from './Components/Login'
 import Home from './Components/Home'
-import Userdash from './Components/Userdash'
+import Userdash from './Userdash'
+import { Task } from '@mui/icons-material'
+import AssignTask from './Components/AssignTask'
+
 
 
 function App() {
@@ -19,6 +22,7 @@ function App() {
     <Route path ='/s' element={<Signup/>}/>
      <Route path ='/L' element={<Login/>}/>
      <Route path ='/user' element={<Userdash/>}/>
+     <Route path ='/tsk' element={<AssignTask/>}/>
    </Routes>
     </>
     //test
