@@ -201,6 +201,119 @@
 
 // export default Userdash;
 
+// import React, { useState, useEffect } from "react";
+// import {
+//   Box,
+//   Typography,
+//   Card,
+//   CardContent,
+//   Avatar,
+//   Chip,
+//   LinearProgress,
+//   Grid,
+// } from "@mui/material";
+// import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartment";
+
+// const Userdash = () => {
+//   const [data, setData] = useState(null);
+
+//   useEffect(() => {
+//     // 🔹 Replace with API call to fetch user + progress later
+//     const mockData = {
+//       user: {
+//         name: "Priya",
+//         avatar: "https://i.pravatar.cc/150?img=47",
+//       },
+//       progress: {
+//         points: 1340,
+//         rank: 4,
+//         nextReward: {
+//           name: "Free Coffee",
+//           remaining: 160,
+//           total: 1500,
+//         },
+//         streak: {
+//           days: 5,
+//           badge: "Taskmaster",
+//         },
+//       },
+//     };
+//     setData(mockData);
+//   }, []);
+
+//   if (!data) return <Typography>Loading...</Typography>;
+
+//   return (
+//     <Box sx={{ p: 4, bgcolor: "#f9f9ff", minHeight: "100vh" }}>
+//       {/* Profile Header */}
+//       <Box display="flex" alignItems="center" gap={2} mb={3}>
+//         <Avatar src={data.user.avatar} sx={{ width: 60, height: 60 }} />
+//         <Box>
+//           <Typography variant="h6" fontWeight="bold">
+//             Welcome back, {data.user.name}!
+//           </Typography>
+//           <Typography color="green">
+//             You’ve earned {data.progress.points} points 🎉
+//           </Typography>
+//           <Typography variant="body2">
+//             Leaderboard Rank: #{data.progress.rank}
+//           </Typography>
+//         </Box>
+//       </Box>
+
+//       <Grid container spacing={3}>
+//         {/* Points Card */}
+//         <Grid item xs={12} md={6}>
+//           <Card>
+//             <CardContent>
+//               <Typography variant="h6">My Points</Typography>
+//               <Typography variant="h4" color="primary" fontWeight="bold">
+//                 {data.progress.points} pts
+//               </Typography>
+//               <Typography variant="body2" color="text.secondary">
+//                 {data.progress.nextReward.remaining} pts to next reward (
+//                 {data.progress.nextReward.name})
+//               </Typography>
+//               <LinearProgress
+//                 variant="determinate"
+//                 value={
+//                   (data.progress.points / data.progress.nextReward.total) * 100
+//                 }
+//                 sx={{ mt: 2, height: 10, borderRadius: 5 }}
+//               />
+//             </CardContent>
+//           </Card>
+//         </Grid>
+
+//         {/* Streak Card */}
+//         <Grid item xs={12} md={6}>
+//           <Card>
+//             <CardContent>
+//               <Typography variant="h6">Streak</Typography>
+//               <Box display="flex" alignItems="center" gap={1}>
+//                 <LocalFireDepartmentIcon color="error" />
+//                 <Typography>
+//                   {data.progress.streak.days}-day streak!
+//                 </Typography>
+//               </Box>
+//               <Chip
+//                 label={`Badge: ${data.progress.streak.badge}`}
+//                 color="success"
+//                 sx={{ mt: 2 }}
+//               />
+//             </CardContent>
+//           </Card>
+//         </Grid>
+//       </Grid>
+//     </Box>
+//   );
+// };
+
+// export default Userdash;
+
+
+
+
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -213,19 +326,25 @@ import {
   Grid,
 } from "@mui/material";
 import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartment";
+import axios from "axios";
 
 const Userdash = () => {
   const [data, setData] = useState(null);
 
+
+
   useEffect(() => {
-    // 🔹 Replace with API call to fetch user + progress later
-    const mockData = {
+  const storedUser = sessionStorage.getItem("user");
+  if (storedUser) {
+    const parsedUser = JSON.parse(storedUser);
+
+    const userData = {
       user: {
-        name: "Priya",
-        avatar: "https://i.pravatar.cc/150?img=47",
+        name: parsedUser.fname, // backend sends ename
+        avatar: "https://i.pravatar.cc/150?u=" + parsedUser._id, // random avatar
       },
       progress: {
-        points: 1340,
+        points: 1340, // mock until you connect points API
         rank: 4,
         nextReward: {
           name: "Free Coffee",
@@ -238,8 +357,11 @@ const Userdash = () => {
         },
       },
     };
-    setData(mockData);
-  }, []);
+
+    setData(userData);
+  }
+}, []);
+
 
   if (!data) return <Typography>Loading...</Typography>;
 

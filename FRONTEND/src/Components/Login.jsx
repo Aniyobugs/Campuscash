@@ -15,27 +15,52 @@ const Login = () => {
             console.log(input)
             
         }
-        const addhandler=()=>
-          axios
-      .post(`${baseurl}/api/login`, input)
-      .then((res) => {
-        console.log(res.data);
-        alert(res.data.message)
-        sessionStorage.setItem("role",res.data.user.role)
-        if(res.status===200){
-          alert(res.data.message)
-          if(res.data.user.role=='admin'){
-            navigate('/admin')
-          }else{
-            navigate('/user')
+      //   const addhandler=()=>
+      //     axios
+      // .post(`${baseurl}/api/login`, input)
+      // .then((res) => {
+      //   console.log(res.data);
+      //   alert(res.data.message)
+      //   sessionStorage.setItem("role",res.data.user.role)
+      //   if(res.status===200){
+      //     alert(res.data.message)
+      //     if(res.data.user.role=='admin'){
+      //       navigate('/admin')
+      //     }else{
+      //       navigate('/user')
+      //   }
+      // }
+    
+      // })  
+      // .catch((error) => {
+      //   console.log(error);
+      // });
+         const addhandler = () =>
+  axios
+    .post(`${baseurl}/api/login`, input)
+    .then((res) => {
+      console.log(res.data);
+      alert(res.data.message);
+
+      if (res.status === 200) {
+        // Save role and user in sessionStorage
+        sessionStorage.setItem("role", res.data.user.role);
+        sessionStorage.setItem("user", JSON.stringify(res.data.user)); // 🔹 save user object
+        if (res.data.token) {
+          sessionStorage.setItem("token", res.data.token); // 🔹 save token if backend sends it
+        }
+
+        // Navigate by role
+        if (res.data.user.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/user");
         }
       }
-    
-      })  
-      .catch((error) => {
-        console.log(error);
-      });
-          
+    })
+    .catch((error) => {
+      console.log(error);
+    }); 
 
             console.log("Clicked")
     
@@ -166,7 +191,7 @@ const Login = () => {
     >
       Don't have an account?{' '}
       <Link 
-        to="/" 
+        to="/s" 
         style={{ 
           color: "#4299e1", 
           fontWeight: 600, 
