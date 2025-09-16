@@ -330,9 +330,6 @@ import axios from "axios";
 
 const Userdash = () => {
   const [data, setData] = useState(null);
-
-
-
   useEffect(() => {
   const storedUser = sessionStorage.getItem("user");
   if (storedUser) {
