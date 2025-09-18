@@ -116,4 +116,39 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// Award points to a user
+router.post("/award/:id", async (req, res) => {
+  try {
+    const { points } = req.body; // points to add
+    const user = await userModel.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    user.points += points; // add points
+    await user.save();
+
+    res.status(200).send({ 
+      message: `Awarded ${points} points to ${user.fname}`,
+      user 
+    });
+  } catch (error) {
+    res.status(500).send({ message: "Something went wrong", error: error.message });
+  }
+});
+
+// Get user by ID
+router.get("/:id", async (req, res) => {
+  try {
+    const user = await userModel.findById(req.params.id).select("fname ename role points");
+    if (!user) return res.status(404).send({ message: "User not found" });
+
+    res.status(200).send(user);
+  } catch (error) {
+    res.status(500).send({ message: "Something went wrong", error: error.message });
+  }
+});
+
+
 module.exports = router;

@@ -15,6 +15,7 @@ var userSchema = mongoose.Schema({
     password: { type: String, required: true },
     yearClassDept: { type: String, required: true },
     termsAccepted: { type: Boolean, required: true },
+    points: { type: Number, default: 0 }, // ⭐ Points field
     role: { type: String, enum: ["admin", "user"], default: "user" }
 });
 var userModel = mongoose.model("user", userSchema);

@@ -330,35 +330,70 @@ import axios from "axios";
 
 const Userdash = () => {
   const [data, setData] = useState(null);
-  useEffect(() => {
+//   useEffect(() => {
+//   const storedUser = sessionStorage.getItem("user");
+//   if (storedUser) {
+//     const parsedUser = JSON.parse(storedUser);
+
+//     const userData = {
+//       user: {
+//         name: parsedUser.fname, // backend sends ename
+//         avatar: "https://i.pravatar.cc/150?u=" + parsedUser._id, // random avatar
+//       },
+//       progress: {
+//         points: 1340, // mock until you connect points API
+//         rank: 4,
+//         nextReward: {
+//           name: "Free Coffee",
+//           remaining: 160,
+//           total: 1500,
+//         },
+//         streak: {
+//           days: 5,
+//           badge: "Taskmaster",
+//         },
+//       },
+//     };
+
+//     setData(userData);
+//   }
+// }, []);
+
+useEffect(() => {
   const storedUser = sessionStorage.getItem("user");
   if (storedUser) {
     const parsedUser = JSON.parse(storedUser);
 
-    const userData = {
-      user: {
-        name: parsedUser.fname, // backend sends ename
-        avatar: "https://i.pravatar.cc/150?u=" + parsedUser._id, // random avatar
-      },
-      progress: {
-        points: 1340, // mock until you connect points API
-        rank: 4,
-        nextReward: {
-          name: "Free Coffee",
-          remaining: 160,
-          total: 1500,
-        },
-        streak: {
-          days: 5,
-          badge: "Taskmaster",
-        },
-      },
-    };
+    // ✅ fetch updated points from backend
+    axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/${parsedUser.id}`)
+      .then(res => {
+        const user = res.data;
 
-    setData(userData);
+        const userData = {
+          user: {
+            name: user.fname,
+            avatar: "https://i.pravatar.cc/150?u=" + user.id,
+          },
+          progress: {
+            points: user.points, // ✅ real points
+            rank: 4,
+            nextReward: {
+              name: "Free Coffee",
+              remaining: 100 - user.points,
+              total: 1500,
+            },
+            streak: {
+              days: 5,
+              badge: "Taskmaster",
+            },
+          },
+        };
+
+        setData(userData);
+      })
+      .catch(err => console.error(err));
   }
 }, []);
-
 
   if (!data) return <Typography>Loading...</Typography>;
 
