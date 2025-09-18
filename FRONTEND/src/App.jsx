@@ -9,7 +9,7 @@ import Home from './Components/Home'
 import Userdash from './Components/Userdash'
 import { Task } from '@mui/icons-material'
 import AssignTask from './Components/AssignTask'
-
+import Awardpoints from './Components/Awardpoints'
 
 
 function App() {
@@ -23,6 +23,7 @@ function App() {
      <Route path ='/L' element={<Login/>}/>
      <Route path ='/user' element={<Userdash/>}/>
      <Route path ='/tsk' element={<AssignTask/>}/>
+     <Route path ='/award' element={<Awardpoints/>}/>
    </Routes>
     </>
     //test1

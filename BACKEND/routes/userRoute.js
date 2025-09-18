@@ -138,6 +138,16 @@ router.post("/award/:id", async (req, res) => {
   }
 });
 
+// Get all users
+router.get("/all", async (req, res) => {
+  try {
+    const users = await userModel.find().select("fname ename role points studentId"); // select fields you need
+    res.status(200).send(users);
+  } catch (error) {
+    res.status(500).send({ message: "Something went wrong", error: error.message });
+  }
+});
+
 // Get user by ID
 router.get("/:id", async (req, res) => {
   try {
@@ -149,6 +159,7 @@ router.get("/:id", async (req, res) => {
     res.status(500).send({ message: "Something went wrong", error: error.message });
   }
 });
+
 
 
 module.exports = router;
