@@ -1,319 +1,3 @@
-// import React, { useState, useEffect } from "react";
-// import {
-//   Box,
-//   Typography,
-//   Card,
-//   CardContent,
-//   Button,
-//   LinearProgress,
-//   Grid,
-//   Chip,
-//   Avatar,
-// } from "@mui/material";
-// import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
-// import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartment";
-
-// const Userdash = () => {
-//   const [data, setData] = useState(null);
-
-//   // Mock data for now
-//   useEffect(() => {
-//     const mockData = {
-//       user: {
-//         name: "Priya",
-//         points: 1340,
-//         rank: 4,
-//         avatar: "https://i.pravatar.cc/150?img=47",
-//       },
-//       nextReward: {
-//         name: "Free Coffee",
-//         remaining: 160,
-//         total: 1500,
-//       },
-//       streak: {
-//         days: 5,
-//         badge: "Taskmaster",
-//       },
-//       tasks: [
-//         {
-//           id: 1,
-//           title: "Math Assignment #5",
-//           due: "Aug 8",
-//           points: 40,
-//           completed: false,
-//         },
-//         {
-//           id: 2,
-//           title: "Seminar: AI Trends",
-//           due: "",
-//           points: 25,
-//           completed: true,
-//         },
-//       ],
-//       rewards: [
-//         { name: "Free Coffee", points: 150 },
-//         { name: "10% Bookstore Discount", points: 500 },
-//         { name: "Transcript Waiver", points: 200 },
-//       ],
-//       achievements: [
-//         { name: "Taskmaster", unlocked: true },
-//         { name: "Consistent Coder", unlocked: false },
-//         { name: "Bookworm", unlocked: false },
-//       ],
-//     };
-
-//     setData(mockData);
-//   }, []);
-
-//   if (!data) return <Typography>Loading...</Typography>;
-
-//   return (
-//     <Box sx={{ p: 4, bgcolor: "#f9f9ff", minHeight: "100vh" }}>
-//       {/* Header */}
-//       <Box display="flex" justifyContent="space-between" alignItems="center">
-//         <Box display="flex" alignItems="center" gap={2}>
-//           <Avatar src={data.user.avatar} />
-//           <Box>
-//             <Typography variant="h6" fontWeight="bold">
-//               Welcome back, {data.user.name}!
-//             </Typography>
-//             <Typography color="green">
-//               You’ve earned {data.user.points} points this semester 🎉
-//             </Typography>
-//           </Box>
-//         </Box>
-//         <Typography variant="body2">
-//           Leaderboard Rank: #{data.user.rank}{" "}
-//           <Button size="small">View all</Button>
-//         </Typography>
-//       </Box>
-
-//       <Grid container spacing={3} mt={3}>
-//         {/* Points Card */}
-//         <Grid item xs={12} md={6}>
-//           <Card>
-//             <CardContent>
-//               <Typography variant="h6">My Points</Typography>
-//               <Typography variant="h4" color="primary" fontWeight="bold">
-//                 {data.user.points} pts
-//               </Typography>
-//               <Typography variant="body2" color="text.secondary">
-//                 {data.nextReward.remaining} pts to next reward (
-//                 {data.nextReward.name})
-//               </Typography>
-//               <LinearProgress
-//                 variant="determinate"
-//                 value={(data.user.points / data.nextReward.total) * 100}
-//                 sx={{ mt: 2, height: 10, borderRadius: 5 }}
-//               />
-        
-//             </CardContent>
-//           </Card>
-//         </Grid>
-
-//         {/* Streak Card */}
-//         <Grid item xs={12} md={6}>
-//           <Card>
-//             <CardContent>
-//               <Typography variant="h6">Streak</Typography>
-//               <Box display="flex" alignItems="center" gap={1}>
-//                 <LocalFireDepartmentIcon color="error" />
-//                 <Typography>
-//                   {data.streak.days}-day assignment streak!
-//                 </Typography>
-//               </Box>
-//               <Chip
-//                 label={`Badge Unlocked: ${data.streak.badge}`}
-//                 color="success"
-//                 sx={{ mt: 2 }}
-//               />
-//             </CardContent>
-//           </Card>
-//         </Grid>
-//       </Grid>
-
-//       {/* Tasks */}
-//       <Box mt={4}>
-//         <Typography variant="h6">Your Tasks</Typography>
-//         {data.tasks.map((task, i) => (
-//           <Card key={i} sx={{ mt: 2 }}>
-//             <CardContent
-//               sx={{
-//                 display: "flex",
-//                 justifyContent: "space-between",
-//                 alignItems: "center",
-//               }}
-//             >
-//               <Box>
-//                 <Typography fontWeight="bold">{task.title}</Typography>
-//                 <Typography variant="body2" color="text.secondary">
-//                   {task.due && `Due: ${task.due}`}
-//                 </Typography>
-//               </Box>
-//               <Box display="flex" alignItems="center" gap={2}>
-//                 <Typography color="primary">+{task.points} pts</Typography>
-              
-//                 {task.completed && (
-//                   <Chip label="Completed" color="success" size="small" />
-//                 )}
-//               </Box>
-//             </CardContent>
-//           </Card>
-//         ))}
-//       </Box>
-
-//       {/* Rewards */}
-//       <Box mt={4}>
-//         <Typography variant="h6">Available Rewards</Typography>
-//         <Grid container spacing={2} mt={1}>
-//           {data.rewards.map((reward, i) => (
-//             <Grid item xs={12} sm={4} key={i}>
-//               <Card>
-//                 <CardContent sx={{ textAlign: "center" }}>
-//                   <EmojiEventsIcon fontSize="large" color="primary" />
-//                   <Typography fontWeight="bold">{reward.name}</Typography>
-//                   <Typography color="text.secondary">
-//                     {reward.points} pts
-//                   </Typography>
-//                 </CardContent>
-//               </Card>
-//             </Grid>
-//           ))}
-//         </Grid>
-//       </Box>
-
-//       {/* Achievements */}
-//       <Box mt={4}>
-//         <Typography variant="h6">Achievements</Typography>
-//         <Box display="flex" gap={2} mt={1}>
-//           {data.achievements.map((ach, i) => (
-//             <Chip
-//               key={i}
-//               label={ach.name}
-//               color={ach.unlocked ? "success" : "default"}
-//             />
-//           ))}
-//         </Box>
-//       </Box>
-//     </Box>
-//   );
-// };
-
-// export default Userdash;
-
-// import React, { useState, useEffect } from "react";
-// import {
-//   Box,
-//   Typography,
-//   Card,
-//   CardContent,
-//   Avatar,
-//   Chip,
-//   LinearProgress,
-//   Grid,
-// } from "@mui/material";
-// import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartment";
-
-// const Userdash = () => {
-//   const [data, setData] = useState(null);
-
-//   useEffect(() => {
-//     // 🔹 Replace with API call to fetch user + progress later
-//     const mockData = {
-//       user: {
-//         name: "Priya",
-//         avatar: "https://i.pravatar.cc/150?img=47",
-//       },
-//       progress: {
-//         points: 1340,
-//         rank: 4,
-//         nextReward: {
-//           name: "Free Coffee",
-//           remaining: 160,
-//           total: 1500,
-//         },
-//         streak: {
-//           days: 5,
-//           badge: "Taskmaster",
-//         },
-//       },
-//     };
-//     setData(mockData);
-//   }, []);
-
-//   if (!data) return <Typography>Loading...</Typography>;
-
-//   return (
-//     <Box sx={{ p: 4, bgcolor: "#f9f9ff", minHeight: "100vh" }}>
-//       {/* Profile Header */}
-//       <Box display="flex" alignItems="center" gap={2} mb={3}>
-//         <Avatar src={data.user.avatar} sx={{ width: 60, height: 60 }} />
-//         <Box>
-//           <Typography variant="h6" fontWeight="bold">
-//             Welcome back, {data.user.name}!
-//           </Typography>
-//           <Typography color="green">
-//             You’ve earned {data.progress.points} points 🎉
-//           </Typography>
-//           <Typography variant="body2">
-//             Leaderboard Rank: #{data.progress.rank}
-//           </Typography>
-//         </Box>
-//       </Box>
-
-//       <Grid container spacing={3}>
-//         {/* Points Card */}
-//         <Grid item xs={12} md={6}>
-//           <Card>
-//             <CardContent>
-//               <Typography variant="h6">My Points</Typography>
-//               <Typography variant="h4" color="primary" fontWeight="bold">
-//                 {data.progress.points} pts
-//               </Typography>
-//               <Typography variant="body2" color="text.secondary">
-//                 {data.progress.nextReward.remaining} pts to next reward (
-//                 {data.progress.nextReward.name})
-//               </Typography>
-//               <LinearProgress
-//                 variant="determinate"
-//                 value={
-//                   (data.progress.points / data.progress.nextReward.total) * 100
-//                 }
-//                 sx={{ mt: 2, height: 10, borderRadius: 5 }}
-//               />
-//             </CardContent>
-//           </Card>
-//         </Grid>
-
-//         {/* Streak Card */}
-//         <Grid item xs={12} md={6}>
-//           <Card>
-//             <CardContent>
-//               <Typography variant="h6">Streak</Typography>
-//               <Box display="flex" alignItems="center" gap={1}>
-//                 <LocalFireDepartmentIcon color="error" />
-//                 <Typography>
-//                   {data.progress.streak.days}-day streak!
-//                 </Typography>
-//               </Box>
-//               <Chip
-//                 label={`Badge: ${data.progress.streak.badge}`}
-//                 color="success"
-//                 sx={{ mt: 2 }}
-//               />
-//             </CardContent>
-//           </Card>
-//         </Grid>
-//       </Grid>
-//     </Box>
-//   );
-// };
-
-// export default Userdash;
-
-
-
-
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -324,76 +8,123 @@ import {
   Chip,
   LinearProgress,
   Grid,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  TextField,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartment";
 import axios from "axios";
 
 const Userdash = () => {
   const [data, setData] = useState(null);
-//   useEffect(() => {
-//   const storedUser = sessionStorage.getItem("user");
-//   if (storedUser) {
-//     const parsedUser = JSON.parse(storedUser);
+  const [form, setForm] = useState({
+    fullName: "",
+    email: "",
+    currentPassword: "",
+    newPassword: "",
+  });
+  const [profilePic, setProfilePic] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+  const [openDialog, setOpenDialog] = useState(false);
+  const baseurl = import.meta.env.VITE_API_BASE_URL;
+  const [userId, setUserId] = useState(null);
 
-//     const userData = {
-//       user: {
-//         name: parsedUser.fname, // backend sends ename
-//         avatar: "https://i.pravatar.cc/150?u=" + parsedUser._id, // random avatar
-//       },
-//       progress: {
-//         points: 1340, // mock until you connect points API
-//         rank: 4,
-//         nextReward: {
-//           name: "Free Coffee",
-//           remaining: 160,
-//           total: 1500,
-//         },
-//         streak: {
-//           days: 5,
-//           badge: "Taskmaster",
-//         },
-//       },
-//     };
+  useEffect(() => {
+    const storedUser = sessionStorage.getItem("user");
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUserId(parsedUser.id);
 
-//     setData(userData);
-//   }
-// }, []);
-
-useEffect(() => {
-  const storedUser = sessionStorage.getItem("user");
-  if (storedUser) {
-    const parsedUser = JSON.parse(storedUser);
-
-    // ✅ fetch updated points from backend
-    axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/${parsedUser.id}`)
-      .then(res => {
-        const user = res.data;
-
-        const userData = {
-          user: {
-            name: user.fname,
-            avatar: "https://i.pravatar.cc/150?u=" + user.id,
-          },
-          progress: {
-            points: user.points, // ✅ real points
-            rank: 4,
-            nextReward: {
-              name: "Free Coffee",
-              remaining: 100 - user.points,
-              total: 1500,
+      axios
+        .get(`${baseurl}/api/${parsedUser.id}`)
+        .then((res) => {
+          const user = res.data;
+          setForm({
+            fullName: user.fname || "",
+            email: user.email || "",
+            currentPassword: "",
+            newPassword: "",
+          });
+          if (user.profilePic) setPreview(`${baseurl}${user.profilePic}`);
+          setData({
+            user: {
+              name: user.fname,
+              avatar: user.profilePic
+                ? `${baseurl}${user.profilePic}`
+                : "https://i.pravatar.cc/150?u=" + user._id,
             },
-            streak: {
-              days: 5,
-              badge: "Taskmaster",
+            progress: {
+              points: user.points,
+              rank: 4,
+              nextReward: {
+                name: "Free Coffee",
+                remaining: 100 - user.points,
+                total: 1500,
+              },
+              streak: {
+                days: 5,
+                badge: "Taskmaster",
+              },
             },
-          },
-        };
+          });
+        })
+        .catch((err) => console.error(err));
+    }
+  }, [baseurl]);
 
-        setData(userData);
-      })
-      .catch(err => console.error(err));
-  }
-}, []);
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfilePic(file);
+      setPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("fullName", form.fullName);
+      formData.append("email", form.email);
+      if (form.currentPassword) formData.append("currentPassword", form.currentPassword);
+      if (form.newPassword) formData.append("newPassword", form.newPassword);
+      if (profilePic) formData.append("profilePic", profilePic);
+
+      const res = await axios.put(`${baseurl}/api/users/${userId}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setSuccess(res.data.message);
+      setError("");
+      setForm((prev) => ({ ...prev, currentPassword: "", newPassword: "" }));
+      setOpenDialog(false);
+
+      const updatedUser = res.data.user;
+      setData((prev) => ({
+        ...prev,
+        user: {
+          ...prev.user,
+          name: updatedUser.fullName || updatedUser.fname,
+          avatar: updatedUser.profilePic
+            ? `${baseurl}${updatedUser.profilePic}`
+            : prev.user.avatar,
+        },
+      }));
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      setError(err.response?.data?.message || "Update failed");
+      setSuccess("");
+    }
+  };
 
   if (!data) return <Typography>Loading...</Typography>;
 
@@ -412,6 +143,13 @@ useEffect(() => {
           <Typography variant="body2">
             Leaderboard Rank: #{data.progress.rank}
           </Typography>
+          <Button
+            variant="outlined"
+            sx={{ mt: 1 }}
+            onClick={() => setOpenDialog(true)}
+          >
+            Edit Profile
+          </Button>
         </Box>
       </Box>
 
@@ -430,9 +168,7 @@ useEffect(() => {
               </Typography>
               <LinearProgress
                 variant="determinate"
-                value={
-                  (data.progress.points / data.progress.nextReward.total) * 100
-                }
+                value={(data.progress.points / data.progress.nextReward.total) * 100}
                 sx={{ mt: 2, height: 10, borderRadius: 5 }}
               />
             </CardContent>
@@ -446,9 +182,7 @@ useEffect(() => {
               <Typography variant="h6">Streak</Typography>
               <Box display="flex" alignItems="center" gap={1}>
                 <LocalFireDepartmentIcon color="error" />
-                <Typography>
-                  {data.progress.streak.days}-day streak!
-                </Typography>
+                <Typography>{data.progress.streak.days}-day streak!</Typography>
               </Box>
               <Chip
                 label={`Badge: ${data.progress.streak.badge}`}
@@ -459,9 +193,91 @@ useEffect(() => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Profile Update Dialog */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Update Profile</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+            <Avatar
+              src={preview || data.user.avatar}
+              sx={{ width: 100, height: 100, border: "2px solid #1b3a57" }}
+            />
+          </Box>
+          <Button variant="outlined" component="label" fullWidth>
+            Upload Profile Picture
+            <input type="file" hidden onChange={handleFileChange} />
+          </Button>
+
+          <TextField
+            fullWidth
+            label="Full Name"
+            name="fullName"
+            value={form.fullName}
+            onChange={handleChange}
+            sx={{ mt: 3 }}
+          />
+          <TextField
+            fullWidth
+            label="Email Address"
+            name="email"
+            type="email"
+            value={form.email}
+            onChange={handleChange}
+            sx={{ mt: 3 }}
+          />
+          <TextField
+            fullWidth
+            label="Current Password"
+            name="currentPassword"
+            type="password"
+            value={form.currentPassword}
+            onChange={handleChange}
+            sx={{ mt: 3 }}
+          />
+          <TextField
+            fullWidth
+            label="New Password"
+            name="newPassword"
+            type="password"
+            value={form.newPassword}
+            onChange={handleChange}
+            sx={{ mt: 3 }}
+          />
+
+          <Button
+            fullWidth
+            variant="contained"
+            sx={{ mt: 4, backgroundColor: "#1b3a57", "&:hover": { backgroundColor: "#16314a" }, py: 1.5 }}
+            onClick={handleSubmit}
+          >
+            Save Changes
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Snackbars */}
+      <Snackbar
+        open={!!success}
+        autoHideDuration={3000}
+        onClose={() => setSuccess("")}
+      >
+        <Alert severity="success" onClose={() => setSuccess("")}>
+          {success}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={!!error}
+        autoHideDuration={3000}
+        onClose={() => setError("")}
+      >
+        <Alert severity="error" onClose={() => setError("")}>
+          {error}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
 
 export default Userdash;
-

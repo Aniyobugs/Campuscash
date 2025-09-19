@@ -16,6 +16,7 @@ var userSchema = mongoose.Schema({
     yearClassDept: { type: String, required: true },
     termsAccepted: { type: Boolean, required: true },
     points: { type: Number, default: 0 }, // ⭐ Points field
+    profilePic: { type: String, default: "" },
     role: { type: String, enum: ["admin", "user"], default: "user" }
 });
 var userModel = mongoose.model("user", userSchema);

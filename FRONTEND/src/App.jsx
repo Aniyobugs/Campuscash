@@ -10,6 +10,7 @@ import Userdash from './Components/Userdash'
 import { Task } from '@mui/icons-material'
 import AssignTask from './Components/AssignTask'
 import Awardpoints from './Components/Awardpoints'
+import ProfileUpdate from './Components/ProfileUpdate'
 
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
      <Route path ='/user' element={<Userdash/>}/>
      <Route path ='/tsk' element={<AssignTask/>}/>
      <Route path ='/award' element={<Awardpoints/>}/>
+      <Route path ='/profile' element={<ProfileUpdate/>}/>
    </Routes>
     </>
     //test1
