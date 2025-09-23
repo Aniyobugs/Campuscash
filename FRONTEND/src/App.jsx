@@ -11,6 +11,7 @@ import { Task } from '@mui/icons-material'
 import AssignTask from './Components/AssignTask'
 import Awardpoints from './Components/Awardpoints'
 import ProfileUpdate from './Components/ProfileUpdate'
+import AdminDashboard from './Components/AdminDashboard'
 
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
      <Route path ='/tsk' element={<AssignTask/>}/>
      <Route path ='/award' element={<Awardpoints/>}/>
       <Route path ='/profile' element={<ProfileUpdate/>}/>
+      <Route path ='/admin' element={<AdminDashboard/>}/>
    </Routes>
     </>
     //test1
