@@ -24,7 +24,7 @@ import {
 import axios from "axios";
 
 const AdminDashboard = () => {
-  const baseurl = import.meta.env.VITE_API_BASE_URL; // backend URL
+  const baseurl = import.meta.env.VITE_API_BASE_URL;
 
   const [users, setUsers] = useState([]);
   const [filtered, setFiltered] = useState([]);
@@ -46,7 +46,6 @@ const AdminDashboard = () => {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
-  // Fetch all users
   useEffect(() => {
     axios
       .get(`${baseurl}/api/users`)
@@ -57,7 +56,6 @@ const AdminDashboard = () => {
       .catch((err) => console.error(err));
   }, [baseurl]);
 
-  // Search filter
   useEffect(() => {
     setFiltered(
       users.filter(
@@ -69,7 +67,6 @@ const AdminDashboard = () => {
     );
   }, [search, users]);
 
-  // Handle award points
   const handleAward = async () => {
     if (!awardData.studentId || !awardData.points) {
       setError("Please select a student and enter points.");
@@ -79,7 +76,6 @@ const AdminDashboard = () => {
       const res = await axios.post(`${baseurl}/api/award-points`, awardData);
       setSuccess(res.data.message);
       setError("");
-
       const updatedUsers = users.map((u) =>
         u._id === awardData.studentId
           ? { ...u, points: u.points + parseInt(awardData.points) }
@@ -93,7 +89,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Handle edit click
   const handleEdit = (user) => {
     setEditingUserId(user._id);
     setEditForm({
@@ -103,12 +98,10 @@ const AdminDashboard = () => {
     });
   };
 
-  // Handle save click
   const handleSave = async (id) => {
     try {
       const res = await axios.put(`${baseurl}/api/users/${id}`, editForm);
       setSuccess(res.data.message);
-
       const updatedUsers = users.map((u) =>
         u._id === id ? { ...u, ...editForm } : u
       );
@@ -120,7 +113,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Stats
   const totalUsers = users.length;
   const totalPoints = users.reduce((sum, u) => sum + (u.points || 0), 0);
   const topStudent =
@@ -176,71 +168,90 @@ const AdminDashboard = () => {
         </Grid>
       </Grid>
 
-     {/* Award Points */}
-<Card sx={{ mb: 5, bgcolor: "white", boxShadow: 4, borderRadius: 2 }}>
-  <CardContent>
-    <Typography variant="h6" gutterBottom color="secondary">
-      Award Points
-    </Typography>
-    <Grid container spacing={2} alignItems="center">
-      {/* Searchable Dropdown - Wider */}
-      <Grid item xs={12} md={8}>
-        <Autocomplete
-          options={users}
-          getOptionLabel={(option) =>
-            `${option.fname} (${option.studentId}) - ${option.points} pts`
-          }
-          value={users.find((u) => u._id === awardData.studentId) || null}
-          onChange={(event, newValue) =>
-            setAwardData({ ...awardData, studentId: newValue?._id || "" })
-          }
-          renderInput={(params) => (
-            <TextField {...params} label="Select Student" fullWidth />
-          )}
-          sx={{ width: "100%" }}
-        />
-      </Grid>
+      {/* Award Points Section */}
+      <Card sx={{ mb: 5, bgcolor: "white", boxShadow: 6, borderRadius: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom color="secondary" sx={{ mb: 3 }}>
+            Award Points
+          </Typography>
 
-      {/* Points input */}
-      <Grid item xs={12} md={2}>
-        <TextField
-          label="Points"
-          type="number"
-          fullWidth
-          value={awardData.points}
-          onChange={(e) =>
-            setAwardData({ ...awardData, points: e.target.value })
-          }
-        />
-      </Grid>
+          <Grid container spacing={2} alignItems="center">
+            {/* Searchable Dropdown with Avatar */}
+            <Grid item xs={12} md={6}>
+              <Autocomplete
+                options={users}
+                getOptionLabel={(option) =>
+                  `${option.fname} (${option.studentId}) - ${option.points || 0} pts`
+                }
+                value={users.find((u) => u._id === awardData.studentId) || null}
+                onChange={(event, newValue) =>
+                  setAwardData({ ...awardData, studentId: newValue?._id || "" })
+                }
+                renderOption={(props, option) => (
+                  <Box component="li" {...props} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Avatar
+                      src={option.profilePic ? `${baseurl}${option.profilePic}` : "/default-avatar.png"}
+                      alt={option.fname}
+                      sx={{ width: 30, height: 30 }}
+                    />
+                    <span>{`${option.fname} (${option.studentId}) - ${option.points || 0} pts`}</span>
+                  </Box>
+                )}
+                renderInput={(params) => <TextField {...params} label="Select Student" fullWidth />}
+                PaperComponent={({ children }) => (
+                  <Paper style={{ width: 350, maxHeight: 300, overflowY: 'auto' }}>
+                    {children}
+                  </Paper>
+                )}
+                sx={{
+                  width: "100%",
+                  "& .MuiAutocomplete-inputRoot": {
+                    paddingRight: "10px",
+                  },
+                }}
+              />
+            </Grid>
 
-      {/* Reason input */}
-      <Grid item xs={12} md={3}>
-        <TextField
-          label="Reason"
-          fullWidth
-          value={awardData.reason}
-          onChange={(e) =>
-            setAwardData({ ...awardData, reason: e.target.value })
-          }
-        />
-      </Grid>
+            {/* Points input */}
+            <Grid item xs={12} md={2}>
+              <TextField
+                label="Points"
+                type="number"
+                fullWidth
+                value={awardData.points}
+                onChange={(e) =>
+                  setAwardData({ ...awardData, points: e.target.value })
+                }
+              />
+            </Grid>
 
-      {/* Award button */}
-      <Grid item xs={12} md={2}>
-        <Button
-          variant="contained"
-          color="primary"
-          fullWidth
-          sx={{ height: "100%", fontWeight: "bold" }}
-          onClick={handleAward}
-        >
-          Award
-        </Button>
-      </Grid>
-    </Grid>
-  </CardContent>
-</Card>
+            {/* Reason input */}
+            <Grid item xs={12} md={3}>
+              <TextField
+                label="Reason"
+                fullWidth
+                value={awardData.reason}
+                onChange={(e) =>
+                  setAwardData({ ...awardData, reason: e.target.value })
+                }
+              />
+            </Grid>
+
+            {/* Award button */}
+            <Grid item xs={12} md={1}>
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                sx={{ height: "100%", fontWeight: "bold", borderRadius: 2 }}
+                onClick={handleAward}
+              >
+                Award
+              </Button>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
 
       {/* Students List Table */}
       <Card sx={{ bgcolor: "white", boxShadow: 4, borderRadius: 2 }}>
