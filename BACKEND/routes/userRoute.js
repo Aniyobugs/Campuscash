@@ -171,5 +171,20 @@ router.post("/award-points", async (req, res) => {
     res.status(500).json({ message: "Something went wrong", error: error.message });
   }
 });
+// Update status (soft delete/restore)
+router.put("/users/:id/status", async (req, res) => {
+  try {
+    const user = await userModel.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Toggle active/inactive
+    user.status = user.status === "active" ? "inactive" : "active";
+    await user.save();
+
+    res.status(200).json({ message: `User is now ${user.status}`, user });
+  } catch (error) {
+    res.status(500).json({ message: "Something went wrong", error: error.message });
+  }
+});
 
 module.exports = router;
