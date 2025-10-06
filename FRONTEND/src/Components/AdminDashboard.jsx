@@ -20,7 +20,11 @@ import {
   Avatar,
   Fade,
   Divider,
+  Chip,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
+import { Edit, Save, Cancel, PersonOff, Person } from "@mui/icons-material";
 import axios from "axios";
 
 const AdminDashboard = () => {
@@ -46,7 +50,6 @@ const AdminDashboard = () => {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
-  // ✅ Fetch only active users
   useEffect(() => {
     axios
       .get(`${baseurl}/api/users`)
@@ -58,7 +61,6 @@ const AdminDashboard = () => {
       .catch((err) => console.error(err));
   }, [baseurl]);
 
-  // ✅ Search filter
   useEffect(() => {
     setFiltered(
       users.filter(
@@ -71,7 +73,6 @@ const AdminDashboard = () => {
     );
   }, [search, users]);
 
-  // ✅ Award points
   const handleAward = async () => {
     if (!awardData.studentId || !awardData.points) {
       setError("Please select a student and enter points.");
@@ -94,7 +95,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // ✅ Edit user
   const handleEdit = (user) => {
     setEditingUserId(user._id);
     setEditForm({
@@ -119,19 +119,16 @@ const AdminDashboard = () => {
     }
   };
 
-  // ✅ Toggle status (Deactivate removes from list, Activate adds back)
   const handleToggleStatus = async (id) => {
     try {
       const res = await axios.put(`${baseurl}/api/users/${id}/status`);
       setSuccess(res.data.message);
 
       if (res.data.user.status === "inactive") {
-        // remove from UI
         const updatedUsers = users.filter((u) => u._id !== id);
         setUsers(updatedUsers);
         setFiltered(updatedUsers);
       } else {
-        // add back to UI
         const updatedUsers = [...users, res.data.user];
         setUsers(updatedUsers);
         setFiltered(updatedUsers);
@@ -141,7 +138,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // ✅ Stats only from active users
   const totalUsers = users.length;
   const totalPoints = users.reduce((sum, u) => sum + (u.points || 0), 0);
   const topStudent =
@@ -151,67 +147,99 @@ const AdminDashboard = () => {
     bgcolor: "white",
     color: "primary.main",
     boxShadow: 4,
-    borderRadius: 2,
-    p: 2,
+    borderRadius: 3,
+    p: 3,
+    minHeight: 140,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
   };
 
   return (
     <Box
       sx={{
-        p: { xs: 2, md: 4 },
+        p: { xs: 2, md: 5 },
         bgcolor: "background.default",
         minHeight: "100vh",
+        maxWidth: 1200,
+        mx: "auto",
       }}
     >
       <Typography
-        variant="h4"
+        variant="h3"
         fontWeight="bold"
-        mb={3}
-        sx={{ letterSpacing: 2, color: "primary.main" }}
+        mb={2}
+        sx={{
+          letterSpacing: 2,
+          color: "primary.main",
+          textAlign: "center",
+          textShadow: "0 2px 8px #e3e3e3",
+        }}
       >
-        Admin Dashboard
+        Admin CampusCash
       </Typography>
       <Divider sx={{ mb: 4 }} />
 
-      {/* ✅ Stats */}
+      {/* Stats */}
       <Grid container spacing={4} mb={4}>
         <Grid item xs={12} md={4}>
-          <Card sx={statCardStyles} elevation={3}>
-            <CardContent>
+          <Card sx={statCardStyles} elevation={6}>
+            <CardContent sx={{ textAlign: "center" }}>
               <Typography variant="h6" gutterBottom>
                 Total Users
               </Typography>
               <Fade in timeout={600}>
-                <Typography variant="h3">{totalUsers}</Typography>
+                <Typography variant="h2" color="primary">
+                  {totalUsers}
+                </Typography>
               </Fade>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Card sx={statCardStyles} elevation={3}>
-            <CardContent>
+          <Card sx={statCardStyles} elevation={6}>
+            <CardContent sx={{ textAlign: "center" }}>
               <Typography variant="h6" gutterBottom>
                 Points Distributed
               </Typography>
               <Fade in timeout={600}>
-                <Typography variant="h3">{totalPoints}</Typography>
+                <Typography variant="h2" color="secondary">
+                  {totalPoints}
+                </Typography>
               </Fade>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Card sx={statCardStyles} elevation={3}>
-            <CardContent>
+          <Card sx={statCardStyles} elevation={6}>
+            <CardContent sx={{ textAlign: "center" }}>
               <Typography variant="h6" gutterBottom>
                 Top Student
               </Typography>
               {topStudent ? (
                 <Fade in timeout={600}>
-                  <Box>
-                    <Typography variant="h5">{topStudent.fname}</Typography>
-                    <Typography color="primary">
-                      {topStudent.points} pts
-                    </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2, justifyContent: "center" }}>
+                    <Avatar
+                      src={
+                        topStudent.profilePic
+                          ? `${baseurl}${topStudent.profilePic}`
+                          : "/default-avatar.png"
+                      }
+                      alt={topStudent.fname}
+                      sx={{ width: 48, height: 48, boxShadow: 2 }}
+                    />
+                    <Box>
+                      <Typography variant="h5" fontWeight="bold">
+                        {topStudent.fname}
+                      </Typography>
+                      <Chip
+                        label={`${topStudent.points} pts`}
+                        color="success"
+                        size="small"
+                        sx={{ fontWeight: "bold", mt: 1 }}
+                      />
+                    </Box>
                   </Box>
                 </Fade>
               ) : (
@@ -222,27 +250,24 @@ const AdminDashboard = () => {
         </Grid>
       </Grid>
 
-      {/* ✅ Award Points Section */}
-      <Card sx={{ mb: 5, bgcolor: "white", boxShadow: 6, borderRadius: 3 }}>
+      {/* Award Points Section */}
+      <Card sx={{ mb: 5, bgcolor: "white", boxShadow: 8, borderRadius: 4 }}>
         <CardContent>
           <Typography
             variant="h6"
             gutterBottom
             color="secondary"
-            sx={{ mb: 3 }}
+            sx={{ mb: 3, fontWeight: "bold", letterSpacing: 1 }}
           >
             Award Points
           </Typography>
 
           <Grid container spacing={2} alignItems="center">
-            {/* Searchable Dropdown */}
             <Grid item xs={12} md={6}>
               <Autocomplete
                 options={users}
                 getOptionLabel={(option) =>
-                  `${option.fname} (${option.studentId}) - ${
-                    option.points || 0
-                  } pts`
+                  `${option.fname} (${option.studentId}) - ${option.points || 0} pts`
                 }
                 value={users.find((u) => u._id === awardData.studentId) || null}
                 onChange={(event, newValue) =>
@@ -263,9 +288,7 @@ const AdminDashboard = () => {
                       alt={option.fname}
                       sx={{ width: 30, height: 30 }}
                     />
-                    <span>{`${option.fname} (${option.studentId}) - ${
-                      option.points || 0
-                    } pts`}</span>
+                    <span>{`${option.fname} (${option.studentId}) - ${option.points || 0} pts`}</span>
                   </Box>
                 )}
                 renderInput={(params) => (
@@ -280,8 +303,6 @@ const AdminDashboard = () => {
                 )}
               />
             </Grid>
-
-            {/* Points input */}
             <Grid item xs={12} md={2}>
               <TextField
                 label="Points"
@@ -291,10 +312,9 @@ const AdminDashboard = () => {
                 onChange={(e) =>
                   setAwardData({ ...awardData, points: e.target.value })
                 }
+                InputProps={{ inputProps: { min: 1 } }}
               />
             </Grid>
-
-            {/* Reason input */}
             <Grid item xs={12} md={3}>
               <TextField
                 label="Reason"
@@ -305,14 +325,18 @@ const AdminDashboard = () => {
                 }
               />
             </Grid>
-
-            {/* Award button */}
             <Grid item xs={12} md={1}>
               <Button
                 variant="contained"
                 color="primary"
                 fullWidth
-                sx={{ height: "100%", fontWeight: "bold", borderRadius: 2 }}
+                sx={{
+                  height: "100%",
+                  fontWeight: "bold",
+                  borderRadius: 2,
+                  boxShadow: 2,
+                  textTransform: "none",
+                }}
                 onClick={handleAward}
               >
                 Award
@@ -322,10 +346,15 @@ const AdminDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* ✅ Students List */}
-      <Card sx={{ bgcolor: "white", boxShadow: 4, borderRadius: 2 }}>
+      {/* Students List */}
+      <Card sx={{ bgcolor: "white", boxShadow: 6, borderRadius: 3 }}>
         <CardContent>
-          <Typography variant="h6" gutterBottom color="secondary">
+          <Typography
+            variant="h6"
+            gutterBottom
+            color="secondary"
+            sx={{ fontWeight: "bold", letterSpacing: 1 }}
+          >
             Students List
           </Typography>
           <TextField
@@ -334,31 +363,36 @@ const AdminDashboard = () => {
             sx={{ mb: 2 }}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            InputProps={{
+              sx: { bgcolor: "#f5f5f5", borderRadius: 2 },
+            }}
           />
-          <TableContainer component={Paper}>
+          <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 2 }}>
             <Table>
               <TableHead>
-                <TableRow>
-                  <TableCell>Photo</TableCell>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Student ID</TableCell>
-                  <TableCell>Year/Class/Dept</TableCell>
-                  <TableCell>Points</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="center">Action</TableCell>
+                <TableRow sx={{ bgcolor: "primary.light" }}>
+                  <TableCell sx={{ fontWeight: "bold" }}>Photo</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Email</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Student ID</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Year/Class/Dept</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Points</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: "bold" }}>
+                    Action
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} align="center">
-                      No students found
+                      <Typography color="text.secondary">No students found</Typography>
                     </TableCell>
                   </TableRow>
                 ) : (
                   filtered.map((u) => (
-                    <TableRow key={u._id} hover>
+                    <TableRow key={u._id} hover sx={{ transition: "background 0.2s" }}>
                       <TableCell>
                         <Avatar
                           src={
@@ -367,7 +401,7 @@ const AdminDashboard = () => {
                               : "/default-avatar.png"
                           }
                           alt={u.fname}
-                          sx={{ width: 40, height: 40 }}
+                          sx={{ width: 40, height: 40, boxShadow: 1 }}
                         />
                       </TableCell>
                       <TableCell>
@@ -381,9 +415,10 @@ const AdminDashboard = () => {
                                 fname: e.target.value,
                               })
                             }
+                            sx={{ bgcolor: "#f5f5f5", borderRadius: 1 }}
                           />
                         ) : (
-                          u.fname
+                          <Typography fontWeight="bold">{u.fname}</Typography>
                         )}
                       </TableCell>
                       <TableCell>
@@ -397,12 +432,20 @@ const AdminDashboard = () => {
                                 ename: e.target.value,
                               })
                             }
+                            sx={{ bgcolor: "#f5f5f5", borderRadius: 1 }}
                           />
                         ) : (
-                          u.ename
+                          <Typography>{u.ename}</Typography>
                         )}
                       </TableCell>
-                      <TableCell>{u.studentId}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={u.studentId}
+                          color="primary"
+                          size="small"
+                          sx={{ fontWeight: "bold" }}
+                        />
+                      </TableCell>
                       <TableCell>
                         {editingUserId === u._id ? (
                           <TextField
@@ -414,55 +457,68 @@ const AdminDashboard = () => {
                                 yearClassDept: e.target.value,
                               })
                             }
+                            sx={{ bgcolor: "#f5f5f5", borderRadius: 1 }}
                           />
                         ) : (
-                          u.yearClassDept
+                          <Typography>{u.yearClassDept}</Typography>
                         )}
                       </TableCell>
-                      <TableCell>{u.points}</TableCell>
-                      <TableCell>{u.status || "active"}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={`${u.points} pts`}
+                          color="success"
+                          size="small"
+                          sx={{ fontWeight: "bold" }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={u.status || "active"}
+                          color={u.status === "active" ? "primary" : "default"}
+                          size="small"
+                          sx={{ fontWeight: "bold" }}
+                        />
+                      </TableCell>
                       <TableCell align="center">
                         {editingUserId === u._id ? (
                           <>
-                            <Button
-                              onClick={() => handleSave(u._id)}
-                              variant="contained"
-                              color="success"
-                              size="small"
-                              sx={{ mr: 1 }}
-                            >
-                              Save
-                            </Button>
-                            <Button
-                              onClick={() => setEditingUserId(null)}
-                              variant="outlined"
-                              color="error"
-                              size="small"
-                            >
-                              Cancel
-                            </Button>
+                            <Tooltip title="Save">
+                              <IconButton
+                                onClick={() => handleSave(u._id)}
+                                color="success"
+                                sx={{ mr: 1 }}
+                              >
+                                <Save />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Cancel">
+                              <IconButton
+                                onClick={() => setEditingUserId(null)}
+                                color="error"
+                              >
+                                <Cancel />
+                              </IconButton>
+                            </Tooltip>
                           </>
                         ) : (
                           <>
-                            <Button
-                              onClick={() => handleEdit(u)}
-                              variant="outlined"
-                              color="primary"
-                              size="small"
-                              sx={{ mr: 1 }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              onClick={() => handleToggleStatus(u._id)}
-                              variant="outlined"
-                              color={u.status === "active" ? "error" : "success"}
-                              size="small"
-                            >
-                              {u.status === "active"
-                                ? "Deactivate"
-                                : "Delete"}
-                            </Button>
+                            <Tooltip title="Edit">
+                              <IconButton
+                                onClick={() => handleEdit(u)}
+                                color="primary"
+                                sx={{ mr: 1 }}
+                              >
+                                <Edit />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title={u.status === "active" ? "Deactivate" : "Activate"}>
+                              <IconButton
+                                onClick={() => handleToggleStatus(u._id)}
+                                color={u.status === "active" ? "error" : "success"}
+                              >
+                                {u.status === "active" ? <PersonOff /> : <Person />}
+                              </IconButton>
+                            </Tooltip>
                           </>
                         )}
                       </TableCell>
@@ -475,7 +531,7 @@ const AdminDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* ✅ Alerts */}
+      {/* Alerts */}
       <Snackbar
         open={!!success}
         autoHideDuration={3000}
