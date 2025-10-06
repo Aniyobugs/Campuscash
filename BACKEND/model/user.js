@@ -18,7 +18,7 @@ var userSchema = mongoose.Schema({
     points: { type: Number, default: 0 }, // ⭐ Points field
     profilePic: { type: String, default: "" },
     role: { type: String, enum: ["admin", "user"], default: "user" },
-    status: { type: String, enum: ["active", "inactive"], default: "active" }
+    status: { type: String, enum: ["active", "inactive"], default: "active"}
 });
 var userModel = mongoose.model("user", userSchema);
 module.exports = userModel;

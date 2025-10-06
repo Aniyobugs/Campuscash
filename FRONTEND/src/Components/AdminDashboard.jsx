@@ -54,7 +54,7 @@ const AdminDashboard = () => {
     axios
       .get(`${baseurl}/api/users`)
       .then((res) => {
-        const activeUsers = res.data.filter((u) => u.status !== "inactive");
+        const activeUsers = res.data.filter((u) => u.status !== "active");
         setUsers(activeUsers);
         setFiltered(activeUsers);
       })
