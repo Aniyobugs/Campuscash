@@ -8,10 +8,16 @@ import {
   Alert,
   Grid,
   Paper,
+  IconButton,
+  InputAdornment,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 
 const AssignTask = () => {
   const [formData, setFormData] = useState({
@@ -36,8 +42,6 @@ const AssignTask = () => {
       return;
     }
 
-    console.log("Submitted Task:", formData);
-
     setSuccess(true);
     setFormData({
       title: "",
@@ -57,35 +61,44 @@ const AssignTask = () => {
           alignItems: "center",
           minHeight: "100vh",
           backgroundImage:
-            "url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80')", // college vibe image
+            "linear-gradient(135deg, #e0e7ff 0%, #f5f7fa 100%), url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           p: 3,
         }}
       >
         <Paper
+          elevation={3}
           sx={{
-            p: 4,
-            maxWidth: 600,
+            p: { xs: 2, sm: 4 },
+            maxWidth: 500,
             width: "100%",
-            borderRadius: 3,
-            backgroundColor: "rgba(255, 255, 255, 0.75)", // transparent glass effect
-            backdropFilter: "blur(10px)", // adds frosted effect
-            boxShadow: "none", // removed shadow
+            borderRadius: 4,
+            backgroundColor: "rgba(255,255,255,0.85)",
+            backdropFilter: "blur(8px)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
           }}
         >
-          <Typography
-            variant="h4"
-            gutterBottom
-            fontWeight="bold"
-            textAlign="center"
-            sx={{ color: "primary.main", mb: 3 }}
-          >
-            Assign New Task
-          </Typography>
+          <Box sx={{ textAlign: "center", mb: 2 }}>
+            <AssignmentIcon color="primary" sx={{ fontSize: 48, mb: 1 }} />
+            <Typography
+              variant="h5"
+              fontWeight="bold"
+              sx={{
+                color: "primary.main",
+                letterSpacing: 1,
+                mb: 1,
+              }}
+            >
+              Assign New Task
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Create and assign a new task to your students.
+            </Typography>
+          </Box>
 
           <form onSubmit={handleSubmit} noValidate>
-            <Grid container spacing={3}>
+            <Grid container spacing={2}>
               <Grid item xs={12}>
                 <TextField
                   required
@@ -95,6 +108,13 @@ const AssignTask = () => {
                   onChange={handleChange("title")}
                   placeholder="e.g. Final Project Presentation"
                   variant="outlined"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <AssignmentIcon color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
                 />
               </Grid>
 
@@ -123,6 +143,13 @@ const AssignTask = () => {
                       fullWidth: true,
                       required: true,
                       variant: "outlined",
+                      InputProps: {
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <CalendarMonthIcon color="action" />
+                          </InputAdornment>
+                        ),
+                      },
                     },
                   }}
                 />
@@ -138,6 +165,13 @@ const AssignTask = () => {
                   value={formData.points}
                   onChange={handleChange("points")}
                   variant="outlined"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <EmojiEventsIcon color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
                 />
               </Grid>
 
@@ -146,10 +180,12 @@ const AssignTask = () => {
                   variant="outlined"
                   fullWidth
                   disabled
+                  startIcon={<UploadFileIcon />}
                   sx={{
                     py: 1.2,
                     borderRadius: 2,
                     color: "text.secondary",
+                    borderStyle: "dashed",
                   }}
                 >
                   Upload Related File (Coming Soon)
@@ -167,6 +203,8 @@ const AssignTask = () => {
                     fontWeight: "bold",
                     borderRadius: 2,
                     textTransform: "none",
+                    fontSize: "1rem",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                   }}
                 >
                   Assign Task
@@ -179,11 +217,13 @@ const AssignTask = () => {
             open={success}
             autoHideDuration={3000}
             onClose={() => setSuccess(false)}
+            anchorOrigin={{ vertical: "top", horizontal: "center" }}
           >
             <Alert
               severity="success"
               variant="filled"
               onClose={() => setSuccess(false)}
+              sx={{ fontWeight: "bold" }}
             >
               Task assigned successfully!
             </Alert>

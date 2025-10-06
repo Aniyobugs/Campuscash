@@ -211,110 +211,132 @@ export default function Home() {
         </Container>
       </Box>
 
-      {/* FEATURES */}
-      <Container maxWidth="lg" sx={{ mt: 8 }}>
-        <Grid container spacing={6} justifyContent="center">
-          {featureData.map(({ icon, title, text }, index) => (
-            <Grid item xs={12} sm={6} md={4} sx={{ display: 'flex', justifyContent: 'center' }} key={index}>
-              <motion.div
-                variants={parallax}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.4 }}
-                transition={{ delay: index * 0.2 }}
-                style={{ width: '100%' }}
-              >
-                <Card
-                  elevation={6}
-                  sx={{
-                    borderRadius: 4,
-                    maxWidth: 340,
-                    textAlign: 'center',
-                    px: 3,
-                    py: 4,
-                    transition: 'box-shadow 0.3s, transform 0.3s',
-                    '&:hover': { boxShadow: 12, transform: 'translateY(-8px) scale(1.04)' },
-                    background: 'linear-gradient(120deg, #fff 80%, #f3f3ff 100%)',
-                  }}
-                >
-                  {icon}
-                  <Typography variant="h6" sx={{ mt: 3, fontWeight: 'bold', color: '#6444e6' }}>
-                    {title}
-                  </Typography>
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    {text}
-                  </Typography>
-                </Card>
-              </motion.div>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
-
-      {/* POPULAR REWARDS */}
-      <Container maxWidth="lg" sx={{ mt: 10, mb: 10 }}>
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.5 }}
-        >
-          <Typography
-            variant="h4"
+     { /* FEATURES */}
+        <Container maxWidth="lg" sx={{ mt: 8 }}>
+          <Grid container spacing={6} justifyContent="center">
+            {featureData.map(({ icon, title, text }, index) => (
+          <Grid item xs={12} sm={6} md={4} sx={{ display: 'flex', justifyContent: 'center' }} key={index}>
+            <motion.div
+              variants={parallax}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ delay: index * 0.2 }}
+              style={{ width: '100%' }}
+            >
+              <Card
+            elevation={6}
             sx={{
-              color: '#6444e6',
-              fontWeight: 'bold',
+              borderRadius: 4,
+              maxWidth: 340,
               textAlign: 'center',
-              mb: 6,
-              fontSize: { xs: '2rem', md: '2.5rem' },
-              textShadow: '0 2px 12px #ffe600',
+              px: 3,
+              py: 4,
+              transition: 'box-shadow 0.3s, transform 0.3s',
+              '&:hover': { boxShadow: 12, transform: 'translateY(-8px) scale(1.04)' },
+              background: 'linear-gradient(120deg, #fff 80%, #f3f3ff 100%)',
+            }}
+              >
+            {icon}
+            <Typography variant="h6" sx={{ mt: 3, fontWeight: 'bold', color: '#6444e6' }}>
+              {title}
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              {text}
+            </Typography>
+              </Card>
+            </motion.div>
+          </Grid>
+            ))}
+          </Grid>
+        </Container>
+
+        {/* POPULAR REWARDS */}
+        <Container maxWidth="lg" sx={{ mt: 10, mb: 10 }}>
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.5 }}
+          >
+            <Typography
+          variant="h4"
+          sx={{
+            color: '#6444e6',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            mb: 6,
+            fontSize: { xs: '2rem', md: '2.5rem' },
+            textShadow: '0 2px 12px #ffe600',
+          }}
+            >
+          Popular Rewards
+            </Typography>
+          </motion.div>
+          <Grid
+            container
+            spacing={4}
+            justifyContent="center"
+            alignItems="stretch"
+          >
+            {rewardsData.map(({ icon, title, desc, points }, idx) => (
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={3}
+            key={idx}
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'stretch',
+              width: '100%',
+              maxWidth: { xs: '100%', sm: 340, md: 320 },
             }}
           >
-            Popular Rewards
-          </Typography>
-        </motion.div>
-        <Grid container spacing={4} justifyContent="center">
-          {rewardsData.map(({ icon, title, desc, points }, idx) => (
-            <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex', justifyContent: 'center' }} key={idx}>
-              <motion.div
-                variants={scaleIn}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ delay: idx * 0.15 }}
-                style={{ width: '100%' }}
+            <motion.div
+              variants={scaleIn}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ delay: idx * 0.15 }}
+              style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
+            >
+              <Card
+            elevation={6}
+            sx={{
+              maxWidth: 320,
+              width: '100%',
+              borderRadius: 3,
+              borderTop: '6px solid #ffe600',
+              textAlign: 'center',
+              px: 3,
+              py: 4,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'box-shadow 0.25s, transform 0.25s',
+              '&:hover': { boxShadow: 14, transform: 'scale(1.05)' },
+              background: 'linear-gradient(120deg, #fff 80%, #f3f3ff 100%)',
+            }}
               >
-                <Card
-                  elevation={6}
-                  sx={{
-                    maxWidth: 320,
-                    width: '100%',
-                    borderRadius: 3,
-                    borderTop: '6px solid #ffe600',
-                    textAlign: 'center',
-                    px: 3,
-                    py: 4,
-                    transition: 'box-shadow 0.25s, transform 0.25s',
-                    '&:hover': { boxShadow: 14, transform: 'scale(1.05)' },
-                    background: 'linear-gradient(120deg, #fff 80%, #f3f3ff 100%)',
-                  }}
-                >
-                  {icon}
-                  <Typography fontWeight="bold" sx={{ mt: 3, color: '#6444e6' }}>
-                    {title}
-                  </Typography>
-                  <Typography variant="body2">{desc}</Typography>
-                  <Typography variant="caption" sx={{ color: '#97d700', fontWeight: 'bold', display: 'block', mt: 1 }}>
-                    {points}
-                  </Typography>
-                </Card>
-              </motion.div>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
+            {icon}
+            <Typography fontWeight="bold" sx={{ mt: 3, color: '#6444e6' }}>
+              {title}
+            </Typography>
+            <Typography variant="body2">{desc}</Typography>
+            <Typography variant="caption" sx={{ color: '#97d700', fontWeight: 'bold', display: 'block', mt: 1 }}>
+              {points}
+            </Typography>
+              </Card>
+            </motion.div>
+          </Grid>
+            ))}
+          </Grid>
+        </Container>
 
-      {/* WHY CAMPUS CASH */}
+        {/* WHY CAMPUS CASH */}
       <Container maxWidth="md" sx={{ mb: 10 }}>
         <motion.div
           variants={fadeUp}
