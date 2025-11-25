@@ -1,3 +1,4 @@
+// model/task.js
 const mongoose = require("mongoose");
 
 const taskSchema = new mongoose.Schema(
@@ -24,11 +25,10 @@ const taskSchema = new mongoose.Schema(
       type: String,
       default: "General",
     },
-    // You can later link tasks to users or faculty:
-    // assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    // Later: assignedTo, assignedBy, etc.
   },
   {
-    timestamps: true, // auto adds createdAt and updatedAt
+    timestamps: true,
   }
 );
 

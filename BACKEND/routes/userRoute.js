@@ -3,6 +3,7 @@ const router = express.Router();
 const userModel = require("../model/user");
 const jwt = require("jsonwebtoken");
 const upload = require("../middleware/multer"); // multer instance for file upload
+const Coupon = require("../model/coupon"); // <--- NEW: import coupon model
 
 const SECRET_KEY = "mysecret"; // move to .env in production
 
@@ -15,7 +16,9 @@ router.post("/", async (req, res) => {
     await newUser.save();
     res.status(200).json({ message: "User added successfully", user: newUser });
   } catch (error) {
-    res.status(500).json({ message: "Something went wrong", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
   }
 });
 
@@ -28,7 +31,9 @@ router.post("/login", async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     if (user.password === req.body.password) {
-      const token = jwt.sign({ id: user._id }, SECRET_KEY, { expiresIn: "1h" });
+      const token = jwt.sign({ id: user._id }, SECRET_KEY, {
+        expiresIn: "1h",
+      });
       return res.status(200).json({
         message: `Welcome ${user.role}`,
         token,
@@ -46,7 +51,9 @@ router.post("/login", async (req, res) => {
 
     res.status(401).json({ message: "Invalid password" });
   } catch (error) {
-    res.status(500).json({ message: "Something went wrong", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
   }
 });
 
@@ -59,15 +66,15 @@ router.get("/me", async (req, res) => {
     if (!token) return res.status(401).json({ message: "No token provided" });
 
     const decoded = jwt.verify(token, SECRET_KEY);
-    const user = await userModel.findById(decoded.id).select(
-      "fname ename role points profilePic yearClassDept"
-    );
+    const user = await userModel
+      .findById(decoded.id)
+      .select("fname ename role points profilePic yearClassDept");
     if (!user) return res.status(404).json({ message: "User not found" });
 
     res.status(200).json(user);
   } catch (error) {
     res.status(401).json({ message: "Invalid token" });
-  }c
+  }
 });
 
 // ==========================
@@ -88,7 +95,9 @@ router.put("/users/:id", upload.single("profilePic"), async (req, res) => {
     await user.save();
     res.status(200).json({ message: "Profile updated successfully", user });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 });
 
@@ -97,12 +106,16 @@ router.put("/users/:id", upload.single("profilePic"), async (req, res) => {
 // ==========================
 router.get("/users", async (req, res) => {
   try {
-    const users = await userModel.find().select(
-      "fname ename studentId email role points yearClassDept profilePic"
-    );
+    const users = await userModel
+      .find()
+      .select(
+        "fname ename studentId email role points yearClassDept profilePic"
+      );
     res.status(200).json(users);
   } catch (error) {
-    res.status(500).json({ message: "Something went wrong", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
   }
 });
 
@@ -111,13 +124,15 @@ router.get("/users", async (req, res) => {
 // ==========================
 router.get("/:id", async (req, res) => {
   try {
-    const user = await userModel.findById(req.params.id).select(
-      "fname ename role points profilePic yearClassDept"
-    );
+    const user = await userModel
+      .findById(req.params.id)
+      .select("fname ename role points profilePic yearClassDept");
     if (!user) return res.status(404).json({ message: "User not found" });
     res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ message: "Something went wrong", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
   }
 });
 
@@ -129,7 +144,9 @@ router.delete("/:id", async (req, res) => {
     await userModel.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Something went wrong", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
   }
 });
 
@@ -145,9 +162,13 @@ router.post("/award/:id", async (req, res) => {
     user.points += parseInt(points);
     await user.save();
 
-    res.status(200).json({ message: `Awarded ${points} points to ${user.fname}`, user });
+    res
+      .status(200)
+      .json({ message: `Awarded ${points} points to ${user.fname}`, user });
   } catch (error) {
-    res.status(500).json({ message: "Something went wrong", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
   }
 });
 
@@ -164,14 +185,21 @@ router.post("/award-points", async (req, res) => {
     await user.save();
 
     res.status(200).json({
-      message: `✅ Awarded ${points} points to ${user.fname} (${reason || "No reason"})`,
+      message: `✅ Awarded ${points} points to ${user.fname} (${
+        reason || "No reason"
+      })`,
       user,
     });
   } catch (error) {
-    res.status(500).json({ message: "Something went wrong", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
   }
 });
+
+// ==========================
 // Update status (soft delete/restore)
+// ==========================
 router.put("/users/:id/status", async (req, res) => {
   try {
     const user = await userModel.findById(req.params.id);
@@ -183,7 +211,102 @@ router.put("/users/:id/status", async (req, res) => {
 
     res.status(200).json({ message: `User is now ${user.status}`, user });
   } catch (error) {
-    res.status(500).json({ message: "Something went wrong", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+});
+
+// ==========================
+// Redeem Points & Generate Coupon
+// Works with rewardName + optional pointsToRedeem
+// (matches your frontend sending pointsToRedeem)
+// ==========================
+router.post("/users/:id/redeem", async (req, res) => {
+  try {
+    const { rewardName, pointsToRedeem } = req.body;
+    const user = await userModel.findById(req.params.id);
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Reward point cost mapping
+    const rewardPointsMap = {
+      "Free Coffee": 100,
+      "Canteen Voucher ₹50": 150,
+      "Library Pass": 200,
+    };
+
+    let pointsRequired = 0;
+
+    if (pointsToRedeem) {
+      pointsRequired = Number(pointsToRedeem);
+    } else if (rewardName && rewardPointsMap[rewardName]) {
+      pointsRequired = rewardPointsMap[rewardName];
+    }
+
+    if (!pointsRequired || pointsRequired <= 0) {
+      return res
+        .status(400)
+        .json({ message: "Invalid points / reward selection" });
+    }
+
+    if (user.points < pointsRequired) {
+      return res
+        .status(400)
+        .json({ message: "Insufficient points for this reward" });
+    }
+
+    // Deduct points
+    user.points -= pointsRequired;
+    await user.save();
+
+    // Generate coupon code
+    const code =
+      "CPN-" +
+      Math.random().toString(36).substring(2, 8).toUpperCase() +
+      "-" +
+      Date.now().toString(36).toUpperCase().slice(-4);
+
+    // Expires in 7 days
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    // Save coupon in DB
+    const coupon = await Coupon.create({
+      code,
+      rewardName: rewardName || "Custom Reward",
+      pointsUsed: pointsRequired,
+      userId: user._id,
+      expiresAt,
+    });
+
+    res.status(200).json({
+      message: "✅ Reward redeemed successfully!",
+      user,
+      coupon,
+    });
+  } catch (error) {
+    console.error("Redeem error:", error);
+    res
+      .status(500)
+      .json({ message: "Server error during redemption", error: error.message });
+  }
+});
+
+// ==========================
+// Get all coupons of a user
+// (for "My Coupons" in dashboard)
+// ==========================
+router.get("/users/:id/coupons", async (req, res) => {
+  try {
+    const coupons = await Coupon.find({ userId: req.params.id }).sort({
+      createdAt: -1,
+    });
+    res.json(coupons);
+  } catch (error) {
+    console.error("Fetch coupons error:", error);
+    res
+      .status(500)
+      .json({ message: "Error fetching coupons", error: error.message });
   }
 });
 

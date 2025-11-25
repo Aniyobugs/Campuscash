@@ -1,14 +1,13 @@
-
+// routes/taskRoute.js
 const express = require("express");
 const router = express.Router();
-const Task = require("../model/task"); // Make sure this path is correct
+const Task = require("../model/task");
 
-// POST a new task
+// POST /api/tasks/addtask  – create a new task
 router.post("/addtask", async (req, res) => {
   try {
     const { title, description, dueDate, points, category } = req.body;
 
-    // Validation
     if (!title || !dueDate || !points) {
       return res.status(400).json({ message: "Please fill all required fields" });
     }
@@ -16,9 +15,10 @@ router.post("/addtask", async (req, res) => {
     const newTask = new Task({
       title,
       description,
-      dueDate,
+      // ensure Date format
+      dueDate: new Date(dueDate),
       points,
-      category,
+      category: category || "General",
     });
 
     await newTask.save();
@@ -29,6 +29,22 @@ router.post("/addtask", async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating task:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// GET /api/tasks/active – only tasks whose dueDate is in the future
+router.get("/active", async (req, res) => {
+  try {
+    const now = new Date();
+
+    const tasks = await Task.find({
+      dueDate: { $gte: now },
+    }).sort({ dueDate: 1 });
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error("Error fetching active tasks:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });

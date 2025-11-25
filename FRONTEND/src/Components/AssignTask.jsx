@@ -1,3 +1,4 @@
+// src/components/AssignTask.jsx
 import React, { useState } from "react";
 import {
   Box,
@@ -8,7 +9,6 @@ import {
   Alert,
   Grid,
   Paper,
-  IconButton,
   InputAdornment,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -18,6 +18,7 @@ import AssignmentIcon from "@mui/icons-material/Assignment";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import axios from "axios";
 
 const AssignTask = () => {
   const [formData, setFormData] = useState({
@@ -29,27 +30,50 @@ const AssignTask = () => {
   });
 
   const [success, setSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const baseurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
   const handleChange = (field) => (e) => {
     setFormData({ ...formData, [field]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.title || !formData.dueDate || !formData.points) {
-      alert("Please fill in all required fields.");
+      setErrorMsg("Please fill in all required fields.");
       return;
     }
 
-    setSuccess(true);
-    setFormData({
-      title: "",
-      description: "",
-      dueDate: null,
-      points: "",
-      category: "",
-    });
+    try {
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        dueDate: formData.dueDate.toISOString(),
+        points: Number(formData.points),
+        category: formData.category || "General",
+      };
+
+      await axios.post(`${baseurl}/api/tasks/addtask`, payload);
+
+      setSuccess(true);
+      setErrorMsg("");
+
+      setFormData({
+        title: "",
+        description: "",
+        dueDate: null,
+        points: "",
+        category: "",
+      });
+    } catch (err) {
+      console.error("Error assigning task:", err);
+      const msg =
+        err?.response?.data?.message ||
+        "Something went wrong while assigning the task.";
+      setErrorMsg(msg);
+    }
   };
 
   return (
@@ -127,6 +151,17 @@ const AssignTask = () => {
                   value={formData.description}
                   onChange={handleChange("description")}
                   placeholder="Optional task details..."
+                  variant="outlined"
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Category"
+                  value={formData.category}
+                  onChange={handleChange("category")}
+                  placeholder="e.g. Assignment, Project, Quiz..."
                   variant="outlined"
                 />
               </Grid>
@@ -213,6 +248,7 @@ const AssignTask = () => {
             </Grid>
           </form>
 
+          {/* Success Snackbar */}
           <Snackbar
             open={success}
             autoHideDuration={3000}
@@ -226,6 +262,23 @@ const AssignTask = () => {
               sx={{ fontWeight: "bold" }}
             >
               Task assigned successfully!
+            </Alert>
+          </Snackbar>
+
+          {/* Error Snackbar */}
+          <Snackbar
+            open={!!errorMsg}
+            autoHideDuration={3000}
+            onClose={() => setErrorMsg("")}
+            anchorOrigin={{ vertical: "top", horizontal: "center" }}
+          >
+            <Alert
+              severity="error"
+              variant="filled"
+              onClose={() => setErrorMsg("")}
+              sx={{ fontWeight: "bold" }}
+            >
+              {errorMsg}
             </Alert>
           </Snackbar>
         </Paper>

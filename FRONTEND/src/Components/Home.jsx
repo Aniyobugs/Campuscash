@@ -492,3 +492,282 @@ export default function Home() {
     </Box>
   );
 }
+
+
+// import * as React from 'react';
+// import { useState } from 'react';
+// import {
+//   AppBar, Toolbar, Typography, Button, Box, Container, Card, CardContent,
+//   Grid, Paper, Divider, Stack, Chip, Link, IconButton, Avatar, LinearProgress,
+//   List, ListItem, ListItemAvatar, ListItemText, Badge
+// } from '@mui/material';
+// import MenuIcon from '@mui/icons-material/Menu';
+// import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+// import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+// import StarsIcon from '@mui/icons-material/Stars';
+// import TaskAltIcon from '@mui/icons-material/TaskAlt';
+// import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
+// import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+// import SchoolIcon from '@mui/icons-material/School';
+// import LocalCafeIcon from '@mui/icons-material/LocalCafe';
+// import StoreIcon from '@mui/icons-material/Store';
+// import PrintIcon from '@mui/icons-material/Print';
+// import RestaurantIcon from '@mui/icons-material/Restaurant';
+// import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+// import { motion } from 'framer-motion';
+
+// // —— Color tokens (edit to match your brand) ——
+// const GRADIENT_PRIMARY = 'linear-gradient(90deg, #6D28D9, #2563EB)'; // purple → blue
+// const GRADIENT_ACCENT = 'linear-gradient(90deg, #F59E0B, #F97316)'; // amber → orange
+// const BG_SOFT = '#0f1223';
+// const CARD_BG = '#11162a';
+// const TEXT_SOFT = 'rgba(255,255,255,0.8)';
+
+// // —— Motion helpers ——
+// const fadeUp = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
+// const pop = { hidden: { opacity: 0, scale: 0.95 }, visible: { opacity: 1, scale: 1, transition: { duration: 0.35 } } };
+
+// function PillButton(props) {
+//   return (
+//     <Button {...props} sx={{ textTransform: 'none', borderRadius: 999, px: 3, py: 1.2, fontWeight: 800, ...props.sx }} />
+//   );
+// }
+
+// function Header() {
+//   const [open, setOpen] = useState(false);
+//   return (
+//     <AppBar position="sticky" elevation={0} sx={{ background: BG_SOFT }}>
+//       <Toolbar sx={{ height: 64 }}>
+//         <Stack direction="row" alignItems="center" spacing={1} sx={{ flexGrow: 1 }}>
+//           <Box sx={{ width: 28, height: 28, borderRadius: 2, background: GRADIENT_PRIMARY }} />
+//           <Typography variant="h6" fontWeight={900}>Campus Cash</Typography>
+//         </Stack>
+//         <Stack direction="row" spacing={1.5} sx={{ display: { xs: 'none', md: 'flex' } }}>
+//           {['Dashboard','Tasks','Rewards','Leaderboard','Help'].map((x) => (
+//             <Button key={x} color="inherit" sx={{ textTransform: 'none', fontWeight: 700 }}>{x}</Button>
+//           ))}
+//         </Stack>
+//         <Stack direction="row" spacing={1.5} sx={{ display: { xs: 'none', md: 'flex' } }}>
+//           <Badge color="secondary" badgeContent={3} overlap="circular">
+//             <Avatar sx={{ width: 32, height: 32, bgcolor: '#1e293b' }}>U</Avatar>
+//           </Badge>
+//         </Stack>
+//         <IconButton onClick={() => setOpen(!open)} sx={{ display: { xs: 'inline-flex', md: 'none' }, color: 'white' }}>
+//           <MenuIcon />
+//         </IconButton>
+//       </Toolbar>
+//       {open && (
+//         <Container sx={{ display: { xs: 'block', md: 'none' } }}>
+//           <Paper sx={{ borderRadius: 3, p: 2, bgcolor: CARD_BG }}>
+//             <Stack spacing={1.2}>
+//               {['Dashboard','Tasks','Rewards','Leaderboard','Help'].map((x) => <Button key={x} sx={{ justifyContent: 'flex-start', textTransform: 'none', color: 'white' }}>{x}</Button>)}
+//             </Stack>
+//           </Paper>
+//         </Container>
+//       )}
+//     </AppBar>
+//   );
+// }
+
+// export default function StudentHomeVibrant() {
+//   return (
+//     <Box sx={{ minHeight: '100vh', bgcolor: BG_SOFT, color: 'white' }}>
+//       {/* Top strip */}
+//       <Box sx={{ background: GRADIENT_PRIMARY }}>
+//         <Container sx={{ py: 1.2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+//           <Typography variant="body2" fontWeight={800}>🎉 Welcome back! Weekly challenge: Finish 3 tasks for a bonus 150 pts.</Typography>
+//           <Link href="#" underline="hover" color="#fff">View challenges</Link>
+//         </Container>
+//       </Box>
+
+//       {/* Header */}
+//       <Header />
+
+//       {/* Hero — student‑centric */}
+//       <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
+//         <Grid container spacing={4} alignItems="center">
+//           <Grid item xs={12} md={6}>
+//             <Stack spacing={2}>
+//               <Chip label="Student Engagement Platform" sx={{ alignSelf: 'flex-start', bgcolor: '#1f2a44', color: '#93c5fd', fontWeight: 800 }} />
+//               <Typography component={motion.h1} variants={fadeUp} initial="hidden" animate="visible" sx={{ fontSize: { xs: 36, md: 52 }, fontWeight: 900, lineHeight: 1.1 }}>
+//                 Earn points for your work.
+//                 <Box component="span" sx={{ display: 'block', background: GRADIENT_PRIMARY, WebkitBackgroundClip: 'text', color: 'transparent' }}>Trade them for real perks.</Box>
+//               </Typography>
+//               <Typography component={motion.p} variants={fadeUp} initial="hidden" animate="visible" transition={{ delay: 0.12 }} sx={{ color: TEXT_SOFT, fontSize: 18 }}>
+//                 Complete assignments and milestones. Rack up points. Redeem at the bookstore, cafeteria, and admin offices.
+//               </Typography>
+//               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+//                 <PillButton variant="contained" sx={{ background: GRADIENT_PRIMARY }}>See Tasks</PillButton>
+//                 <PillButton variant="outlined" sx={{ borderColor: '#475569', color: 'white' }}>My Wallet</PillButton>
+//               </Stack>
+//               <Stack direction="row" spacing={3} sx={{ pt: 1, color: TEXT_SOFT }}>
+//                 <Stack direction="row" spacing={1} alignItems="center"><LocalFireDepartmentIcon /> <Typography variant="body2"><b>7‑day</b> streak</Typography></Stack>
+//                 <Stack direction="row" spacing={1} alignItems="center"><WorkspacePremiumIcon /> <Typography variant="body2"><b>Top 12%</b> on leaderboard</Typography></Stack>
+//               </Stack>
+//             </Stack>
+//           </Grid>
+//           <Grid item xs={12} md={6}>
+//             {/* Stat cards */}
+//             <Grid container spacing={2}>
+//               {[{k:'Points',v:'2,640',icon:<StarsIcon/>},{k:'Completed',v:'18 tasks',icon:<AssignmentTurnedInIcon/>},{k:'Badges',v:'5',icon:<EmojiEventsIcon/>}].map((s,i)=>(
+//                 <Grid item xs={12} sm={4} key={i}>
+//                   <Card component={motion.div} variants={pop} initial="hidden" animate="visible" sx={{ borderRadius: 3, p: 2, height: '100%', bgcolor: CARD_BG, boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}>
+//                     <Stack spacing={1}>
+//                       <Avatar sx={{ bgcolor: '#1d4ed8' }}>{s.icon}</Avatar>
+//                       <Typography variant="h5" fontWeight={900}>{s.v}</Typography>
+//                       <Typography variant="caption" color={TEXT_SOFT}>{s.k}</Typography>
+//                     </Stack>
+//                   </Card>
+//                 </Grid>
+//               ))}
+//             </Grid>
+//           </Grid>
+//         </Grid>
+//       </Container>
+
+//       {/* Quick Actions */}
+//       <Container maxWidth="lg" sx={{ pb: 8 }}>
+//         <Grid container spacing={2}>
+//           {[{t:'Submit Assignment',sub:'Due today 6:00 PM',cta:'Open'},{t:'Join Hackathon',sub:'Registration ends Fri',cta:'Register'},{t:'Profile & KYC',sub:'Unlock wallet transfers',cta:'Verify'}].map((a,i)=> (
+//             <Grid item xs={12} md={4} key={i}>
+//               <Card sx={{ borderRadius: 3, p: 3, bgcolor: CARD_BG, boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}>
+//                 <Stack direction="row" alignItems="center" spacing={2}>
+//                   <Avatar sx={{ bgcolor: '#ea580c' }}><TaskAltIcon/></Avatar>
+//                   <Box sx={{ flex: 1 }}>
+//                     <Typography fontWeight={800}>{a.t}</Typography>
+//                     <Typography variant="caption" color={TEXT_SOFT}>{a.sub}</Typography>
+//                   </Box>
+//                   <PillButton size="small" variant="contained" sx={{ background: GRADIENT_ACCENT }}>{a.cta}</PillButton>
+//                 </Stack>
+//               </Card>
+//             </Grid>
+//           ))}
+//         </Grid>
+//       </Container>
+
+//       {/* Upcoming Tasks + Progress */}
+//       <Container maxWidth="lg" sx={{ pb: 8 }}>
+//         <Grid container spacing={2}>
+//           <Grid item xs={12} md={6}>
+//             <Card sx={{ borderRadius: 3, p: 2.5, bgcolor: CARD_BG, boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}>
+//               <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+//                 <Typography fontWeight={900}>Upcoming Tasks</Typography>
+//                 <Button size="small" endIcon={<ArrowForwardIosIcon fontSize="inherit" />} sx={{ textTransform: 'none' }}>View all</Button>
+//               </Stack>
+//               <List>
+//                 {[
+//                   {title:'DBMS Assignment 2', pts:120, due:'Today, 6:00 PM'},
+//                   {title:'Mini‑project proposal', pts:300, due:'Wed, 11:00 AM'},
+//                   {title:'Math quiz practice', pts:80, due:'Fri, 9:00 PM'}
+//                 ].map((t,i)=> (
+//                   <ListItem key={i} divider secondaryAction={<Chip label={`+${t.pts} pts`} color="primary" /> }>
+//                     <ListItemAvatar><Avatar sx={{ bgcolor: '#2563EB' }}><SchoolIcon/></Avatar></ListItemAvatar>
+//                     <ListItemText primary={t.title} secondary={<Typography variant="caption" color={TEXT_SOFT}>{t.due}</Typography>} />
+//                   </ListItem>
+//                 ))}
+//               </List>
+//             </Card>
+//           </Grid>
+//           <Grid item xs={12} md={6}>
+//             <Card sx={{ borderRadius: 3, p: 2.5, bgcolor: CARD_BG, boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}>
+//               <Typography fontWeight={900} sx={{ mb: 1 }}>Semester Progress</Typography>
+//               <Typography variant="caption" color={TEXT_SOFT}>Credits completed</Typography>
+//               <LinearProgress variant="determinate" value={62} sx={{ height: 10, borderRadius: 6, my: 1 }} />
+//               <Stack direction="row" spacing={3} sx={{ mb: 3 }}>
+//                 <Typography variant="body2"><b>62%</b> complete</Typography>
+//                 <Typography variant="body2" color={TEXT_SOFT}>Target: 80%</Typography>
+//               </Stack>
+//               <Typography variant="caption" color={TEXT_SOFT}>Weekly streak</Typography>
+//               <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+//                 {Array.from({ length: 7 }).map((_, i) => (
+//                   <Box key={i} sx={{ width: 28, height: 28, borderRadius: 1, bgcolor: i < 5 ? '#22c55e' : '#334155' }} />
+//                 ))}
+//               </Stack>
+//             </Card>
+//           </Grid>
+//         </Grid>
+//       </Container>
+
+//       {/* Redeem — Featured rewards */}
+//       <Container maxWidth="lg" sx={{ pb: 10 }}>
+//         <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'flex-end' }} sx={{ mb: 2 }}>
+//           <Typography variant="h5" fontWeight={900}>Redeem fast</Typography>
+//           <Button sx={{ textTransform: 'none' }}>See catalog</Button>
+//         </Stack>
+//         <Grid container spacing={2}>
+//           {[
+//             {icon:<StoreIcon/>, title:'Bookstore ₹100 off', pts:400},
+//             {icon:<LocalCafeIcon/>, title:'Free Cappuccino', pts:110},
+//             {icon:<PrintIcon/>, title:'10 Print Credits', pts:150},
+//             {icon:<RestaurantIcon/>, title:'Canteen Combo', pts:220},
+//           ].map((r,i)=> (
+//             <Grid item xs={12} sm={6} md={3} key={i}>
+//               <Card component={motion.div} whileHover={{ y: -4 }} sx={{ borderRadius: 3, p: 2.5, bgcolor: CARD_BG, boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}>
+//                 <Stack spacing={1.2} alignItems="flex-start">
+//                   <Avatar sx={{ bgcolor: '#7c3aed' }}>{r.icon}</Avatar>
+//                   <Typography fontWeight={800}>{r.title}</Typography>
+//                   <Chip label={`${r.pts} pts`} color="secondary" />
+//                   <PillButton size="small" variant="contained" sx={{ background: GRADIENT_PRIMARY }}>Redeem</PillButton>
+//                 </Stack>
+//               </Card>
+//             </Grid>
+//           ))}
+//         </Grid>
+//       </Container>
+
+//       {/* How it works */}
+//       <Container maxWidth="lg" sx={{ pb: 10 }}>
+//         <Typography variant="h5" fontWeight={900} align="center" sx={{ mb: 3 }}>How it works</Typography>
+//         <Grid container spacing={2}>
+//           {[
+//             {t:'Do tasks',d:'Finish assignments, projects, attend events',icon:<TaskAltIcon/>},
+//             {t:'Earn points',d:'Every action adds to your wallet',icon:<StarsIcon/>},
+//             {t:'Redeem',d:'Food, books, printing, admin perks',icon:<EmojiEventsIcon/>},
+//           ].map((s,i)=> (
+//             <Grid item xs={12} md={4} key={i}>
+//               <Card sx={{ borderRadius: 3, p: 3, bgcolor: CARD_BG, textAlign:'center', boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}>
+//                 <Avatar sx={{ bgcolor: '#2563EB', mx: 'auto', mb: 1 }}>{s.icon}</Avatar>
+//                 <Typography fontWeight={900}>{s.t}</Typography>
+//                 <Typography variant="body2" color={TEXT_SOFT}>{s.d}</Typography>
+//               </Card>
+//             </Grid>
+//           ))}
+//         </Grid>
+//       </Container>
+
+//       {/* Footer */}
+//       <Box sx={{ background: '#0a0d1b' }}>
+//         <Container sx={{ py: 6 }}>
+//           <Grid container spacing={4}>
+//             <Grid item xs={12} md={4}>
+//               <Stack direction="row" spacing={1.2} alignItems="center">
+//                 <Box sx={{ width: 28, height: 28, borderRadius: 2, background: GRADIENT_PRIMARY }} />
+//                 <Typography variant="h6" fontWeight={900}>Campus Cash</Typography>
+//               </Stack>
+//               <Typography variant="body2" sx={{ mt: 1, color: TEXT_SOFT }}>
+//                 Motivate academic performance with real rewards students love.
+//               </Typography>
+//             </Grid>
+//             <Grid item xs={12} md={4}>
+//               <Typography variant="subtitle2" fontWeight={900}>Explore</Typography>
+//               <Stack sx={{ mt: 1 }} spacing={1}>
+//                 {['Dashboard','Tasks','Rewards','Leaderboard','Help'].map((x)=> (
+//                   <Link key={x} href="#" color={TEXT_SOFT} underline="hover">{x}</Link>
+//                 ))}
+//               </Stack>
+//             </Grid>
+//             <Grid item xs={12} md={4}>
+//               <Typography variant="subtitle2" fontWeight={900}>Contact</Typography>
+//               <Stack sx={{ mt: 1 }} spacing={1}>
+//                 <Typography variant="body2" color={TEXT_SOFT}>info@campuscash.edu</Typography>
+//                 <Typography variant="body2" color={TEXT_SOFT}>@campuscash_app</Typography>
+//               </Stack>
+//             </Grid>
+//           </Grid>
+//           <Divider sx={{ my: 3, borderColor: '#1f2937' }} />
+//           <Typography variant="caption" color={TEXT_SOFT}>© {new Date().getFullYear()} Campus Cash. All rights reserved.</Typography>
+//         </Container>
+//       </Box>
+//     </Box>
+//   );
+// }
