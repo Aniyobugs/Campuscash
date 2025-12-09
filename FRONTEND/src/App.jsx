@@ -12,6 +12,7 @@ import AssignTask from './Components/AssignTask'
 import Awardpoints from './Components/Awardpoints'
 import ProfileUpdate from './Components/ProfileUpdate'
 import AdminDashboard from './Components/AdminDashboard'
+import Operation from './Components/Operation'
 
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
      <Route path ='/award' element={<Awardpoints/>}/>
       <Route path ='/profile' element={<ProfileUpdate/>}/>
       <Route path ='/admin' element={<AdminDashboard/>}/>
+       <Route path ='/op' element={<Operation/>}/>
    </Routes>
     </>
     //test1
