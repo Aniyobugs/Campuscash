@@ -28,13 +28,15 @@ import QRCode from "react-qr-code";
 import html2canvas from "html2canvas";
 
 /* ---------- Beautiful Coupon Component ---------- */
-
 const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
   if (!coupon) return null;
 
   const expiresText = coupon.expiresAt
     ? new Date(coupon.expiresAt).toLocaleDateString()
     : "No expiry";
+
+  const usedAtText =
+    coupon.usedAt ? new Date(coupon.usedAt).toLocaleString() : null;
 
   const qrValue = JSON.stringify({
     code: coupon.code,
@@ -63,7 +65,30 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
           boxShadow: "0 18px 40px rgba(15,23,42,0.6)",
         }}
       >
-        {/* perforated side circles */}
+
+        {/* --- USED BANNER --- */}
+        {coupon.isUsed && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 12,
+              right: -40,
+              transform: "rotate(45deg)",
+              background: "#dc2626",
+              color: "white",
+              px: 6,
+              py: 1,
+              fontWeight: "bold",
+              zIndex: 20,
+              fontSize: "0.9rem",
+              boxShadow: "0 4px 10px rgba(0,0,0,0.4)",
+            }}
+          >
+            USED
+          </Box>
+        )}
+
+        {/* perforated circles */}
         <Box
           sx={{
             position: "absolute",
@@ -89,7 +114,7 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
           }}
         />
 
-        {/* subtle pattern overlay */}
+        {/* subtle pattern */}
         <Box
           sx={{
             position: "absolute",
@@ -123,8 +148,9 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
           </Typography>
         </Box>
 
+        {/* main body */}
         <Box sx={{ display: "flex", p: 3, gap: 2, position: "relative", zIndex: 1 }}>
-          {/* left side: text info */}
+          {/* left info */}
           <Box sx={{ flex: 1, pr: 1 }}>
             <Typography
               variant="overline"
@@ -132,6 +158,7 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
             >
               COUPON CODE
             </Typography>
+
             <Typography
               variant="h5"
               sx={{
@@ -172,9 +199,27 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
                 {expiresText}
               </Box>
             </Typography>
+
+            {coupon.isUsed && (
+              <>
+                <Typography
+                  variant="body2"
+                  sx={{ color: "#fca5a5", mt: 1, fontWeight: 600 }}
+                >
+                  Used At: {usedAtText}
+                </Typography>
+
+                <Typography
+                  variant="body2"
+                  sx={{ color: "#fca5a5", fontWeight: 600 }}
+                >
+                  Used By: {coupon.usedBy || "Store"}
+                </Typography>
+              </>
+            )}
           </Box>
 
-          {/* right side: QR */}
+          {/* QR */}
           <Box
             sx={{
               width: 120,
@@ -189,14 +234,7 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
               border: "1px solid rgba(148,163,184,0.6)",
             }}
           >
-            <Box
-              sx={{
-                p: 1,
-                bgcolor: "white",
-                borderRadius: 2,
-                mb: 1,
-              }}
-            >
+            <Box sx={{ p: 1, bgcolor: "white", borderRadius: 2, mb: 1 }}>
               <QRCode
                 value={qrValue}
                 size={90}
@@ -207,12 +245,11 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
               variant="caption"
               sx={{ textAlign: "center", fontSize: "0.65rem", opacity: 0.85 }}
             >
-              Scan at counter to redeem
+              Scan at counter
             </Typography>
           </Box>
         </Box>
-
-        {/* dashed separator + terms */}
+        {/* dashed separator */}
         <Box
           sx={{
             position: "relative",
@@ -232,9 +269,8 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
             variant="caption"
             sx={{ opacity: 0.7, fontSize: "0.7rem" }}
           >
-            Terms: This coupon is valid for one-time use only and must be
-            presented at the campus counter before expiry. Not transferable or
-            redeemable for cash.
+            Terms: This coupon is valid once and must be shown at the campus
+            store before expiry.
           </Typography>
         </Box>
       </Box>
@@ -243,7 +279,6 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
 });
 
 /* ---------- Main Dashboard Component ---------- */
-
 const Userdash = () => {
   const [data, setData] = useState(null);
   const [form, setForm] = useState({
@@ -259,20 +294,23 @@ const Userdash = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [userId, setUserId] = useState(null);
 
+  // Tasks
   const [tasks, setTasks] = useState([]);
   const [tasksLoading, setTasksLoading] = useState(false);
 
+  // Redeem dialog
   const [redeemOpen, setRedeemOpen] = useState(false);
   const [redeemLoading, setRedeemLoading] = useState(false);
   const [selectedReward, setSelectedReward] = useState("Free Coffee");
 
-  // NEW: all coupons + selected coupon
+  // Coupons
   const [coupons, setCoupons] = useState([]);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
 
   const [redeemPoints, setRedeemPoints] = useState(100);
   const couponRef = useRef(null);
 
+  // Base URL
   const baseurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
   const rewardPointsMap = {
@@ -301,7 +339,7 @@ const Userdash = () => {
   const isExpired = (coupon) =>
     coupon.expiresAt && new Date(coupon.expiresAt) < new Date();
 
-  // Fetch coupons for user
+  /* ---------------- Fetch coupons ---------------- */
   const fetchCoupons = async (uid) => {
     try {
       const res = await axios.get(`${baseurl}/api/users/${uid}/coupons`);
@@ -311,7 +349,7 @@ const Userdash = () => {
     }
   };
 
-  // Fetch user
+  /* ---------------- Fetch user & coupons ---------------- */
   useEffect(() => {
     const storedUser = sessionStorage.getItem("user");
     if (storedUser) {
@@ -328,7 +366,9 @@ const Userdash = () => {
             currentPassword: "",
             newPassword: "",
           });
+
           if (user.profilePic) setPreview(`${baseurl}${user.profilePic}`);
+
           setData({
             user: {
               name: user.fname || user.fullName,
@@ -351,14 +391,13 @@ const Userdash = () => {
             },
           });
 
-          // also fetch coupons
           fetchCoupons(parsedUser.id);
         })
         .catch((err) => console.error(err));
     }
   }, [baseurl]);
 
-  // Fetch active tasks
+  /* ---------------- Fetch Active Tasks ---------------- */
   const fetchActiveTasks = async () => {
     try {
       setTasksLoading(true);
@@ -381,11 +420,12 @@ const Userdash = () => {
     const interval = setInterval(fetchActiveTasks, 60 * 1000);
     return () => clearInterval(interval);
   }, [baseurl]);
-
+  /* ---------------- Form Change ---------------- */
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  /* ---------------- Profile Pic Change ---------------- */
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -394,6 +434,7 @@ const Userdash = () => {
     }
   };
 
+  /* ---------------- Save Profile ---------------- */
   const handleSubmit = async () => {
     try {
       const formData = new FormData();
@@ -425,12 +466,12 @@ const Userdash = () => {
         },
       }));
     } catch (err) {
-      console.error("Error updating profile:", err);
       setError(err.response?.data?.message || "Update failed");
       setSuccess("");
     }
   };
 
+  /* ---------------- Redeem Points ---------------- */
   const handleRedeem = async () => {
     if (!userId) return;
     try {
@@ -454,7 +495,6 @@ const Userdash = () => {
         },
       }));
 
-      // add new coupon to list and select it
       setCoupons((prev) => [newCoupon, ...prev]);
       setSelectedCoupon(newCoupon);
 
@@ -462,7 +502,6 @@ const Userdash = () => {
       setError("");
       setRedeemOpen(false);
     } catch (err) {
-      console.error("Redeem error:", err);
       setError(err.response?.data?.message || "Redemption failed");
       setSuccess("");
     } finally {
@@ -470,9 +509,11 @@ const Userdash = () => {
     }
   };
 
+  /* ---------------- Download TXT ---------------- */
   const handleDownloadCouponTxt = () => {
     if (!selectedCoupon) return;
     const c = selectedCoupon;
+
     const content = `Campus Cash Coupon
 Coupon Code: ${c.code}
 Reward: ${c.rewardName}
@@ -481,7 +522,9 @@ Expires At: ${
       c.expiresAt ? new Date(c.expiresAt).toLocaleString() : "N/A"
     }
 User ID: ${c.userId}
+Status: ${c.isUsed ? "USED" : "ACTIVE"}
 `;
+
     const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -491,6 +534,7 @@ User ID: ${c.userId}
     URL.revokeObjectURL(url);
   };
 
+  /* ---------------- Download Image ---------------- */
   const downloadCouponImage = async () => {
     if (!couponRef.current || !selectedCoupon) return;
     const canvas = await html2canvas(couponRef.current, { scale: 2 });
@@ -501,10 +545,36 @@ User ID: ${c.userId}
     a.click();
   };
 
+  /* ---------------- Sync Coupon Status After Store Validation ---------------- */
+  const updateCouponStatus = async (couponCode) => {
+    try {
+      const res = await axios.get(`${baseurl}/api/coupons/status/${couponCode}`);
+
+      if (res.data?.isUsed !== undefined) {
+        setCoupons((prev) =>
+          prev.map((c) =>
+            c.code === couponCode ? { ...c, isUsed: res.data.isUsed } : c
+          )
+        );
+
+        if (selectedCoupon?.code === couponCode) {
+          setSelectedCoupon((prev) => ({
+            ...prev,
+            isUsed: res.data.isUsed,
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Error syncing coupon:", error);
+    }
+  };
+  /* ----------------- UI START ----------------- */
+
   if (!data) return <Typography>Loading...</Typography>;
 
   return (
     <Box sx={{ p: 4, bgcolor: "#f9f9ff", minHeight: "100vh" }}>
+
       {/* Profile Header */}
       <Box display="flex" alignItems="center" gap={2} mb={3}>
         <Avatar src={data.user.avatar} sx={{ width: 60, height: 60 }} />
@@ -518,18 +588,15 @@ User ID: ${c.userId}
           <Typography variant="body2">
             Leaderboard Rank: #{data.progress.rank}
           </Typography>
-          <Button
-            variant="outlined"
-            sx={{ mt: 1 }}
-            onClick={() => setOpenDialog(true)}
-          >
+          <Button variant="outlined" sx={{ mt: 1 }} onClick={() => setOpenDialog(true)}>
             Edit Profile
           </Button>
         </Box>
       </Box>
 
+
+      {/* ---------------- POINTS CARD ---------------- */}
       <Grid container spacing={3}>
-        {/* Points Card */}
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
@@ -537,15 +604,14 @@ User ID: ${c.userId}
               <Typography variant="h4" color="primary" fontWeight="bold">
                 {data.progress.points} pts
               </Typography>
+
               <Typography variant="body2" color="text.secondary">
-                {data.progress.nextReward.remaining} pts to next reward (
-                {data.progress.nextReward.name})
+                {data.progress.nextReward.remaining} pts to next reward ({data.progress.nextReward.name})
               </Typography>
+
               <LinearProgress
                 variant="determinate"
-                value={
-                  (data.progress.points / data.progress.nextReward.total) * 100
-                }
+                value={(data.progress.points / data.progress.nextReward.total) * 100}
                 sx={{ mt: 2, height: 10, borderRadius: 5 }}
               />
 
@@ -560,13 +626,9 @@ User ID: ${c.userId}
               >
                 Redeem Points
               </Button>
+
               {data.progress.points < 100 && (
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  display="block"
-                  mt={1}
-                >
+                <Typography variant="caption" color="text.secondary" display="block" mt={1}>
                   You need at least 100 points to redeem.
                 </Typography>
               )}
@@ -574,7 +636,8 @@ User ID: ${c.userId}
           </Card>
         </Grid>
 
-        {/* Streak Card */}
+
+        {/* ------------------- STREAK CARD ------------------- */}
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
@@ -583,17 +646,14 @@ User ID: ${c.userId}
                 <LocalFireDepartmentIcon color="error" />
                 <Typography>{data.progress.streak.days}-day streak!</Typography>
               </Box>
-              <Chip
-                label={`Badge: ${data.progress.streak.badge}`}
-                color="success"
-                sx={{ mt: 2 }}
-              />
+              <Chip label={`Badge: ${data.progress.streak.badge}`} color="success" sx={{ mt: 2 }} />
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {/* Assigned Tasks */}
+
+      {/* ---------------- TASK LIST ---------------- */}
       <Box mt={4}>
         <Typography variant="h6" fontWeight="bold" mb={2}>
           Assigned Tasks
@@ -602,64 +662,35 @@ User ID: ${c.userId}
         {tasksLoading && <LinearProgress sx={{ mb: 2 }} />}
 
         {!tasksLoading && tasks.length === 0 && (
-          <Typography color="text.secondary">
-            🎉 No active tasks right now.
-          </Typography>
+          <Typography color="text.secondary">🎉 No active tasks right now.</Typography>
         )}
 
         <Grid container spacing={2}>
-          {tasks.map((task) => (
-            <Grid item xs={12} md={6} key={task._id}>
-              <Card
-                sx={{
-                  borderRadius: 3,
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
-                }}
-              >
+          {tasks.map((t) => (
+            <Grid item xs={12} md={6} key={t._id}>
+              <Card sx={{ borderRadius: 3, boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}>
                 <CardContent>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      mb: 1,
-                    }}
-                  >
-                    <Typography variant="h6" fontWeight="bold">
-                      {task.title}
-                    </Typography>
-                    <Chip
-                      label={task.category || "General"}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Typography variant="h6" fontWeight="bold">{t.title}</Typography>
+
+                    <Chip label={t.category || "General"} size="small" color="primary" variant="outlined" />
                   </Box>
 
-                  {task.description && (
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 1 }}
-                    >
-                      {task.description}
+                  {t.description && (
+                    <Typography variant="body2" color="text.secondary" sx={{ my: 1 }}>
+                      {t.description}
                     </Typography>
                   )}
 
-                  <Typography variant="body2" sx={{ mb: 0.5 }}>
-                    <strong>Due:</strong>{" "}
-                    {new Date(task.dueDate).toLocaleString()}
+                  <Typography variant="body2">
+                    <strong>Due:</strong> {new Date(t.dueDate).toLocaleString()}
                   </Typography>
 
                   <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Points:</strong> {task.points}
+                    <strong>Points:</strong> {t.points}
                   </Typography>
 
-                  <Chip
-                    label={getRemainingTime(task.dueDate)}
-                    size="small"
-                    color="secondary"
-                  />
+                  <Chip label={getRemainingTime(t.dueDate)} size="small" color="secondary" />
                 </CardContent>
               </Card>
             </Grid>
@@ -667,65 +698,66 @@ User ID: ${c.userId}
         </Grid>
       </Box>
 
-      {/* My Coupons Area (ALL COUPONS + EXPIRY) */}
+
+      {/* ---------------- COUPON LIST ---------------- */}
       <Box mt={4}>
         <Typography variant="h6" fontWeight="bold" mb={2}>
           My Coupons
         </Typography>
 
         {coupons.length === 0 ? (
-          <Typography color="text.secondary">
-            You have not redeemed any coupons yet.
-          </Typography>
+          <Typography color="text.secondary">You have not redeemed any coupons yet.</Typography>
         ) : (
           <Grid container spacing={2}>
             {coupons.map((c) => {
               const expired = isExpired(c);
+              const used = c.isUsed;
+
               return (
-                <Grid item xs={12} sm={6} md={4} key={c._id || c.code}>
+                <Grid item xs={12} sm={6} md={4} key={c._id}>
                   <Card
                     sx={{
                       borderRadius: 3,
                       cursor: "pointer",
-                      boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
-                      border: expired
-                        ? "1px solid #fecaca"
-                        : "1px solid #bbf7d0",
+                      border:
+                        used ? "2px solid #fca5a5" :
+                        expired ? "2px solid #fcd34d" :
+                        "2px solid #86efac",
                     }}
                     onClick={() => setSelectedCoupon(c)}
                   >
                     <CardContent>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          mb: 1,
-                        }}
-                      >
-                        <Typography
-                          variant="subtitle1"
-                          fontWeight="bold"
-                          noWrap
-                        >
+                      <Box display="flex" justifyContent="space-between" alignItems="center">
+                        <Typography variant="subtitle1" fontWeight="bold" noWrap>
                           {c.rewardName}
                         </Typography>
+
                         <Chip
-                          label={expired ? "Expired" : "Active"}
+                          label={
+                            used ? "USED" :
+                            expired ? "EXPIRED" :
+                            "ACTIVE"
+                          }
                           size="small"
-                          color={expired ? "error" : "success"}
+                          color={
+                            used ? "error" :
+                            expired ? "warning" :
+                            "success"
+                          }
                         />
                       </Box>
-                      <Typography variant="body2">
+
+                      <Typography variant="body2" sx={{ mt: 1 }}>
                         Code: <strong>{c.code}</strong>
                       </Typography>
+
                       <Typography variant="body2">
                         Points: <strong>{c.pointsUsed}</strong>
                       </Typography>
+
                       {c.expiresAt && (
-                        <Typography variant="body2" sx={{ mt: 0.5 }}>
-                          Expiry:{" "}
-                          {new Date(c.expiresAt).toLocaleDateString()}
+                        <Typography variant="body2" sx={{ mt: 1 }}>
+                          Expiry: {new Date(c.expiresAt).toLocaleDateString()}
                         </Typography>
                       )}
                     </CardContent>
@@ -737,7 +769,8 @@ User ID: ${c.userId}
         )}
       </Box>
 
-      {/* Selected Coupon Preview + Download Buttons */}
+
+      {/* ---------------- SELECTED COUPON DISPLAY ---------------- */}
       {selectedCoupon && (
         <>
           <BeautifulCoupon
@@ -745,6 +778,7 @@ User ID: ${c.userId}
             coupon={selectedCoupon}
             userName={data.user.name}
           />
+
           <Box
             sx={{
               textAlign: "center",
@@ -755,34 +789,25 @@ User ID: ${c.userId}
             }}
           >
             <Button variant="outlined" onClick={handleDownloadCouponTxt}>
-              Download Coupon (.txt)
+              Download (.txt)
             </Button>
-            <Button
-              variant="contained"
-              color="success"
-              onClick={downloadCouponImage}
-            >
-              Download Coupon (Image)
+
+            <Button variant="contained" color="success" onClick={downloadCouponImage}>
+              Download (Image)
             </Button>
           </Box>
         </>
       )}
 
-      {/* Profile Update Dialog */}
-      <Dialog
-        open={openDialog}
-        onClose={() => setOpenDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
+
+      {/* ---------------- PROFILE DIALOG ---------------- */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Update Profile</DialogTitle>
         <DialogContent>
-          <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
-            <Avatar
-              src={preview || data.user.avatar}
-              sx={{ width: 100, height: 100, border: "2px solid #1b3a57" }}
-            />
+          <Box display="flex" justifyContent="center" mb={2}>
+            <Avatar src={preview || data.user.avatar} sx={{ width: 100, height: 100 }} />
           </Box>
+
           <Button variant="outlined" component="label" fullWidth>
             Upload Profile Picture
             <input type="file" hidden onChange={handleFileChange} />
@@ -796,15 +821,16 @@ User ID: ${c.userId}
             onChange={handleChange}
             sx={{ mt: 3 }}
           />
+
           <TextField
             fullWidth
-            label="Email Address"
+            label="Email"
             name="email"
-            type="email"
             value={form.email}
             onChange={handleChange}
             sx={{ mt: 3 }}
           />
+
           <TextField
             fullWidth
             label="Current Password"
@@ -814,6 +840,7 @@ User ID: ${c.userId}
             onChange={handleChange}
             sx={{ mt: 3 }}
           />
+
           <TextField
             fullWidth
             label="New Password"
@@ -827,12 +854,7 @@ User ID: ${c.userId}
           <Button
             fullWidth
             variant="contained"
-            sx={{
-              mt: 4,
-              backgroundColor: "#1b3a57",
-              "&:hover": { backgroundColor: "#16314a" },
-              py: 1.5,
-            }}
+            sx={{ mt: 4, py: 1.5 }}
             onClick={handleSubmit}
           >
             Save Changes
@@ -840,38 +862,29 @@ User ID: ${c.userId}
         </DialogContent>
       </Dialog>
 
-      {/* Redeem Dialog */}
-      <Dialog
-        open={redeemOpen}
-        onClose={() => setRedeemOpen(false)}
-        maxWidth="xs"
-        fullWidth
-      >
+
+      {/* ---------------- REDEEM DIALOG ---------------- */}
+      <Dialog open={redeemOpen} onClose={() => setRedeemOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Redeem Points</DialogTitle>
+
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2 }}>
-            You currently have{" "}
-            <strong>{data.progress.points} points.</strong>
-            <br />
-            Choose a reward and/or adjust points to redeem.
+            You currently have <strong>{data.progress.points}</strong> points.
           </Typography>
 
-          <FormControl fullWidth sx={{ mt: 2 }}>
-            <InputLabel id="reward-label">Reward</InputLabel>
+          <FormControl fullWidth>
+            <InputLabel>Reward</InputLabel>
             <Select
-              labelId="reward-label"
               value={selectedReward}
               label="Reward"
               onChange={(e) => {
-                const value = e.target.value;
-                setSelectedReward(value);
-                setRedeemPoints(rewardPointsMap[value] || 100);
+                const v = e.target.value;
+                setSelectedReward(v);
+                setRedeemPoints(rewardPointsMap[v]);
               }}
             >
               <MenuItem value="Free Coffee">Free Coffee (100 pts)</MenuItem>
-              <MenuItem value="Canteen Voucher ₹50">
-                Canteen Voucher ₹50 (150 pts)
-              </MenuItem>
+              <MenuItem value="Canteen Voucher ₹50">Canteen Voucher ₹50 (150 pts)</MenuItem>
               <MenuItem value="Library Pass">Library Pass (200 pts)</MenuItem>
             </Select>
           </FormControl>
@@ -879,53 +892,40 @@ User ID: ${c.userId}
           <TextField
             fullWidth
             type="number"
-            sx={{ mt: 2 }}
             label="Points to Redeem"
             value={redeemPoints}
             onChange={(e) => setRedeemPoints(Number(e.target.value))}
+            sx={{ mt: 2 }}
             inputProps={{
               min: 50,
               max: data.progress.points,
             }}
-            helperText={`Min 50 - Max ${data.progress.points} points`}
           />
         </DialogContent>
+
         <DialogActions>
           <Button onClick={() => setRedeemOpen(false)}>Cancel</Button>
+
           <Button
             variant="contained"
             onClick={handleRedeem}
-            disabled={
-              redeemLoading ||
-              redeemPoints < 50 ||
-              redeemPoints > data.progress.points
-            }
+            disabled={redeemLoading || redeemPoints < 50}
           >
-            {redeemLoading ? "Redeeming..." : "Redeem"}
+            {redeemLoading ? "Processing..." : "Redeem"}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Snackbars */}
-      <Snackbar
-        open={!!success}
-        autoHideDuration={3000}
-        onClose={() => setSuccess("")}
-      >
-        <Alert severity="success" onClose={() => setSuccess("")}>
-          {success}
-        </Alert>
+
+      {/* ---------------- SNACKBARS ---------------- */}
+      <Snackbar open={!!success} autoHideDuration={3000} onClose={() => setSuccess("")}>
+        <Alert severity="success">{success}</Alert>
       </Snackbar>
 
-      <Snackbar
-        open={!!error}
-        autoHideDuration={3000}
-        onClose={() => setError("")}
-      >
-        <Alert severity="error" onClose={() => setError("")}>
-          {error}
-        </Alert>
+      <Snackbar open={!!error} autoHideDuration={3000} onClose={() => setError("")}>
+        <Alert severity="error">{error}</Alert>
       </Snackbar>
+
     </Box>
   );
 };

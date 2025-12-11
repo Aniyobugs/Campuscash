@@ -310,4 +310,76 @@ router.get("/users/:id/coupons", async (req, res) => {
   }
 });
 
+// ==========================
+// Store: Verify Coupon
+// ==========================
+router.get("/coupons/verify/:code", async (req, res) => {
+  try {
+    const coupon = await Coupon.findOne({ code: req.params.code })
+      .populate("userId", "fname ename yearClassDept");
+
+    if (!coupon)
+      return res.status(404).json({ message: "Invalid coupon code" });
+
+    if (coupon.expiresAt && coupon.expiresAt < new Date())
+      return res.status(400).json({ message: "Coupon expired" });
+
+    if (coupon.isUsed)
+      return res.status(400).json({ message: "Coupon already used" });
+
+    res.json({
+      valid: true,
+      coupon,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ==========================
+// Store: Accept & Use Coupon
+// ==========================
+router.post("/coupons/use", async (req, res) => {
+  try {
+    const { code, storeName } = req.body;
+
+    const coupon = await Coupon.findOne({ code });
+
+    if (!coupon)
+      return res.status(404).json({ message: "Coupon not found" });
+
+    if (coupon.isUsed)
+      return res.status(400).json({ message: "Coupon already used" });
+
+    coupon.isUsed = true;
+    coupon.usedAt = new Date();
+    coupon.usedByStore = storeName || "Unknown Store";
+
+    await coupon.save();
+
+    res.json({
+      message: "Coupon accepted successfully",
+      coupon,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ==========================
+// ADMIN: Get full coupon logs
+// ==========================
+router.get("/coupons/logs", async (req, res) => {
+  try {
+    const logs = await Coupon.find()
+      .populate("userId", "fname ename studentId yearClassDept")
+      .sort({ createdAt: -1 });
+
+    res.json(logs);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
 module.exports = router;
