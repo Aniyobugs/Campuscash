@@ -51,11 +51,16 @@ const Login = () => {
         }
 
         // Navigate by role
-        if (res.data.user.role === "admin") {
-          navigate("/admin");
-        } else {
-          navigate("/user");
-        }
+if (res.data.user.role === "admin") {
+  navigate("/admin");
+} 
+else if (res.data.user.role === "store") {
+  navigate("/store");   // <-- NEW store page route
+} 
+else {
+  navigate("/user");
+}
+
       }
     })
     .catch((error) => {

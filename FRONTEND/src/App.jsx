@@ -13,6 +13,7 @@ import Awardpoints from './Components/Awardpoints'
 import ProfileUpdate from './Components/ProfileUpdate'
 import AdminDashboard from './Components/AdminDashboard'
 import StoreVerify from './Components/StoreVerify'
+import AdminRoleManager from './Components/AdminRoleManager'
 
 
 
@@ -31,6 +32,8 @@ function App() {
       <Route path ='/profile' element={<ProfileUpdate/>}/>
       <Route path ='/admin' element={<AdminDashboard/>}/>
       <Route path ='/store' element={<StoreVerify/>}/>
+      <Route path="/admin/roles" element={<AdminRoleManager />} />
+
       
    </Routes>
     </>
