@@ -178,7 +178,7 @@ const StorePage = () => {
       </Typography>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={5}>
+        <Grid size={{ xs: 12, md: 5 }}>
           <Paper sx={{ p: 3, height: "100%" }} elevation={3}>
             <Stack spacing={2}>
               <Typography variant="h6">Scan or Enter Coupon</Typography>
@@ -259,7 +259,7 @@ const StorePage = () => {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} md={7}>
+        <Grid size={{ xs: 12, md: 7 }}>
           <Paper sx={{ p: 2 }} elevation={0}>
             <Stack direction={{ xs: "column", sm: "row" }} alignItems="center" spacing={2} mb={1}>
               <TextField

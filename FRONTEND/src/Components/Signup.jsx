@@ -278,10 +278,10 @@ const Signup = () => {
 
             <TextField select fullWidth label="Year / Class / Department" name="yearClassDept" value={input.yearClassDept || ''} onChange={inputHandler} error={!!errors.yearClassDept} helperText={errors.yearClassDept}>
               <MenuItem value="">Select Year / Class / Dept</MenuItem>
-              <MenuItem value="First Year">First Year</MenuItem>
-              <MenuItem value="Second Year">Second Year</MenuItem>
-              <MenuItem value="Third Year">Third Year</MenuItem>
-              <MenuItem value="Final Year">Final Year</MenuItem>
+              <MenuItem value="Year 1">First Year</MenuItem>
+              <MenuItem value="Year 2">Second Year</MenuItem>
+              <MenuItem value="Year 3">Third Year</MenuItem>
+              <MenuItem value="Year 4">Final Year</MenuItem>
               <MenuItem value="Other">Other</MenuItem>
             </TextField>
 

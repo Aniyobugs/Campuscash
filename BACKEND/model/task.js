@@ -25,6 +25,16 @@ const taskSchema = new mongoose.Schema(
       type: String,
       default: "General",
     },
+    assignedYears: {
+      type: [String],
+      default: [],
+    },
+    awardedTo: [
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
+        awardedAt: { type: Date },
+      },
+    ],
     // Later: assignedTo, assignedBy, etc.
   },
   {

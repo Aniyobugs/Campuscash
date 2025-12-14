@@ -16,6 +16,15 @@ import {
   Button,
   Snackbar,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  ListItemSecondaryAction,
+  CircularProgress,
   Autocomplete,
   Avatar,
   Fade,
@@ -28,7 +37,7 @@ import { Edit, Save, Cancel, PersonOff, Person } from "@mui/icons-material";
 import axios from "axios";
 
 const AdminDashboard = () => {
-  const baseurl = import.meta.env.VITE_API_BASE_URL;
+  const baseurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
   const [users, setUsers] = useState([]);
   const [filtered, setFiltered] = useState([]);
@@ -49,16 +58,37 @@ const AdminDashboard = () => {
 
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [tasks, setTasks] = useState([]);
+  const [tasksLoading, setTasksLoading] = useState(false);
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [candidates, setCandidates] = useState([]);
+  const [candidatesLoading, setCandidatesLoading] = useState(false);
 
   useEffect(() => {
     axios
       .get(`${baseurl}/api/users`)
       .then((res) => {
-        const activeUsers = res.data.filter((u) => u.status !== "active");
+        // include all users except those explicitly marked 'inactive'
+        const activeUsers = res.data.filter((u) => u.status !== "inactive");
         setUsers(activeUsers);
         setFiltered(activeUsers);
       })
-      .catch((err) => console.error(err));
+      .catch((err) => {
+        console.error("Users fetch error:", err.response?.data || err.message || err);
+        setError(err.response?.data?.message || "Failed to load users");
+      });
+
+    // fetch tasks for admin
+    setTasksLoading(true);
+    axios
+      .get(`${baseurl}/api/tasks`)
+      .then((res) => setTasks(res.data || []))
+      .catch((err) => {
+        console.error("Tasks fetch error:", err.response?.data || err.message || err);
+        setError(err.response?.data?.message || "Failed to load tasks");
+      })
+      .finally(() => setTasksLoading(false));
   }, [baseurl]);
 
   useEffect(() => {
@@ -102,6 +132,42 @@ const AdminDashboard = () => {
       ename: user.ename,
       yearClassDept: user.yearClassDept,
     });
+  };
+
+  const handleOpenTask = async (task) => {
+    setSelectedTask(task);
+    setTaskDialogOpen(true);
+    setCandidatesLoading(true);
+    try {
+      const res = await axios.get(`${baseurl}/api/tasks/${task._id}/candidates`);
+      setCandidates(res.data || []);
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to load candidates");
+    } finally {
+      setCandidatesLoading(false);
+    }
+  };
+
+  const handleAwardForTask = async (candidate) => {
+    if (!selectedTask) return;
+    try {
+      const res = await axios.post(`${baseurl}/api/tasks/${selectedTask._id}/award`, { userId: candidate._id });
+      setSuccess(res.data.message || "Awarded successfully");
+      setError("");
+
+      // update candidate in local list
+      setCandidates((prev) => prev.map((c) => (c._id === candidate._id ? { ...c, awarded: true, points: res.data.user.points } : c)));
+
+      // update users list points
+      setUsers((prev) => prev.map((u) => (u._id === candidate._id ? { ...u, points: res.data.user.points } : u)));
+
+      // update tasks list awarded count
+      setTasks((prev) => prev.map((t) => (t._id === selectedTask._id ? { ...t, awardedTo: [...(t.awardedTo || []), { user: candidate._id }] } : t)));
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to award points");
+      setSuccess("");
+    }
   };
 
   const handleSave = async (id) => {
@@ -183,7 +249,7 @@ const AdminDashboard = () => {
 
       {/* Stats */}
       <Grid container spacing={4} mb={4}>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={statCardStyles} elevation={6}>
             <CardContent sx={{ textAlign: "center" }}>
               <Typography variant="h6" gutterBottom>
@@ -197,7 +263,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={statCardStyles} elevation={6}>
             <CardContent sx={{ textAlign: "center" }}>
               <Typography variant="h6" gutterBottom>
@@ -211,7 +277,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={statCardStyles} elevation={6}>
             <CardContent sx={{ textAlign: "center" }}>
               <Typography variant="h6" gutterBottom>
@@ -263,7 +329,7 @@ const AdminDashboard = () => {
           </Typography>
 
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Autocomplete
                 options={users}
                 getOptionLabel={(option) =>
@@ -303,7 +369,7 @@ const AdminDashboard = () => {
                 )}
               />
             </Grid>
-            <Grid item xs={12} md={2}>
+            <Grid size={{ xs: 12, md: 2 }}>
               <TextField
                 label="Points"
                 type="number"
@@ -315,7 +381,7 @@ const AdminDashboard = () => {
                 InputProps={{ inputProps: { min: 1 } }}
               />
             </Grid>
-            <Grid item xs={12} md={3}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <TextField
                 label="Reason"
                 fullWidth
@@ -325,7 +391,7 @@ const AdminDashboard = () => {
                 }
               />
             </Grid>
-            <Grid item xs={12} md={1}>
+            <Grid size={{ xs: 12, md: 1 }}>
               <Button
                 variant="contained"
                 color="primary"
@@ -530,6 +596,96 @@ const AdminDashboard = () => {
           </TableContainer>
         </CardContent>
       </Card>
+
+              {/* Tasks List / Manage */}
+              <Card sx={{ mt: 4, bgcolor: "white", boxShadow: 6, borderRadius: 3 }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom color="secondary" sx={{ fontWeight: "bold", letterSpacing: 1 }}>
+                    Tasks
+                  </Typography>
+
+                  {tasksLoading ? (
+                    <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+                      <CircularProgress />
+                    </Box>
+                  ) : (
+                    <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 2 }}>
+                      <Table>
+                        <TableHead>
+                          <TableRow sx={{ bgcolor: "primary.light" }}>
+                            <TableCell sx={{ fontWeight: "bold" }}>Title</TableCell>
+                            <TableCell sx={{ fontWeight: "bold" }}>Points</TableCell>
+                            <TableCell sx={{ fontWeight: "bold" }}>Due</TableCell>
+                            <TableCell sx={{ fontWeight: "bold" }}>Years</TableCell>
+                            <TableCell sx={{ fontWeight: "bold" }} align="center">Awarded</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: "bold" }}>Action</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {tasks.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={6} align="center">
+                                <Typography color="text.secondary">No tasks found</Typography>
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            tasks.map((t) => (
+                              <TableRow key={t._id} hover>
+                                <TableCell>{t.title}</TableCell>
+                                <TableCell>{t.points}</TableCell>
+                                <TableCell>{new Date(t.dueDate).toLocaleDateString()}</TableCell>
+                                <TableCell>{(t.assignedYears || []).join(", ") || "All"}</TableCell>
+                                <TableCell align="center">{(t.awardedTo || []).length}</TableCell>
+                                <TableCell align="center">
+                                  <Button variant="outlined" size="small" onClick={() => handleOpenTask(t)}>
+                                    Manage
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Dialog open={taskDialogOpen} onClose={() => setTaskDialogOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Manage Task</DialogTitle>
+                <DialogContent>
+                  {selectedTask && (
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight={700}>{selectedTask.title}</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{selectedTask.description}</Typography>
+
+                      {candidatesLoading ? (
+                        <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}><CircularProgress size={28} /></Box>
+                      ) : (
+                        <List>
+                          {candidates.length === 0 ? (
+                                <Typography color="text.secondary">No students match this task. Try using values like "Year 3", "3rd Year", or set "All" to target all students.</Typography>
+                              ) : (
+                            candidates.map((c) => (
+                              <ListItem key={c._id} divider>
+                                <ListItemAvatar>
+                                  <Avatar src={c.profilePic ? `${baseurl}${c.profilePic}` : "/default-avatar.png"} />
+                                </ListItemAvatar>
+                                <ListItemText primary={`${c.fname} (${c.studentId || "--"})`} secondary={`${c.yearClassDept || ""} • ${c.points || 0} pts`} />
+                                <ListItemSecondaryAction>
+                                  <Button size="small" variant={c.awarded ? "outlined" : "contained"} disabled={c.awarded} onClick={() => handleAwardForTask(c)}>
+                                    {c.awarded ? "Awarded" : `Award ${selectedTask.points} pts`}
+                                  </Button>
+                                </ListItemSecondaryAction>
+                              </ListItem>
+                            ))
+                          )}
+                        </List>
+                      )}
+                    </Box>
+                  )}
+                </DialogContent>
+              </Dialog>
 
       {/* Alerts */}
       <Snackbar

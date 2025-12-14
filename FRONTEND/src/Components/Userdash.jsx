@@ -297,6 +297,7 @@ const Userdash = () => {
   // Tasks
   const [tasks, setTasks] = useState([]);
   const [tasksLoading, setTasksLoading] = useState(false);
+  const [userYear, setUserYear] = useState(null);
 
   // Redeem dialog
   const [redeemOpen, setRedeemOpen] = useState(false);
@@ -360,6 +361,8 @@ const Userdash = () => {
         .get(`${baseurl}/api/${parsedUser.id}`)
         .then((res) => {
           const user = res.data;
+          // store user's year for task filtering
+          if (user.yearClassDept) setUserYear(user.yearClassDept);
           setForm({
             fullName: user.fname || user.fullName || "",
             email: user.email || "",
@@ -401,7 +404,9 @@ const Userdash = () => {
   const fetchActiveTasks = async () => {
     try {
       setTasksLoading(true);
-      const res = await axios.get(`${baseurl}/api/tasks/active`);
+      const res = await axios.get(`${baseurl}/api/tasks/active`, {
+        params: userYear ? { year: userYear } : {},
+      });
       const now = new Date();
       const activeOnly = (res.data || []).filter(
         (t) => new Date(t.dueDate) >= now
@@ -419,7 +424,7 @@ const Userdash = () => {
     fetchActiveTasks();
     const interval = setInterval(fetchActiveTasks, 60 * 1000);
     return () => clearInterval(interval);
-  }, [baseurl]);
+  }, [baseurl, userYear]);
   /* ---------------- Form Change ---------------- */
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -597,7 +602,7 @@ Status: ${c.isUsed ? "USED" : "ACTIVE"}
 
       {/* ---------------- POINTS CARD ---------------- */}
       <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Typography variant="h6">My Points</Typography>
@@ -638,7 +643,7 @@ Status: ${c.isUsed ? "USED" : "ACTIVE"}
 
 
         {/* ------------------- STREAK CARD ------------------- */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card>
             <CardContent>
               <Typography variant="h6">Streak</Typography>
@@ -667,7 +672,7 @@ Status: ${c.isUsed ? "USED" : "ACTIVE"}
 
         <Grid container spacing={2}>
           {tasks.map((t) => (
-            <Grid item xs={12} md={6} key={t._id}>
+            <Grid size={{ xs: 12, md: 6 }} key={t._id}>
               <Card sx={{ borderRadius: 3, boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}>
                 <CardContent>
                   <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -714,7 +719,7 @@ Status: ${c.isUsed ? "USED" : "ACTIVE"}
               const used = c.isUsed;
 
               return (
-                <Grid item xs={12} sm={6} md={4} key={c._id}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={c._id}>
                   <Card
                     sx={{
                       borderRadius: 3,

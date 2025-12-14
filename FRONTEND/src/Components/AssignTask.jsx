@@ -10,6 +10,10 @@ import {
   Grid,
   Paper,
   InputAdornment,
+  Avatar,
+  Stack,
+  Chip,
+  Autocomplete,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -27,6 +31,7 @@ const AssignTask = () => {
     dueDate: null,
     points: "",
     category: "",
+    assignedYears: [],
   });
 
   const [success, setSuccess] = useState(false);
@@ -53,6 +58,7 @@ const AssignTask = () => {
         dueDate: formData.dueDate.toISOString(),
         points: Number(formData.points),
         category: formData.category || "General",
+          assignedYears: formData.assignedYears || [],
       };
 
       await axios.post(`${baseurl}/api/tasks/addtask`, payload);
@@ -66,6 +72,7 @@ const AssignTask = () => {
         dueDate: null,
         points: "",
         category: "",
+        assignedYears: [],
       });
     } catch (err) {
       console.error("Error assigning task:", err);
@@ -82,206 +89,208 @@ const AssignTask = () => {
         sx={{
           display: "flex",
           justifyContent: "center",
-          alignItems: "center",
+          alignItems: "flex-start",
           minHeight: "100vh",
-          backgroundImage:
-            "linear-gradient(135deg, #e0e7ff 0%, #f5f7fa 100%), url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          p: 3,
+          py: 6,
+          px: 2,
+          background: "linear-gradient(180deg,#f7fbff 0%, #ffffff 100%)",
         }}
       >
         <Paper
-          elevation={3}
+          elevation={6}
           sx={{
-            p: { xs: 2, sm: 4 },
-            maxWidth: 500,
+            maxWidth: 920,
             width: "100%",
-            borderRadius: 4,
-            backgroundColor: "rgba(255,255,255,0.85)",
-            backdropFilter: "blur(8px)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
+            borderRadius: 3,
+            overflow: "hidden",
+            display: "flex",
           }}
         >
-          <Box sx={{ textAlign: "center", mb: 2 }}>
-            <AssignmentIcon color="primary" sx={{ fontSize: 48, mb: 1 }} />
-            <Typography
-              variant="h5"
-              fontWeight="bold"
-              sx={{
-                color: "primary.main",
-                letterSpacing: 1,
-                mb: 1,
-              }}
-            >
-              Assign New Task
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Create and assign a new task to your students.
-            </Typography>
+          <Box sx={{ flex: 1, p: { xs: 3, sm: 5 } }}>
+            <Stack direction="row" spacing={2} alignItems="center" mb={2}>
+              <Avatar sx={{ bgcolor: "primary.main", width: 56, height: 56 }}>
+                <AssignmentIcon sx={{ fontSize: 28 }} />
+              </Avatar>
+
+              <Box>
+                <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: 0.3 }}>
+                  Assign New Task
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Create and assign tasks with points and due dates.
+                </Typography>
+              </Box>
+            </Stack>
+
+            <Box component="form" onSubmit={handleSubmit} noValidate>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    required
+                    fullWidth
+                    label="Task Title"
+                    value={formData.title}
+                    onChange={handleChange("title")}
+                    placeholder="e.g. Final Project Presentation"
+                    variant="outlined"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <AssignmentIcon color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Category"
+                    value={formData.category}
+                    onChange={handleChange("category")}
+                    placeholder="e.g. Assignment, Project, Quiz..."
+                    variant="outlined"
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Autocomplete
+                    multiple
+                    freeSolo
+                    options={["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"]}
+                    value={formData.assignedYears}
+                    onChange={(e, value) => setFormData({ ...formData, assignedYears: value })}
+                    renderTags={(value, getTagProps) =>
+                      value.map((option, index) => (
+                        <Chip variant="outlined" label={option} size="small" {...getTagProps({ index })} />
+                      ))
+                    }
+                    renderInput={(params) => (
+                      <TextField {...params} label="Assign to Years (optional)" placeholder="Add or select years" />
+                    )}
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12 }}>
+                  <TextField
+                    multiline
+                    rows={3}
+                    fullWidth
+                    label="Description"
+                    value={formData.description}
+                    onChange={handleChange("description")}
+                    placeholder="Optional task details..."
+                    variant="outlined"
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <DatePicker
+                    label="Due Date"
+                    value={formData.dueDate}
+                    onChange={(newDate) => setFormData({ ...formData, dueDate: newDate })}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        required: true,
+                        variant: "outlined",
+                        InputProps: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <CalendarMonthIcon color="action" />
+                            </InputAdornment>
+                          ),
+                        },
+                      },
+                    }}
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <TextField
+                    label="Points"
+                    type="number"
+                    required
+                    fullWidth
+                    inputProps={{ min: 1 }}
+                    value={formData.points}
+                    onChange={handleChange("points")}
+                    variant="outlined"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <EmojiEventsIcon color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12, md: 4 }} sx={{ display: "flex", alignItems: "center" }}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<UploadFileIcon />}
+                    disabled
+                    sx={{ ml: { md: 1 }, width: "100%", borderStyle: "dashed" }}
+                  >
+                    Upload (Soon)
+                  </Button>
+                </Grid>
+
+                <Grid size={{ xs: 12 }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    type="submit"
+                    fullWidth
+                    sx={{
+                      py: 1.4,
+                      fontWeight: 700,
+                      borderRadius: 2,
+                      textTransform: "none",
+                      boxShadow: "0 6px 18px rgba(25,118,210,0.12)",
+                      transition: "transform 150ms ease",
+                      '&:hover': { transform: "translateY(-2px)" },
+                    }}
+                  >
+                    Assign Task
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
           </Box>
 
-          <form onSubmit={handleSubmit} noValidate>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Task Title"
-                  value={formData.title}
-                  onChange={handleChange("title")}
-                  placeholder="e.g. Final Project Presentation"
-                  variant="outlined"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <AssignmentIcon color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
+          <Box sx={{ width: { xs: 0, md: 340 }, display: { xs: "none", md: "block" }, bgcolor: "primary.light", color: "primary.contrastText" }}>
+            <Box sx={{ p: 4 }}>
+              <Typography variant="subtitle1" fontWeight={700} mb={1}>
+                Quick Tips
+              </Typography>
+              <Stack spacing={1} mb={2}>
+                <Chip label="Give clear instructions" variant="filled" color="primary" />
+                <Chip label="Set fair points" variant="outlined" />
+                <Chip label="Use categories for filtering" variant="outlined" />
+              </Stack>
 
-              <Grid item xs={12}>
-                <TextField
-                  multiline
-                  rows={3}
-                  fullWidth
-                  label="Description"
-                  value={formData.description}
-                  onChange={handleChange("description")}
-                  placeholder="Optional task details..."
-                  variant="outlined"
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Category"
-                  value={formData.category}
-                  onChange={handleChange("category")}
-                  placeholder="e.g. Assignment, Project, Quiz..."
-                  variant="outlined"
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <DatePicker
-                  label="Due Date"
-                  value={formData.dueDate}
-                  onChange={(newDate) =>
-                    setFormData({ ...formData, dueDate: newDate })
-                  }
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      required: true,
-                      variant: "outlined",
-                      InputProps: {
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <CalendarMonthIcon color="action" />
-                          </InputAdornment>
-                        ),
-                      },
-                    },
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Points Awarded"
-                  type="number"
-                  required
-                  fullWidth
-                  inputProps={{ min: 1 }}
-                  value={formData.points}
-                  onChange={handleChange("points")}
-                  variant="outlined"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <EmojiEventsIcon color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  disabled
-                  startIcon={<UploadFileIcon />}
-                  sx={{
-                    py: 1.2,
-                    borderRadius: 2,
-                    color: "text.secondary",
-                    borderStyle: "dashed",
-                  }}
-                >
-                  Upload Related File (Coming Soon)
-                </Button>
-              </Grid>
-
-              <Grid item xs={12}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  type="submit"
-                  fullWidth
-                  sx={{
-                    py: 1.3,
-                    fontWeight: "bold",
-                    borderRadius: 2,
-                    textTransform: "none",
-                    fontSize: "1rem",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                  }}
-                >
-                  Assign Task
-                </Button>
-              </Grid>
-            </Grid>
-          </form>
-
-          {/* Success Snackbar */}
-          <Snackbar
-            open={success}
-            autoHideDuration={3000}
-            onClose={() => setSuccess(false)}
-            anchorOrigin={{ vertical: "top", horizontal: "center" }}
-          >
-            <Alert
-              severity="success"
-              variant="filled"
-              onClose={() => setSuccess(false)}
-              sx={{ fontWeight: "bold" }}
-            >
-              Task assigned successfully!
-            </Alert>
-          </Snackbar>
-
-          {/* Error Snackbar */}
-          <Snackbar
-            open={!!errorMsg}
-            autoHideDuration={3000}
-            onClose={() => setErrorMsg("")}
-            anchorOrigin={{ vertical: "top", horizontal: "center" }}
-          >
-            <Alert
-              severity="error"
-              variant="filled"
-              onClose={() => setErrorMsg("")}
-              sx={{ fontWeight: "bold" }}
-            >
-              {errorMsg}
-            </Alert>
-          </Snackbar>
+              <Typography variant="body2" sx={{ opacity: 0.95 }}>
+                Tasks help students track progress. Use the points field to reward effort and due dates to keep timelines clear.
+              </Typography>
+            </Box>
+          </Box>
         </Paper>
+
+        {/* Feedback */}
+        <Snackbar open={success} autoHideDuration={3000} onClose={() => setSuccess(false)} anchorOrigin={{ vertical: "top", horizontal: "center" }}>
+          <Alert severity="success" variant="filled" onClose={() => setSuccess(false)} sx={{ fontWeight: "bold" }}>
+            Task assigned successfully!
+          </Alert>
+        </Snackbar>
+
+        <Snackbar open={!!errorMsg} autoHideDuration={3000} onClose={() => setErrorMsg("")} anchorOrigin={{ vertical: "top", horizontal: "center" }}>
+          <Alert severity="error" variant="filled" onClose={() => setErrorMsg("")} sx={{ fontWeight: "bold" }}>
+            {errorMsg}
+          </Alert>
+        </Snackbar>
       </Box>
     </LocalizationProvider>
   );

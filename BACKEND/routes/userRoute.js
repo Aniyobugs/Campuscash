@@ -109,7 +109,7 @@ router.get("/users", async (req, res) => {
     const users = await userModel
       .find()
       .select(
-        "fname ename studentId email role points yearClassDept profilePic"
+        "fname ename studentId email role points yearClassDept profilePic status"
       );
     res.status(200).json(users);
   } catch (error) {

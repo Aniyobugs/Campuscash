@@ -185,7 +185,7 @@ export default function Home() {
         <Box aria-hidden sx={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0.12))', pointerEvents: 'none' }} />
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 3 }}>
           <Grid container spacing={4} alignItems="center">
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
                 <Typography variant="h2" sx={{ fontWeight: 800, mb: 2, fontSize: { xs: '2rem', md: '3rem' }, color: '#0b1a4a' }}>
                   Study. Earn. Redeem. Repeat!
@@ -213,7 +213,7 @@ export default function Home() {
               </motion.div>
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <motion.div variants={parallax} initial="hidden" whileInView="visible" viewport={{ once: true }}>
                 <Box sx={{ borderRadius: 4, overflow: 'hidden', boxShadow: 8, bgcolor: '#fff' }}>
                   <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1400&auto=format&fit=crop&ixlib=rb-4.0.3&s=3b7d9b2b8c2d3f2b6b9a" alt="students" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', maxHeight: 380 }} />
@@ -228,7 +228,7 @@ export default function Home() {
         <Container id="how" maxWidth="lg" sx={{ mt: 8 }}>
           <Grid container spacing={6} justifyContent="center">
             {featureData.map(({ icon, title, text }, index) => (
-          <Grid item xs={12} sm={6} md={4} sx={{ display: 'flex', justifyContent: 'center' }} key={index}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} sx={{ display: 'flex', justifyContent: 'center' }} key={index}>
             <motion.div
               variants={parallax}
               initial="hidden"
@@ -468,7 +468,7 @@ export default function Home() {
       <Box sx={{ bgcolor: '#6444e6', color: '#fff', py: 6 }}>
         <Container maxWidth="lg">
           <Grid container spacing={4} justifyContent="center" alignItems="flex-start">
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Typography variant="h6" fontWeight="bold">
                 Campus Cash
               </Typography>
