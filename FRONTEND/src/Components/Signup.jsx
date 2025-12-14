@@ -110,8 +110,20 @@ import {
   Checkbox,
   FormControlLabel,
   MenuItem,
+  IconButton,
+  InputAdornment,
+  LinearProgress,
+  Snackbar,
+  Alert,
+  Stack,
+  Divider,
+  Avatar,
+  Box,
 } from "@mui/material";
-import Box from "@mui/material/Box";
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import GoogleIcon from '@mui/icons-material/Google';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import axios from "axios";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -120,6 +132,11 @@ const Signup = () => {
   const [input, setInput] = useState({
     termsAccepted: false,
   });
+  const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+  const [pwdStrength, setPwdStrength] = useState(0);
 
   const baseurl = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
@@ -128,34 +145,48 @@ const Signup = () => {
     const value =
       e.target.type === "checkbox" ? e.target.checked : e.target.value;
     setInput({ ...input, [e.target.name]: value });
+    if (e.target.name === 'password') setPwdStrength(calcStrength(value));
   };
 
   const addHandler = () => {
     // frontend validation
-    if (!input.fname || !input.ename || !input.password) {
-      alert("Please fill all required fields");
-      return;
-    }
-    if (!input.studentId || !input.yearClassDept) {
-      alert("Please enter Student ID and Year/Class/Dept");
-      return;
-    }
-    if (!input.termsAccepted) {
-      alert("You must accept the Terms of Service");
-      return;
-    }
+    const nextErrors = {};
+    if (!input.fname) nextErrors.fname = 'Full name is required';
+    if (!input.ename || !/^\S+@\S+\.\S+$/.test(input.ename)) nextErrors.ename = 'Enter a valid college email';
+    if (!input.password || input.password.length < 6) nextErrors.password = 'Password must be at least 6 characters';
+    if (!input.studentId) nextErrors.studentId = 'Student ID is required';
+    if (!input.yearClassDept) nextErrors.yearClassDept = 'Please select your year/class/department';
+    if (!input.termsAccepted) nextErrors.termsAccepted = 'You must accept the Terms of Service';
+
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
+    setLoading(true);
 
     axios
       .post(`${baseurl}/api`, input)
       .then((res) => {
-        alert(res.data.message);
-        navigate("/L");
+        setSuccessMsg(res.data.message || 'Account created');
+        setLoading(false);
+        setTimeout(() => navigate('/L'), 900);
       })
       .catch((error) => {
-        console.log(error);
-        alert(error.response?.data?.message || "Signup failed");
+        setLoading(false);
+        const msg = error.response?.data?.message || 'Signup failed';
+        setErrors({ form: msg });
       });
   };
+
+  const calcStrength = (pwd) => {
+    let score = 0;
+    if (!pwd) return 0;
+    if (pwd.length >= 6) score += 30;
+    if (/[A-Z]/.test(pwd)) score += 20;
+    if (/[0-9]/.test(pwd)) score += 20;
+    if (/[^A-Za-z0-9]/.test(pwd)) score += 30;
+    return Math.min(100, score);
+  };
+
+  const togglePassword = () => setShowPassword((s) => !s);
 
   return (
     <Box
@@ -165,162 +196,117 @@ const Signup = () => {
         alignItems: "center",
         justifyContent: "center",
         background: "linear-gradient(120deg,#e0c3fc 0%,#8ec5fc 100%)",
+        p: 3,
       }}
     >
       <Box
         sx={{
-          width: 400,
-          p: 4,
-          background: "#fff",
-          borderRadius: 5,
-          boxShadow: "0 6px 32px rgba(132, 50, 255, 0.14)",
+          width: { xs: '100%', md: 900 },
+          display: 'flex',
+          borderRadius: 3,
+          overflow: 'hidden',
+          boxShadow: '0 8px 40px rgba(16,24,40,0.12)',
+          bgcolor: 'background.paper'
         }}
       >
-        <Typography
-          variant="h3"
-          align="center"
-          sx={{
-            mb: 2,
-            fontWeight: 600,
-            color: "#152fc5ff",
-            fontFamily: "italian",
-            letterSpacing: "2px",
-          }}
-        >
-          CAMPUS CASH
-        </Typography>
-
-        <Typography
-          variant="h6"
-          align="center"
-          sx={{
-            color: "#84889eff",
-            mb: 3,
-            fontFamily: "italian",
-            fontWeight: 300,
-          }}
-        >
-          Signup Form
-        </Typography>
-
-        <TextField
-          fullWidth
-          label="Full Name"
-          variant="filled"
-          name="fname"
-          onChange={inputHandler}
-          sx={{ mb: 2 }}
-        />
-
-        <TextField
-          fullWidth
-          label="College Email"
-          variant="filled"
-          name="ename"
-          onChange={inputHandler}
-          sx={{ mb: 2 }}
-        />
-
-        <TextField
-          fullWidth
-          label="Student ID Number"
-          variant="filled"
-          name="studentId"
-          onChange={inputHandler}
-          sx={{ mb: 2 }}
-        />
-
-        <TextField
-          fullWidth
-          label="Password"
-          variant="filled"
-          type="password"
-          name="password"
-          onChange={inputHandler}
-          sx={{ mb: 2 }}
-        />
-
-        <TextField
-          fullWidth
-          select
-          label="Year / Class / Department"
-          variant="filled"
-          name="yearClassDept"
-          onChange={inputHandler}
-          defaultValue=""
-          sx={{ mb: 2 }}
-        >
-          <MenuItem value="" disabled>
-            Select Year / Class / Dept
-          </MenuItem>
-          <MenuItem value="First Year">First Year</MenuItem>
-          <MenuItem value="Second Year">Second Year</MenuItem>
-          <MenuItem value="Third Year">Third Year</MenuItem>
-          <MenuItem value="Final Year">Final Year</MenuItem>
-          <MenuItem value="Other">Other</MenuItem>
-        </TextField>
-
-        <FormControlLabel
-          sx={{ mb: 2, mt: 1 }}
-          control={
-            <Checkbox
-              name="termsAccepted"
-              color="secondary"
-              onChange={inputHandler}
-            />
-          }
-          label={
-            <span style={{ color: "#512194ff", fontFamily: "italian" }}>
-              I agree to the Campus Cash Terms of Service
-            </span>
-          }
-        />
-
-        <Button
-          onClick={addHandler}
-          fullWidth
-          variant="contained"
-          sx={{
-            mt: 1,
-            background:
-              "linear-gradient(90deg, #4501e4ff 0%, #4d3bb4ff 100%)",
-            color: "#fff",
-            fontWeight: 500,
-            fontFamily: "italian",
-            textTransform: "none",
-            fontSize: "1.1rem",
-            "&:hover": {
-              background:
-                "linear-gradient(90deg, #2b16ebff 0%, #5a65c2ff 100%)",
-            },
-          }}
-        >
-          Sign Up
-        </Button>
-
-        <Typography
-          variant="h6"
-          align="center"
-          sx={{
-            color: "text.secondary",
-            mt: 3,
-            fontFamily: "italian",
-          }}
-        >
-          Already a user?{" "}
-          <Link
-            to="/L"
-            style={{
-              fontFamily: "italian",
-              color: "purple",
-              textDecoration: "none",
-              fontWeight: 500,
+        {/* Left panel with student image */}
+        <Box sx={{ display: { xs: 'none', md: 'flex' }, flex: 1, position: 'relative', minHeight: 420 }}>
+          {/* Background image */}
+          <Box
+            aria-hidden
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage: `url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80')`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              filter: 'brightness(0.65) contrast(1.05)',
             }}
-          >
-            Login
-          </Link>
-        </Typography>
+          />
+
+          {/* Gradient overlay and content */}
+          <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(77,59,180,0.45), rgba(108,92,231,0.45))' }} />
+
+          <Box sx={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 6, color: '#fff' }}>
+            <Stack spacing={2} alignItems="center">
+              <Avatar sx={{ width: 84, height: 84, bgcolor: 'rgba(255,255,255,0.85)', color: '#6c5ce7' }}>CC</Avatar>
+              <Typography variant="h4" sx={{ fontWeight: 700 }}>Join Campus Cash</Typography>
+              <Typography sx={{ opacity: 0.95, maxWidth: 300, textAlign: 'center' }}>
+                Earn points for campus activities, redeem rewards and stay motivated.
+              </Typography>
+              <Divider sx={{ width: 120, bgcolor: 'rgba(255,255,255,0.25)' }} />
+              <Stack spacing={1} sx={{ mt: 2 }}>
+                <Typography sx={{ fontWeight: 600 }}>Student-friendly</Typography>
+                <Typography sx={{ fontWeight: 600 }}>Secure & Simple</Typography>
+                <Typography sx={{ fontWeight: 600 }}>Instant Rewards</Typography>
+              </Stack>
+            </Stack>
+          </Box>
+        </Box>
+
+        {/* Right: form */}
+        <Box sx={{ flex: 1, p: { xs: 3, md: 6 } }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>Create your account</Typography>
+          <Typography sx={{ color: 'text.secondary', mb: 3 }}>Sign up with your college email</Typography>
+
+          <Stack spacing={2}>
+            <TextField fullWidth label="Full name" name="fname" value={input.fname || ''} onChange={inputHandler} error={!!errors.fname} helperText={errors.fname} />
+            <TextField fullWidth label="College email" name="ename" value={input.ename || ''} onChange={inputHandler} error={!!errors.ename} helperText={errors.ename} />
+            <TextField fullWidth label="Student ID" name="studentId" value={input.studentId || ''} onChange={inputHandler} error={!!errors.studentId} helperText={errors.studentId} />
+
+            <TextField
+              fullWidth
+              label="Password"
+              name="password"
+              value={input.password || ''}
+              onChange={inputHandler}
+              error={!!errors.password}
+              helperText={errors.password}
+              type={showPassword ? 'text' : 'password'}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton edge="end" onClick={togglePassword}>
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
+
+            <LinearProgress variant="determinate" value={pwdStrength} sx={{ height: 8, borderRadius: 2 }} />
+
+            <TextField select fullWidth label="Year / Class / Department" name="yearClassDept" value={input.yearClassDept || ''} onChange={inputHandler} error={!!errors.yearClassDept} helperText={errors.yearClassDept}>
+              <MenuItem value="">Select Year / Class / Dept</MenuItem>
+              <MenuItem value="First Year">First Year</MenuItem>
+              <MenuItem value="Second Year">Second Year</MenuItem>
+              <MenuItem value="Third Year">Third Year</MenuItem>
+              <MenuItem value="Final Year">Final Year</MenuItem>
+              <MenuItem value="Other">Other</MenuItem>
+            </TextField>
+
+            <FormControlLabel control={<Checkbox name="termsAccepted" checked={!!input.termsAccepted} onChange={inputHandler} />} label={<span>I agree to the <Link to="/terms">Terms of Service</Link></span>} />
+
+            {errors.form && <Alert severity="error">{errors.form}</Alert>}
+
+            <Button onClick={addHandler} disabled={loading} fullWidth variant="contained" sx={{ py: 1.5, fontWeight: 700, textTransform: 'none', background: 'linear-gradient(90deg,#4d3bb4,#6c5ce7)' }}>{loading ? 'Creating account...' : 'Sign Up'}</Button>
+
+            <Divider>OR</Divider>
+
+            <Stack direction="row" spacing={2}>
+              <Button startIcon={<GoogleIcon />} variant="outlined" fullWidth>Continue with Google</Button>
+              <Button startIcon={<GitHubIcon />} variant="outlined" fullWidth>Continue with GitHub</Button>
+            </Stack>
+
+            <Typography variant="body2" sx={{ textAlign: 'center', mt: 2 }}>Already a user? <Link to="/L">Login</Link></Typography>
+          </Stack>
+
+        </Box>
       </Box>
+
+      <Snackbar open={!!successMsg} autoHideDuration={3000} onClose={() => setSuccessMsg('')}>
+        <Alert severity="success" onClose={() => setSuccessMsg('')}>{successMsg}</Alert>
+      </Snackbar>
     </Box>
   );
 };

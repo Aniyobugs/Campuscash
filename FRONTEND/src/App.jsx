@@ -6,6 +6,9 @@ import { Route, Routes } from 'react-router-dom'
 import Signup from './Components/Signup'
 import Login from './Components/Login'
 import Home from './Components/Home'
+import Navbar from './Components/Navbar'
+import { AuthProvider } from './contexts/AuthContext'
+import ProtectedRoute from './Components/ProtectedRoute'
 import Userdash from './Components/Userdash'
 import { Task } from '@mui/icons-material'
 import AssignTask from './Components/AssignTask'
@@ -22,21 +25,24 @@ function App() {
 
   return (
     <>
+  <AuthProvider>
+   <Navbar />
    <Routes>
     <Route path ='/' element={<Home/>}/>
     <Route path ='/s' element={<Signup/>}/>
      <Route path ='/L' element={<Login/>}/>
-     <Route path ='/user' element={<Userdash/>}/>
-     <Route path ='/tsk' element={<AssignTask/>}/>
-     <Route path ='/award' element={<Awardpoints/>}/>
-      <Route path ='/profile' element={<ProfileUpdate/>}/>
-      <Route path ='/admin' element={<AdminDashboard/>}/>
-      <Route path ='/store' element={<StoreVerify/>}/>
-      <Route path="/admin/roles" element={<AdminRoleManager />} />
+     <Route path ='/user' element={<ProtectedRoute allowedRoles={["user"]}><Userdash/></ProtectedRoute>} />
+     <Route path ='/tsk' element={<ProtectedRoute allowedRoles={["admin"]}><AssignTask/></ProtectedRoute>} />
+     <Route path ='/award' element={<ProtectedRoute allowedRoles={["admin"]}><Awardpoints/></ProtectedRoute>} />
+      <Route path ='/profile' element={<ProtectedRoute allowedRoles={["user","admin","store"]}><ProfileUpdate/></ProtectedRoute>} />
+      <Route path ='/admin' element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard/></ProtectedRoute>} />
+      <Route path ='/store' element={<ProtectedRoute allowedRoles={["store"]}><StoreVerify/></ProtectedRoute>} />
+      <Route path="/admin/roles" element={<ProtectedRoute allowedRoles={["admin"]}><AdminRoleManager /></ProtectedRoute>} />
 
       
-   </Routes>
-    </>
+  </Routes>
+  </AuthProvider>
+   </>
     //test1
   )
 }

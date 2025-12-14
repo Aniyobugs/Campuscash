@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   AppBar, Toolbar, Typography, Button, Box, Container, Card,
-  Grid, Paper, Divider, Stack, Chip, Link
+  Grid, Paper, Divider, Stack, Chip, Link, Avatar, Rating
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DiamondIcon from '@mui/icons-material/Diamond';
@@ -10,7 +11,6 @@ import LocalCafeIcon from '@mui/icons-material/LocalCafe';
 import StoreIcon from '@mui/icons-material/Store';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import Navbar from './Navbar';
 import { motion } from 'framer-motion';
 
 const featureData = [
@@ -33,28 +33,53 @@ const featureData = [
 
 const rewardsData = [
   {
+    img: 'https://images.unsplash.com/photo-1529070538774-1843cb3265df?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=5d6d7d',
     icon: <StoreIcon sx={{ fontSize: 40, color: '#6444e6' }} />,
     title: 'Campus Store Discount',
     desc: 'Get 10% off textbooks and supplies!',
     points: '500 Points',
   },
   {
+    img: 'https://images.unsplash.com/photo-1511920170033-f8396924c348?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=8a7c7c',
     icon: <LocalCafeIcon sx={{ fontSize: 40, color: '#6444e6' }} />,
     title: 'Free Coffee',
     desc: 'Grab a drink at the campus café.',
     points: '100 Points',
   },
   {
+    img: 'https://images.unsplash.com/photo-1532634896-26909d0d3a7e?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=4b2b4e3a1b',
     icon: <ReceiptIcon sx={{ fontSize: 40, color: '#6444e6' }} />,
     title: 'Transcript Fee Waiver',
     desc: 'Waive your admin transcript fee.',
     points: '200 Points',
   },
   {
+    img: 'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=2b2c2c',
     icon: <AccessTimeIcon sx={{ fontSize: 40, color: '#6444e6' }} />,
     title: 'Library Extension',
     desc: 'Extra week for book returns.',
     points: '80 Points',
+  },
+];
+
+const testimonials = [
+  {
+    name: 'Aisha R.',
+    role: 'Computer Science Student',
+    quote: 'Campus Cash made studying fun — I redeemed a textbook discount within a month!',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=3c8f6f6f6f6f6f6f6f6f',
+  },
+  {
+    name: 'Rahul K.',
+    role: 'Business Student',
+    quote: 'Easy tasks, quick points. Coffee on me this week — thanks Campus Cash!',
+    avatar: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=4b8f6f6f6f6f6f6f6f6f',
+  },
+  {
+    name: 'Lina M.',
+    role: 'Engineering Student',
+    quote: 'The dashboard is motivating and the rewards are actually useful for campus life.',
+    avatar: 'https://images.unsplash.com/photo-1545996124-1e1a5b1d9de3?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=55f6f6f6f6f6f6f6f6f',
   },
 ];
 
@@ -73,23 +98,33 @@ const parallax = {
 };
 
 export default function Home() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const id = location.state?.scrollTo;
+    if (id) {
+      const el = document.getElementById(id);
+      if (el) {
+        // wait a tick in case layout isn't ready
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+      }
+      // clear navigation state so repeated visits don't auto-scroll
+      try {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch (e) {
+        /* ignore */
+      }
+    }
+  }, [location]);
   return (
     <Box sx={{ bgcolor: '#f8f8ff', minHeight: '100vh', overflowX: 'hidden' }}>
-      <Navbar />
+      {/* Navbar is now rendered globally in App.jsx */}
 
 
 
       {/* HERO SECTION */}
-      <Box
-        sx={{
-          py: { xs: 8, md: 12 },
-          background: 'linear-gradient(135deg, #6444e6 0%, #07c8f9 100%)',
-          color: '#fff',
-          textAlign: 'center',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
+      <Box sx={{ py: { xs: 6, md: 10 }, position: 'relative', overflow: 'hidden' }}>
         {/* Animated floating shapes */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -103,7 +138,7 @@ export default function Home() {
             height: 80,
             background: '#ffe600',
             borderRadius: '50%',
-            zIndex: 0,
+            zIndex: 2,
             filter: 'blur(2px)'
           }}
         />
@@ -119,100 +154,78 @@ export default function Home() {
             height: 60,
             background: '#fff',
             borderRadius: '50%',
-            zIndex: 0,
+            zIndex: 2,
             filter: 'blur(2px)'
           }}
         />
-        <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-          >
-            <Typography variant="h2" sx={{
-              fontWeight: 'bold',
-              mb: 3,
-              fontSize: { xs: '2.5rem', md: '4rem' },
-              textShadow: '0 4px 24px #6444e6'
-            }}>
-              Study. Earn. Redeem. Repeat!
-            </Typography>
-          </motion.div>
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            transition={{ delay: 0.3 }}
-          >
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Campus Cash motivates students with real rewards for academic achievement and campus engagement.
-            </Typography>
-          </motion.div>
-          <motion.div
-            variants={scaleIn}
-            initial="hidden"
-            animate="visible"
-            transition={{ delay: 0.6 }}
-          >
-            <Typography variant="body1" sx={{
-              color: '#ffe600',
-              fontWeight: 'bold',
-              mb: 4,
-              fontSize: '1.2rem'
-            }}>
-              Complete tasks, earn points, and redeem them for food, books, perks & more!
-            </Typography>
-          </motion.div>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={3}
-            justifyContent="center"
-            sx={{ maxWidth: 400, mx: 'auto' }}
-          >
-            <motion.div whileHover={{ scale: 1.08 }}>
-              <Button
-                variant="contained"
-                sx={{
-                  bgcolor: '#ffe600',
-                  color: '#6444e6',
-                  fontWeight: 'bold',
-                  textTransform: 'none',
-                  px: 5,
-                  py: 1.5,
-                  fontSize: 18,
-                  boxShadow: 4,
-                  borderRadius: 3,
-                  '&:hover': { bgcolor: '#fff159' },
-                  transition: 'transform 0.2s',
-                }}
-              >
-                Join Now
-              </Button>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.08 }}>
-              <Button
-                variant="contained"
-                color="success"
-                sx={{
-                  fontWeight: 'bold',
-                  textTransform: 'none',
-                  px: 5,
-                  py: 1.5,
-                  fontSize: 18,
-                  boxShadow: 4,
-                  borderRadius: 3,
-                  transition: 'transform 0.2s',
-                }}
-              >
-                How It Works
-              </Button>
-            </motion.div>
-          </Stack>
+
+        {/* Subtle blurred background (desktop only) + scrim for contrast */}
+        <Box
+          aria-hidden
+          sx={{
+            display: { xs: 'none', md: 'block' },
+            position: 'absolute',
+            inset: 0,
+            zIndex: 0,
+            backgroundImage: "url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1200&auto=format&fit=crop&ixlib=rb-4.0.3&s=3d9f9a')",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(8px)',
+            opacity: 0.4,
+            transform: 'scale(1.02)',
+            backgroundBlendMode: 'normal',
+            pointerEvents: 'none',
+            '@media (prefers-reduced-motion: reduce)': {
+              transition: 'none',
+              animation: 'none',
+            },
+          }}
+        />
+
+        <Box aria-hidden sx={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0.12))', pointerEvents: 'none' }} />
+        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 3 }}>
+          <Grid container spacing={4} alignItems="center">
+            <Grid item xs={12} md={6}>
+              <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                <Typography variant="h2" sx={{ fontWeight: 800, mb: 2, fontSize: { xs: '2rem', md: '3rem' }, color: '#0b1a4a' }}>
+                  Study. Earn. Redeem. Repeat!
+                </Typography>
+
+                <Typography variant="h6" sx={{ mb: 3, color: '#233' }}>
+                  Campus Cash rewards students with meaningful benefits—turn your campus activity into real value.
+                </Typography>
+
+                <Typography variant="body1" sx={{ color: '#0b3a66', mb: 4 }}>
+                  Complete tasks, earn points, and redeem them for food, books, and exclusive campus perks.
+                </Typography>
+
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                  <Button variant="contained" sx={{ background: '#ffde59', color: '#1a0f47', px: 4, py: 1.25, fontWeight: 700 }} onClick={() => navigate('/s')}>
+                    Join Now
+                  </Button>
+                  <Button variant="outlined" onClick={() => { const el = document.getElementById('how'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }}>
+                    How it works
+                  </Button>
+                  <Button variant="text" onClick={() => { const el = document.getElementById('rewards'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }}>
+                    Explore Rewards
+                  </Button>
+                </Stack>
+              </motion.div>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <motion.div variants={parallax} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                <Box sx={{ borderRadius: 4, overflow: 'hidden', boxShadow: 8, bgcolor: '#fff' }}>
+                  <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1400&auto=format&fit=crop&ixlib=rb-4.0.3&s=3b7d9b2b8c2d3f2b6b9a" alt="students" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', maxHeight: 380 }} />
+                </Box>
+              </motion.div>
+            </Grid>
+          </Grid>
         </Container>
       </Box>
 
-     { /* FEATURES */}
-        <Container maxWidth="lg" sx={{ mt: 8 }}>
+      { /* FEATURES (How It Works) */}
+        <Container id="how" maxWidth="lg" sx={{ mt: 8 }}>
           <Grid container spacing={6} justifyContent="center">
             {featureData.map(({ icon, title, text }, index) => (
           <Grid item xs={12} sm={6} md={4} sx={{ display: 'flex', justifyContent: 'center' }} key={index}>
@@ -252,7 +265,7 @@ export default function Home() {
         </Container>
 
         {/* POPULAR REWARDS */}
-        <Container maxWidth="lg" sx={{ mt: 10, mb: 10 }}>
+        <Container id="rewards" maxWidth="lg" sx={{ mt: 10, mb: 10 }}>
           <motion.div
             variants={fadeUp}
             initial="hidden"
@@ -279,7 +292,7 @@ export default function Home() {
             justifyContent="center"
             alignItems="stretch"
           >
-            {rewardsData.map(({ icon, title, desc, points }, idx) => (
+            {rewardsData.map(({ img, icon, title, desc, points }, idx) => (
           <Grid
             item
             xs={12}
@@ -310,25 +323,30 @@ export default function Home() {
               borderRadius: 3,
               borderTop: '6px solid #ffe600',
               textAlign: 'center',
-              px: 3,
-              py: 4,
+              px: 0,
+              py: 0,
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
+              alignItems: 'stretch',
               justifyContent: 'center',
               transition: 'box-shadow 0.25s, transform 0.25s',
-              '&:hover': { boxShadow: 14, transform: 'scale(1.05)' },
+              '&:hover': { boxShadow: 14, transform: 'scale(1.04)' },
               background: 'linear-gradient(120deg, #fff 80%, #f3f3ff 100%)',
             }}
               >
-            {icon}
-            <Typography fontWeight="bold" sx={{ mt: 3, color: '#6444e6' }}>
-              {title}
-            </Typography>
-            <Typography variant="body2">{desc}</Typography>
-            <Typography variant="caption" sx={{ color: '#97d700', fontWeight: 'bold', display: 'block', mt: 1 }}>
-              {points}
-            </Typography>
+            <Box sx={{ width: '100%', height: 140, overflow: 'hidden' }}>
+              <img src={img} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} loading="lazy" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=placeholder'; }} />
+            </Box>
+            <Box sx={{ p: 3, textAlign: 'center' }}>
+              {icon}
+              <Typography fontWeight="bold" sx={{ mt: 2, color: '#6444e6' }}>
+                {title}
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1 }}>{desc}</Typography>
+              <Typography variant="caption" sx={{ color: '#97d700', fontWeight: 'bold', display: 'block', mt: 1 }}>
+                {points}
+              </Typography>
+            </Box>
               </Card>
             </motion.div>
           </Grid>
@@ -337,7 +355,7 @@ export default function Home() {
         </Container>
 
         {/* WHY CAMPUS CASH */}
-      <Container maxWidth="md" sx={{ mb: 10 }}>
+      <Container id="why" maxWidth="md" sx={{ mb: 10 }}>
         <motion.div
           variants={fadeUp}
           initial="hidden"
@@ -385,7 +403,7 @@ export default function Home() {
       </Container>
 
       {/* TESTIMONIALS */}
-      <Container maxWidth="md" sx={{ mb: 12 }}>
+      <Container id="testimonials" maxWidth="md" sx={{ mb: 12 }}>
         <Stack spacing={4} alignItems="center">
           <motion.div
             variants={fadeUp}

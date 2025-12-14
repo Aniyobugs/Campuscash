@@ -1,27 +1,44 @@
 import React, { useState, useEffect } from "react";
 import {
   Box,
-  Card,
-  CardContent,
+  Grid,
+  Paper,
+  Stack,
   TextField,
   Button,
   Typography,
   Alert,
-  Divider,
   Chip,
   Table,
   TableHead,
   TableBody,
   TableRow,
   TableCell,
-  Paper,
+  TableContainer,
   Dialog,
   DialogTitle,
   DialogContent,
+  IconButton,
+  InputAdornment,
+  CircularProgress,
+  Snackbar,
 } from "@mui/material";
+import {
+  QrCodeScanner,
+  ContentCopy,
+  CheckCircleOutline,
+  Search,
+  Refresh,
+  Check,
+} from "@mui/icons-material";
 
 import { Scanner } from "@yudiel/react-qr-scanner"; // React 19 compatible scanner
 import axios from "axios";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import { Tooltip as MuiTooltip } from "@mui/material";
+
+dayjs.extend(relativeTime);
 
 const StorePage = () => {
   const baseurl = import.meta.env.VITE_API_BASE_URL;
@@ -30,16 +47,28 @@ const StorePage = () => {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [openQR, setOpenQR] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const [logs, setLogs] = useState([]);
+  const [query, setQuery] = useState("");
+
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [accepting, setAccepting] = useState(false);
+
+  const [snack, setSnack] = useState({ open: false, message: "", severity: "success" });
 
   // Fetch coupon logs
   const fetchLogs = async () => {
+    setLoadingLogs(true);
     try {
       const res = await axios.get(`${baseurl}/api/coupons/logs`);
-      setLogs(res.data);
+      setLogs(res.data || []);
     } catch (err) {
       console.error("Log fetch error:", err);
+      setSnack({ open: true, message: "Failed to load logs", severity: "error" });
+    } finally {
+      setLoadingLogs(false);
     }
   };
 
@@ -49,6 +78,8 @@ const StorePage = () => {
 
   // Verify coupon
   const verifyCoupon = async (couponCode) => {
+    if (!couponCode) return setSnack({ open: true, message: "Enter a coupon code", severity: "warning" });
+    setVerifying(true);
     try {
       const res = await axios.get(`${baseurl}/api/coupons/verify/${couponCode}`);
       setResult(res.data.coupon);
@@ -56,21 +87,31 @@ const StorePage = () => {
     } catch (err) {
       setResult(null);
       setError(err.response?.data?.message || "Invalid coupon");
+    } finally {
+      setVerifying(false);
     }
   };
 
   // Accept coupon
   const acceptCoupon = async () => {
+    if (!result?.code) return;
+    setAccepting(true);
     try {
       const res = await axios.post(`${baseurl}/api/coupons/use`, {
-        code,
+        code: result.code,
         storeName: "SNS Store",
       });
       setResult(res.data.coupon);
       setError("");
+      setSnack({ open: true, message: "Coupon accepted", severity: "success" });
       fetchLogs();
     } catch (err) {
+      console.error(err);
       setError(err.response?.data?.message || "Could not accept coupon");
+      setSnack({ open: true, message: "Could not accept coupon", severity: "error" });
+    } finally {
+      setAccepting(false);
+      setConfirmOpen(false);
     }
   };
 
@@ -86,80 +127,238 @@ const StorePage = () => {
     }
   };
 
+  const filteredLogs = logs.filter((l) => {
+    if (!query) return true;
+    return (
+      (l.userId?.fname || "").toLowerCase().includes(query.toLowerCase()) ||
+      (l.code || "").toLowerCase().includes(query.toLowerCase()) ||
+      (l.rewardName || "").toLowerCase().includes(query.toLowerCase()) ||
+      (l.usedByStore || "").toLowerCase().includes(query.toLowerCase())
+    );
+  });
+
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const totalCount = logs.length;
+  const usedCount = logs.filter((l) => l.isUsed).length;
+  const notUsedCount = logs.filter((l) => !l.isUsed).length;
+
+  const filteredAndStatus = filteredLogs.filter((l) => {
+    if (statusFilter === "all") return true;
+    if (statusFilter === "used") return l.isUsed;
+    if (statusFilter === "notUsed") return !l.isUsed;
+    return true;
+  });
+
+  // Accept coupon from a log (store action)
+  const acceptLogCoupon = async (couponCode, storeName = "SNS Store") => {
+    try {
+      await axios.post(`${baseurl}/api/coupons/use`, { code: couponCode, storeName });
+      setSnack({ open: true, message: "Coupon accepted", severity: "success" });
+      fetchLogs();
+    } catch (err) {
+      console.error("Accept from logs error", err);
+      setSnack({ open: true, message: "Could not accept coupon", severity: "error" });
+    }
+  };
+
+  const copyCode = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setSnack({ open: true, message: "Copied to clipboard", severity: "success" });
+    } catch (e) {
+      setSnack({ open: true, message: "Copy failed", severity: "error" });
+    }
+  };
+
   return (
-    <Box sx={{ p: 4 }}>
-      <Typography variant="h4" fontWeight="bold" mb={3}>
+    <Box sx={{ p: { xs: 2, md: 4 } }}>
+      <Typography variant="h4" fontWeight="700" mb={3}>
         Store Coupon Verification
       </Typography>
 
-      {/* COUPON VERIFICATION BOX */}
-      <Card sx={{ width: 500, mb: 4 }}>
-        <CardContent>
-          <Typography variant="h6" fontWeight="bold" mb={1}>
-            Verify Coupon
-          </Typography>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={5}>
+          <Paper sx={{ p: 3, height: "100%" }} elevation={3}>
+            <Stack spacing={2}>
+              <Typography variant="h6">Scan or Enter Coupon</Typography>
 
-          <TextField
-            label="Enter Coupon Code"
-            fullWidth
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            sx={{ mb: 2 }}
-          />
+              <TextField
+                label="Coupon code"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                fullWidth
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <MuiTooltip title="Scan QR">
+                        <IconButton onClick={() => setOpenQR(true)}>
+                          <QrCodeScanner />
+                        </IconButton>
+                      </MuiTooltip>
+                    </InputAdornment>
+                  ),
+                }}
+              />
 
-          <Button variant="contained" fullWidth onClick={() => verifyCoupon(code)}>
-            Verify
-          </Button>
-
-          <Button
-            variant="outlined"
-            fullWidth
-            sx={{ mt: 2 }}
-            onClick={() => setOpenQR(true)}
-          >
-            Scan QR Code
-          </Button>
-
-          {/* Error Message */}
-          {error && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          {/* Result Box */}
-          {result && (
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="h6">{result.rewardName}</Typography>
-              <Typography>Coupon Code: {result.code}</Typography>
-              <Typography>Points Used: {result.pointsUsed}</Typography>
-              <Typography>
-                Expires: {new Date(result.expiresAt).toLocaleDateString()}
-              </Typography>
-              <Typography>
-                Redeemed By: {result.userId?.fname} ({result.userId?.ename})
-              </Typography>
-
-              {result.isUsed ? (
-                <Alert severity="warning" sx={{ mt: 2 }}>
-                  Already used at {result.usedByStore} on{" "}
-                  {new Date(result.usedAt).toLocaleString()}
-                </Alert>
-              ) : (
+              <Stack direction="row" spacing={2}>
                 <Button
-                  variant="outlined"
-                  color="success"
+                  variant="contained"
+                  startIcon={verifying ? <CircularProgress size={18} /> : <CheckCircleOutline />}
+                  onClick={() => verifyCoupon(code)}
+                  disabled={!code || verifying}
                   fullWidth
-                  sx={{ mt: 2 }}
-                  onClick={acceptCoupon}
                 >
-                  ACCEPT COUPON
+                  Verify
                 </Button>
+
+                <Button variant="outlined" startIcon={<Refresh />} onClick={fetchLogs} disabled={loadingLogs}>
+                  Refresh
+                </Button>
+              </Stack>
+
+              {error && <Alert severity="error">{error}</Alert>}
+
+              {result && (
+                <Paper sx={{ p: 2 }} variant="outlined">
+                  <Stack spacing={1}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="subtitle1" fontWeight={700}>
+                        {result.rewardName}
+                      </Typography>
+                      <Stack direction="row" spacing={1}>
+                        <Chip label={result.isUsed ? "USED" : "AVAILABLE"} color={result.isUsed ? "error" : "success"} />
+                        <IconButton onClick={() => copyCode(result.code)} size="small">
+                          <ContentCopy fontSize="small" />
+                        </IconButton>
+                      </Stack>
+                    </Stack>
+
+                    <Typography variant="body2">Code: {result.code}</Typography>
+                    <Typography variant="body2">Points: {result.pointsUsed}</Typography>
+                    <Typography variant="body2">Expires: {new Date(result.expiresAt).toLocaleDateString()}</Typography>
+                    <Typography variant="body2">Redeemed By: {result.userId?.fname} ({result.userId?.ename})</Typography>
+
+                    {result.isUsed ? (
+                      <Alert severity="warning">Already used at {result.usedByStore} on {result.usedAt ? new Date(result.usedAt).toLocaleString() : "-"}</Alert>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        color="success"
+                        startIcon={accepting ? <CircularProgress size={18} /> : <Check />}
+                        onClick={() => setConfirmOpen(true)}
+                        disabled={accepting}
+                      >
+                        Accept Coupon
+                      </Button>
+                    )}
+                  </Stack>
+                </Paper>
               )}
-            </Box>
-          )}
-        </CardContent>
-      </Card>
+            </Stack>
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} md={7}>
+          <Paper sx={{ p: 2 }} elevation={0}>
+            <Stack direction={{ xs: "column", sm: "row" }} alignItems="center" spacing={2} mb={1}>
+              <TextField
+                placeholder="Search logs by user, code or reward"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                size="small"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ flex: 1 }}
+              />
+              <Button startIcon={<Refresh />} onClick={fetchLogs} disabled={loadingLogs}>
+                {loadingLogs ? <CircularProgress size={18} /> : "Reload"}
+              </Button>
+            </Stack>
+
+            <Stack direction="row" spacing={1} mb={2} alignItems="center">
+              <Chip label={`Total: ${totalCount}`} />
+              <Chip label={`Used: ${usedCount}`} color="success" />
+              <Chip label={`Not used: ${notUsedCount}`} color="warning" />
+              <Stack direction="row" spacing={1} ml="auto">
+                <Button variant={statusFilter === "all" ? "contained" : "outlined"} onClick={() => setStatusFilter("all")}>All</Button>
+                <Button variant={statusFilter === "used" ? "contained" : "outlined"} onClick={() => setStatusFilter("used")}>Used</Button>
+                <Button variant={statusFilter === "notUsed" ? "contained" : "outlined"} onClick={() => setStatusFilter("notUsed")}>Not used</Button>
+              </Stack>
+            </Stack>
+
+            <Typography variant="h6" mb={1}>Coupon Usage Logs</Typography>
+
+            <TableContainer sx={{ maxHeight: 520 }}>
+              <Table stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>User</TableCell>
+                    <TableCell>Reward</TableCell>
+                    <TableCell>Code</TableCell>
+                    <TableCell>Redeemed</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Used At</TableCell>
+                    <TableCell>Store</TableCell>
+                    <TableCell>Action</TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {filteredAndStatus.map((log) => (
+                    <TableRow key={log._id} hover>
+                      <TableCell>
+                        {log.userId?.fname} {log.userId?.ename ? `(${log.userId?.ename})` : ""}
+                      </TableCell>
+                      <TableCell>{log.rewardName}</TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Typography>{log.code}</Typography>
+                          <IconButton size="small" onClick={() => copyCode(log.code)}>
+                            <ContentCopy fontSize="small" />
+                          </IconButton>
+                        </Stack>
+                      </TableCell>
+                      <TableCell>{log.redeemedAt ? new Date(log.redeemedAt).toLocaleString() : "-"}</TableCell>
+                      <TableCell>{log.isUsed ? <Chip label="USED" color="success" /> : <Chip label="NOT USED" color="warning" />}</TableCell>
+                      <TableCell>
+                        {log.usedAt ? (
+                          <MuiTooltip title={new Date(log.usedAt).toLocaleString()}>
+                            <span>{dayjs(log.usedAt).fromNow()}</span>
+                          </MuiTooltip>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {log.usedByStore ? (
+                          <Button size="small" onClick={() => setQuery(log.usedByStore)}>{log.usedByStore}</Button>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {!log.isUsed ? (
+                          <Button size="small" variant="contained" color="success" onClick={() => acceptLogCoupon(log.code)}>
+                            Accept
+                          </Button>
+                        ) : (
+                          <Typography variant="body2">—</Typography>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        </Grid>
+      </Grid>
 
       {/* QR SCANNER POPUP */}
       <Dialog open={openQR} onClose={() => setOpenQR(false)} maxWidth="sm" fullWidth>
@@ -174,53 +373,25 @@ const StorePage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* COUPON LOG TABLE */}
-      <Typography variant="h5" fontWeight="bold" mb={2}>
-        Coupon Usage Logs
-      </Typography>
+      {/* Confirm accept dialog */}
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+        <DialogTitle>Accept Coupon</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to accept this coupon for <strong>{result?.rewardName}</strong>?</Typography>
+          <Stack direction="row" spacing={2} mt={2}>
+            <Button onClick={() => setConfirmOpen(false)}>Cancel</Button>
+            <Button variant="contained" color="success" onClick={acceptCoupon} disabled={accepting} startIcon={accepting ? <CircularProgress size={14} /> : <Check />}>
+              Yes, Accept
+            </Button>
+          </Stack>
+        </DialogContent>
+      </Dialog>
 
-      <Paper sx={{ width: "100%", overflow: "hidden" }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell><strong>User</strong></TableCell>
-              <TableCell><strong>Reward</strong></TableCell>
-              <TableCell><strong>Code</strong></TableCell>
-              <TableCell><strong>Redeemed</strong></TableCell>
-              <TableCell><strong>Status</strong></TableCell>
-              <TableCell><strong>Used At</strong></TableCell>
-              <TableCell><strong>Store</strong></TableCell>
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {logs.map((log) => (
-              <TableRow key={log._id}>
-                <TableCell>
-                  {log.userId?.fname} ({log.userId?.ename})
-                </TableCell>
-                <TableCell>{log.rewardName}</TableCell>
-                <TableCell>{log.code}</TableCell>
-                <TableCell>
-                  {new Date(log.redeemedAt).toLocaleString()}
-                </TableCell>
-                <TableCell>
-                  {log.isUsed ? (
-                    <Chip label="USED" color="success" />
-                  ) : (
-                    <Chip label="NOT USED" color="warning" />
-                  )}
-                </TableCell>
-
-                <TableCell>
-                  {log.usedAt ? new Date(log.usedAt).toLocaleString() : "---"}
-                </TableCell>
-                <TableCell>{log.usedByStore || "---"}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Paper>
+      <Snackbar open={snack.open} autoHideDuration={3000} onClose={() => setSnack((s) => ({ ...s, open: false }))}>
+        <Alert onClose={() => setSnack((s) => ({ ...s, open: false }))} severity={snack.severity} sx={{ width: "100%" }}>
+          {snack.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

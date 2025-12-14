@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
 import {
   Box,
   Typography,
@@ -10,7 +11,7 @@ import {
 } from "@mui/material";
 import axios from "axios";
 
-const ProfileUpdate = ({ userId }) => {
+const ProfileUpdate = ({ userId: propUserId }) => {
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -22,17 +23,28 @@ const ProfileUpdate = ({ userId }) => {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const baseurl = import.meta.env.VITE_API_BASE_URL;
+  const { user } = useAuth();
+  const userId = propUserId || user?.id || user?._id;
+
+  useEffect(() => {
+    if (!userId) {
+      setError("No user logged in");
+      return;
+    }
+  }, [userId]);
 
   // Fetch current user info
   useEffect(() => {
+    if (!userId) return;
+
     axios
       .get(`${baseurl}/api/${userId}`)
       .then((res) => {
-        const { fname, email, profilePic } = res.data;
+        const { fname, ename, profilePic } = res.data;
         setForm((prev) => ({
           ...prev,
           fullName: fname || "",
-          email: email || "",
+          email: ename || "",
         }));
         if (profilePic) setPreview(`${baseurl}${profilePic}`);
       })
