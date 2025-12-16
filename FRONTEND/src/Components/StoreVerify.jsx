@@ -92,6 +92,42 @@ const StorePage = () => {
     }
   };
 
+  // Try to extract a coupon code from various QR payload shapes.
+  // If input is JSON like {"code":"CPN-...","reward":"..."} we return the code.
+  const extractCodeFromString = (input) => {
+    if (!input || typeof input !== "string") return null;
+    const trimmed = input.trim();
+
+    // Quick heuristic: if looks like JSON, try parse
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+
+        // If parsed is an array, try first element
+        const obj = Array.isArray(parsed) ? parsed[0] : parsed;
+
+        if (!obj) return null;
+
+        // Common shapes: { code: '...' } or { coupon: { code: '...' } }
+        if (typeof obj === "string") return obj;
+        if (obj.code) return obj.code;
+        if (obj.coupon && obj.coupon.code) return obj.coupon.code;
+        if (obj.data && obj.data.code) return obj.data.code;
+        if (obj.payload && obj.payload.code) return obj.payload.code;
+
+        // Some QR payloads use nested values or different keys; try to find first string-looking value that resembles a coupon code
+        for (const key of Object.keys(obj)) {
+          const val = obj[key];
+          if (typeof val === "string" && val.match(/CPN-|[A-Z0-9-]{6,}/i)) return val;
+        }
+      } catch {
+        // ignore parse errors
+      }
+    }
+
+    return null;
+  };
+
   // Accept coupon
   const acceptCoupon = async () => {
     if (!result?.code) return;
@@ -121,8 +157,10 @@ const StorePage = () => {
 
     const scannedCode = scanned[0]?.rawValue;
     if (scannedCode) {
-      setCode(scannedCode);
-      verifyCoupon(scannedCode);
+      // If scanner returns a JSON payload, extract the code field
+      const extracted = extractCodeFromString(scannedCode) || scannedCode;
+      setCode(extracted);
+      verifyCoupon(extracted);
       setOpenQR(false); // close popup
     }
   };
@@ -166,7 +204,7 @@ const StorePage = () => {
     try {
       await navigator.clipboard.writeText(text);
       setSnack({ open: true, message: "Copied to clipboard", severity: "success" });
-    } catch (e) {
+    } catch {
       setSnack({ open: true, message: "Copy failed", severity: "error" });
     }
   };
@@ -186,7 +224,16 @@ const StorePage = () => {
               <TextField
                 label="Coupon code"
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  // If pasted/typed value looks like JSON, try to extract code immediately
+                  if (v.trim().startsWith("{") || v.trim().startsWith("[")) {
+                    const extracted = extractCodeFromString(v);
+                    setCode(extracted ?? v);
+                  } else {
+                    setCode(v);
+                  }
+                }}
                 fullWidth
                 InputProps={{
                   endAdornment: (

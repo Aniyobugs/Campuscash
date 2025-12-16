@@ -1,15 +1,6 @@
 const multer = require("multer");
-const path = require("path");
-
-// storage config
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); 
-  },
-});
+// Use memory storage so server can stream file into GridFS (or any storage) instead of writing to disk
+const storage = multer.memoryStorage();
 
 // filter (optional)
 const fileFilter = (req, file, cb) => {

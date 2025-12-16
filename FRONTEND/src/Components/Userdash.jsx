@@ -485,25 +485,38 @@ const Userdash = () => {
         rewardName: selectedReward,
         pointsToRedeem: redeemPoints,
       });
+      // Support multiple response shapes from the API:
+      // - { user, coupon, message }
+      // - coupon object directly: { code, reward, userId, ... }
+      const resp = res.data || {};
+      const newCoupon = resp.coupon ?? (resp.code ? resp : null);
+      const user = resp.user ?? null;
+      const message = resp.message ?? null;
 
-      const { user, coupon: newCoupon, message } = res.data;
-
-      setData((prev) => ({
-        ...prev,
-        progress: {
-          ...prev.progress,
-          points: user.points,
-          nextReward: {
-            ...prev.progress.nextReward,
-            remaining: 100 - user.points,
+      // If user info present, update points
+      if (user) {
+        setData((prev) => ({
+          ...prev,
+          progress: {
+            ...prev.progress,
+            points: user.points,
+            nextReward: {
+              ...prev.progress.nextReward,
+              remaining: 100 - user.points,
+            },
           },
-        },
-      }));
+        }));
+      }
 
-      setCoupons((prev) => [newCoupon, ...prev]);
-      setSelectedCoupon(newCoupon);
+      if (newCoupon) {
+        setCoupons((prev) => [newCoupon, ...prev]);
+        setSelectedCoupon(newCoupon);
+        // Show only coupon code in the success snackbar
+        setSuccess(newCoupon.code ?? message ?? "Redeemed successfully!");
+      } else {
+        setSuccess(message ?? "Redeemed successfully!");
+      }
 
-      setSuccess(message || "Redeemed successfully!");
       setError("");
       setRedeemOpen(false);
     } catch (err) {
@@ -551,7 +564,7 @@ Status: ${c.isUsed ? "USED" : "ACTIVE"}
   };
 
   /* ---------------- Sync Coupon Status After Store Validation ---------------- */
-  const updateCouponStatus = async (couponCode) => {
+  const _updateCouponStatus = async (couponCode) => {
     try {
       const res = await axios.get(`${baseurl}/api/coupons/status/${couponCode}`);
 
