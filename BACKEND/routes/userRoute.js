@@ -2,7 +2,9 @@ const express = require("express");
 const router = express.Router();
 const userModel = require("../model/user");
 const jwt = require("jsonwebtoken");
-const upload = require("../middleware/multer"); // multer instance for file upload
+const upload = require("../middleware/multer"); // multer instance for file upload (memory storage)
+const mongoose = require("mongoose");
+const { Readable } = require("stream");
 const Coupon = require("../model/coupon"); // <--- NEW: import coupon model
 
 const SECRET_KEY = "mysecret"; // move to .env in production
@@ -90,11 +92,51 @@ router.put("/users/:id", upload.single("profilePic"), async (req, res) => {
     if (email) user.ename = email;
     if (yearClassDept) user.yearClassDept = yearClassDept;
 
-    if (req.file) user.profilePic = `/uploads/${req.file.filename}`;
+    // If a file was uploaded, stream it into GridFS and store an access path on the user
+    if (req.file && req.file.buffer) {
+      const db = mongoose.connection.db;
+      const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "uploads" });
+
+      // If user already had a GridFS file reference, try to delete it (best-effort)
+      try {
+        if (user.profilePic && user.profilePic.startsWith("/api/files/")) {
+          const prevId = user.profilePic.replace("/api/files/", "");
+          if (prevId) {
+            try {
+              await bucket.delete(new mongoose.Types.ObjectId(prevId));
+            } catch (delErr) {
+              // ignore delete errors
+              console.warn("Previous GridFS delete failed", delErr.message || delErr);
+            }
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      // Upload new file
+      const filename = `${Date.now()}-${req.file.originalname}`;
+      const readable = Readable.from(req.file.buffer);
+
+      const uploadStream = bucket.openUploadStream(filename, {
+        contentType: req.file.mimetype,
+      });
+
+      await new Promise((resolve, reject) => {
+        readable.pipe(uploadStream)
+          .on("error", (err) => reject(err))
+          .on("finish", () => resolve());
+      });
+
+      const fileId = uploadStream.id.toString();
+  // Save path that frontend can use: baseurl + profilePic -> will become e.g. http://host/api/files/<id>
+  user.profilePic = `/api/files/${fileId}`;
+    }
 
     await user.save();
     res.status(200).json({ message: "Profile updated successfully", user });
   } catch (error) {
+    console.error("Profile update error:", error);
     res
       .status(500)
       .json({ message: "Server error", error: error.message });
@@ -363,6 +405,33 @@ router.post("/coupons/use", async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// ==========================
+// Serve files stored in GridFS
+// GET /api/users/files/:id
+// ==========================
+router.get("/files/:id", async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const db = mongoose.connection.db;
+    const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "uploads" });
+
+    const _id = new mongoose.Types.ObjectId(fileId);
+    const filesColl = db.collection("uploads.files");
+    const fileDoc = await filesColl.findOne({ _id });
+    if (!fileDoc) return res.status(404).json({ message: "File not found" });
+
+    res.setHeader("Content-Type", fileDoc.contentType || "application/octet-stream");
+    const downloadStream = bucket.openDownloadStream(_id);
+    downloadStream.pipe(res).on("error", (err) => {
+      console.error("GridFS download error:", err);
+      res.status(500).end();
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error fetching file", error: err.message });
   }
 });
 
