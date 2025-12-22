@@ -7,7 +7,7 @@ const User = require("../model/user");
 // POST /api/tasks/addtask  – create a new task
 router.post("/addtask", async (req, res) => {
   try {
-    const { title, description, dueDate, points, category, assignedYears } = req.body;
+    const { title, description, dueDate, points, category, assignedYears, quiz } = req.body;
 
     if (!title || !dueDate || !points) {
       return res.status(400).json({ message: "Please fill all required fields" });
@@ -22,6 +22,15 @@ router.post("/addtask", async (req, res) => {
       category: category || "General",
       assignedYears: Array.isArray(assignedYears) ? assignedYears : [],
     });
+
+    // attach quiz if provided and category indicates Quiz
+    if ((category && String(category).toLowerCase() === 'quiz') || quiz) {
+      // basic validation
+      if (!quiz || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {
+        return res.status(400).json({ message: 'Quiz requires at least one question' });
+      }
+      newTask.quiz = quiz;
+    }
 
     await newTask.save();
 

@@ -260,6 +260,29 @@ router.put("/users/:id/status", async (req, res) => {
 });
 
 // ==========================
+// Update user role (Admin)
+// ==========================
+router.put("/users/:id/role", async (req, res) => {
+  try {
+    const { role } = req.body;
+    const allowed = ["admin", "faculty", "user", "store"];
+    if (!allowed.includes(role)) return res.status(400).json({ message: "Invalid role" });
+
+    const user = await userModel.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.role = role;
+    await user.save();
+
+    res.status(200).json({ message: `Role updated to ${role}` });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+});
+
+// ==========================
 // Redeem Points & Generate Coupon
 // Works with rewardName + optional pointsToRedeem
 // (matches your frontend sending pointsToRedeem)
@@ -451,29 +474,12 @@ router.get("/coupons/logs", async (req, res) => {
 });
 // ==========================
 // ADMIN: Update User Role
+// (Consolidated earlier in this file to also allow 'faculty')
 // ==========================
-router.put("/users/:id/role", async (req, res) => {
-  try {
-    const { role } = req.body;
+// NOTE: The actual handler for updating user role is defined above and
+// supports the following roles: ["admin","faculty","user","store"].
+// Keeping this comment as a single source of truth to avoid duplicate routes.
 
-    if (!["admin", "user", "store"].includes(role)) {
-      return res.status(400).json({ message: "Invalid role selected" });
-    }
-
-    const user = await userModel.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    user.role = role;
-    await user.save();
-
-    res.json({ message: "Role updated successfully", user });
-  } catch (error) {
-    res.status(500).json({
-      message: "Error updating role",
-      error: error.message,
-    });
-  }
-});
 
 
 module.exports = router;

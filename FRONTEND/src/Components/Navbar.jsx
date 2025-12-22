@@ -73,11 +73,13 @@ export default function Navbar() {
             <ListItemText primary="Home" />
           </ListItemButton>
         </ListItem>
+
         {role ? (
           <ListItem>
             <ListItemText primary={role.toUpperCase()} sx={{ fontWeight: 'bold' }} />
           </ListItem>
         ) : null}
+
         {!role &&
           menuItems.map((item) => (
             <ListItem disablePadding key={item.label}>
@@ -86,6 +88,7 @@ export default function Navbar() {
               </ListItemButton>
             </ListItem>
           ))}
+
         {role === "admin" && (
           <>
             <ListItem disablePadding>
@@ -114,22 +117,38 @@ export default function Navbar() {
           </ListItem>
         )}
 
-        {role === "user" && (
+        {role === "faculty" && (
+          <ListItem disablePadding>
+            <ListItemButton component={Link} to="/faculty">
+              <ListItemText primary="Faculty" />
+            </ListItemButton>
+          </ListItem>
+        )}
+
+        {/* Profile / Auth Actions */}
+        {role ? (
           <>
-            <ListItem disablePadding>
-              <ListItemButton component={Link} to="/user">
-                <ListItemText primary="Dashboard" />
-              </ListItemButton>
-            </ListItem>
             <ListItem disablePadding>
               <ListItemButton component={Link} to="/profile">
                 <ListItemText primary="Profile" />
               </ListItemButton>
             </ListItem>
-          </>
-        )}
 
-        {!role ? (
+            <ListItem disablePadding>
+              <ListItemButton onClick={logout}>
+                <ListItemText primary="Logout" />
+              </ListItemButton>
+            </ListItem>
+
+            {user && (
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/profile">
+                  <ListItemText primary={user.fname || user.ename || user.email} />
+                </ListItemButton>
+              </ListItem>
+            )}
+          </>
+        ) : (
           <>
             <ListItem disablePadding>
               <ListItemButton component={Link} to="/L">
@@ -142,22 +161,8 @@ export default function Navbar() {
               </ListItemButton>
             </ListItem>
           </>
-        ) : (
-          <>
-            <ListItem disablePadding>
-              <ListItemButton onClick={logout}>
-                <ListItemText primary="Logout" />
-              </ListItemButton>
-            </ListItem>
-            {user && (
-              <ListItem disablePadding>
-                <ListItemButton component={Link} to="/profile">
-                  <ListItemText primary={user.fname || user.ename || user.email} />
-                </ListItemButton>
-              </ListItem>
-            )}
-          </>
         )}
+
       </List>
     </Box>
   );
@@ -218,6 +223,12 @@ export default function Navbar() {
               {role === "store" && (
                 <Button color="inherit" component={Link} to="/store">
                   Store
+                </Button>
+              )}
+
+              {role === "faculty" && (
+                <Button color="inherit" component={Link} to="/faculty">
+                  Faculty
                 </Button>
               )}
 

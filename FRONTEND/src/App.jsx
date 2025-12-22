@@ -15,6 +15,7 @@ import AssignTask from './Components/AssignTask'
 import Awardpoints from './Components/Awardpoints'
 import ProfileUpdate from './Components/ProfileUpdate'
 import AdminDashboard from './Components/AdminDashboard'
+import FacultyDashboard from './Components/FacultyDashboard'
 import StoreVerify from './Components/StoreVerify'
 import AdminRoleManager from './Components/AdminRoleManager'
 
@@ -32,10 +33,11 @@ function App() {
     <Route path ='/s' element={<Signup/>}/>
      <Route path ='/L' element={<Login/>}/>
      <Route path ='/user' element={<ProtectedRoute allowedRoles={["user"]}><Userdash/></ProtectedRoute>} />
-     <Route path ='/tsk' element={<ProtectedRoute allowedRoles={["admin"]}><AssignTask/></ProtectedRoute>} />
-     <Route path ='/award' element={<ProtectedRoute allowedRoles={["admin"]}><Awardpoints/></ProtectedRoute>} />
-      <Route path ='/profile' element={<ProtectedRoute allowedRoles={["user","admin","store"]}><ProfileUpdate/></ProtectedRoute>} />
+     <Route path ='/tsk' element={<ProtectedRoute allowedRoles={["admin","faculty"]}><AssignTask/></ProtectedRoute>} />
+     <Route path ='/award' element={<ProtectedRoute allowedRoles={["admin","faculty"]}><Awardpoints/></ProtectedRoute>} />
+      <Route path ='/profile' element={<ProtectedRoute allowedRoles={["user","admin","store","faculty"]}><ProfileUpdate/></ProtectedRoute>} />
       <Route path ='/admin' element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard/></ProtectedRoute>} />
+      <Route path ='/faculty' element={<ProtectedRoute allowedRoles={["admin","faculty"]}><FacultyDashboard/></ProtectedRoute>} />
       <Route path ='/store' element={<ProtectedRoute allowedRoles={["store"]}><StoreVerify/></ProtectedRoute>} />
       <Route path="/admin/roles" element={<ProtectedRoute allowedRoles={["admin"]}><AdminRoleManager /></ProtectedRoute>} />
 

@@ -299,6 +299,83 @@ const Userdash = () => {
   const [tasksLoading, setTasksLoading] = useState(false);
   const [userYear, setUserYear] = useState(null);
 
+  // Submission UI
+  const [submissionOpen, setSubmissionOpen] = useState(false);
+  const [selectedTaskToSubmit, setSelectedTaskToSubmit] = useState(null);
+  const [submissionType, setSubmissionType] = useState('link');
+  const [submissionFile, setSubmissionFile] = useState(null);
+  const [submissionLink, setSubmissionLink] = useState('');
+  const [submissionText, setSubmissionText] = useState('');
+  const [submissionLoading, setSubmissionLoading] = useState(false);
+
+  // Quiz UI
+  const [quizOpen, setQuizOpen] = useState(false);
+  const [selectedQuizTask, setSelectedQuizTask] = useState(null);
+  const [quizAnswers, setQuizAnswers] = useState([]);
+  const [quizLoading, setQuizLoading] = useState(false);
+
+  const handleSubmitSubmission = async () => {
+    if (!selectedTaskToSubmit || !userId) return;
+    try {
+      setSubmissionLoading(true);
+      const fd = new FormData();
+      fd.append('type', submissionType);
+      fd.append('userId', userId);
+      if (submissionType === 'file' && submissionFile) fd.append('file', submissionFile);
+      if (submissionType === 'link') fd.append('link', submissionLink);
+      if (submissionType === 'text') fd.append('text', submissionText);
+
+      const res = await axios.post(`${baseurl}/api/tasks/${selectedTaskToSubmit._id}/submit`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      setSuccess('Submitted successfully');
+      setError('');
+      setSubmissionOpen(false);
+      setSubmissionFile(null);
+      setSubmissionLink('');
+      setSubmissionText('');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Submit failed');
+    } finally {
+      setSubmissionLoading(false);
+    }
+  };
+
+  const openQuiz = (t) => {
+    setSelectedQuizTask(t);
+    setQuizAnswers(Array(t.quiz?.questions?.length || 0).fill(null));
+    setQuizOpen(true);
+  };
+
+  const submitQuiz = async () => {
+    if (!selectedQuizTask || !userId) return;
+    if (quizAnswers.some((a) => a === null || a === undefined)) {
+      setError('Please answer all questions before submitting');
+      return;
+    }
+    try {
+      setQuizLoading(true);
+      const payload = { type: 'quiz', userId, answers: quizAnswers };
+      const res = await axios.post(`${baseurl}/api/tasks/${selectedQuizTask._id}/submit`, payload);
+      const submission = res.data.submission;
+      setSuccess(`You scored ${submission.score}% — ${submission.passed ? 'Passed' : 'Failed'}`);
+      setError('');
+
+      // If server returned updated user points, update local points display
+      if (res.data.user) {
+        const updated = res.data.user;
+        setData((prev) => ({ ...prev, progress: { ...prev.progress, points: updated.points } }));
+      }
+
+      setQuizOpen(false);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Quiz submission failed');
+    } finally {
+      setQuizLoading(false);
+    }
+  };
+
   // Redeem dialog
   const [redeemOpen, setRedeemOpen] = useState(false);
   const [redeemLoading, setRedeemLoading] = useState(false);
@@ -709,12 +786,111 @@ Status: ${c.isUsed ? "USED" : "ACTIVE"}
                   </Typography>
 
                   <Chip label={getRemainingTime(t.dueDate)} size="small" color="secondary" />
+
+                  {/* Action Buttons */}
+                  <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                    {t.category === 'Quiz' ? (
+                      <>
+                        <Button variant="contained" size="small" onClick={() => openQuiz(t)}>Take Quiz</Button>
+                        <Button variant="outlined" size="small" onClick={() => window.open(`/task-info/${t._id}`, '_blank')}>View</Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button variant="contained" size="small" onClick={() => {
+                          setSelectedTaskToSubmit(t);
+                          setSubmissionType('link');
+                          setSubmissionOpen(true);
+                        }}>
+                          Submit
+                        </Button>
+                        <Button variant="outlined" size="small" onClick={() => window.open(`/task-info/${t._id}`, '_blank')}>View</Button>
+                      </>
+                    )}
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>
           ))}
         </Grid>
       </Box>
+
+      {/* Submission dialog */}
+      <Dialog open={submissionOpen} onClose={() => setSubmissionOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Submit work for task</DialogTitle>
+        <DialogContent>
+          {selectedTaskToSubmit && (
+            <Box>
+              <Typography variant="subtitle1" fontWeight={700}>{selectedTaskToSubmit.title}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{selectedTaskToSubmit.description}</Typography>
+
+              <FormControl fullWidth sx={{ mt: 2 }}>
+                <InputLabel>Submission Type</InputLabel>
+                <Select
+                  value={submissionType}
+                  label="Submission Type"
+                  onChange={(e) => setSubmissionType(e.target.value)}
+                >
+                  <MenuItem value="file">File Upload</MenuItem>
+                  <MenuItem value="link">Link / URL</MenuItem>
+                  <MenuItem value="text">Text / Comment</MenuItem>
+                </Select>
+              </FormControl>
+
+              {submissionType === 'file' && (
+                <Box sx={{ mt: 2 }}>
+                  <Button variant="outlined" component="label">Upload File
+                    <input type="file" hidden onChange={(e) => setSubmissionFile(e.target.files[0])} />
+                  </Button>
+                  {submissionFile && <Typography variant="caption" sx={{ ml: 2 }}>{submissionFile.name}</Typography>}
+                </Box>
+              )}
+
+              {submissionType === 'link' && (
+                <TextField fullWidth label="Link (URL)" sx={{ mt: 2 }} value={submissionLink} onChange={(e) => setSubmissionLink(e.target.value)} />
+              )}
+
+              {submissionType === 'text' && (
+                <TextField fullWidth multiline rows={4} label="Comments" sx={{ mt: 2 }} value={submissionText} onChange={(e) => setSubmissionText(e.target.value)} />
+              )}
+
+              <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                <Button onClick={() => setSubmissionOpen(false)}>Cancel</Button>
+                <Button variant="contained" onClick={handleSubmitSubmission} disabled={submissionLoading}>{submissionLoading ? 'Submitting...' : 'Submit'}</Button>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
+
+
+      {/* Quiz dialog */}
+      <Dialog open={quizOpen} onClose={() => setQuizOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Take Quiz</DialogTitle>
+        <DialogContent>
+          {selectedQuizTask && (
+            <Box>
+              <Typography variant="subtitle1" fontWeight={700}>{selectedQuizTask.title}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{selectedQuizTask.description}</Typography>
+
+              {selectedQuizTask.quiz?.questions?.map((q, idx) => (
+                <Box key={idx} sx={{ mt: 2 }}>
+                  <Typography variant="subtitle2">{idx + 1}. {q.text}</Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', mt: 1 }}>
+                    {q.options.map((opt, oi) => (
+                      <Button key={oi} size="small" variant={quizAnswers[idx] === oi ? 'contained' : 'outlined'} sx={{ mb: 1, textTransform: 'none' }} onClick={() => setQuizAnswers(prev => { const arr = [...prev]; arr[idx] = oi; return arr; })}>{opt}</Button>
+                    ))}
+                  </Box>
+                </Box>
+              ))}
+
+              <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                <Button onClick={() => setQuizOpen(false)}>Cancel</Button>
+                <Button variant="contained" onClick={submitQuiz} disabled={quizLoading}>{quizLoading ? 'Submitting...' : 'Submit Quiz'}</Button>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
 
 
       {/* ---------------- COUPON LIST ---------------- */}

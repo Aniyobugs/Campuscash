@@ -35,6 +35,19 @@ const taskSchema = new mongoose.Schema(
         awardedAt: { type: Date },
       },
     ],
+    // Quiz support: optional for tasks with category 'quiz'
+    quiz: {
+      questions: [
+        {
+          text: { type: String, required: true },
+          options: { type: [String], required: true },
+          // index into options array
+          correctIndex: { type: Number, required: true },
+        },
+      ],
+      // percentage required to pass (0-100). If not set default to 70
+      passingScore: { type: Number, default: 70 },
+    },
     // Later: assignedTo, assignedBy, etc.
   },
   {

@@ -40,7 +40,8 @@ import {
 import { Edit, Save, Cancel, PersonOff, Person } from "@mui/icons-material";
 import axios from "axios";
 
-const AdminDashboard = () => {
+// Faculty Dashboard — same functionality as Admin but without role editing/toggling and with different styling
+const FacultyDashboard = () => {
   const baseurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
   const [users, setUsers] = useState([]);
@@ -64,12 +65,14 @@ const AdminDashboard = () => {
   const [error, setError] = useState("");
   const [tasks, setTasks] = useState([]);
   const [tasksLoading, setTasksLoading] = useState(false);
+
+  // Task modal / candidates
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [candidates, setCandidates] = useState([]);
   const [candidatesLoading, setCandidatesLoading] = useState(false);
 
-  // Create Task dialog state
+  // Create Task dialog state (copied from AdminDashboard)
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
   const [createTaskForm, setCreateTaskForm] = useState({
     title: '',
@@ -81,7 +84,7 @@ const AdminDashboard = () => {
     quiz: { questions: [], passingScore: 70 },
   });
 
-  // derive year options from existing users (plus some common defaults)
+  // derive year options from existing users (plus common defaults)
   const yearOptions = Array.from(new Set([
     'All',
     'Year 1',
@@ -110,14 +113,9 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    fetchSubmissions();
-  }, []);
-
-  useEffect(() => {
     axios
       .get(`${baseurl}/api/users`)
       .then((res) => {
-        // include all users except those explicitly marked 'inactive'
         const activeUsers = res.data.filter((u) => u.status !== "inactive");
         setUsers(activeUsers);
         setFiltered(activeUsers);
@@ -127,7 +125,7 @@ const AdminDashboard = () => {
         setError(err.response?.data?.message || "Failed to load users");
       });
 
-    // fetch tasks for admin
+    // fetch tasks for faculty
     setTasksLoading(true);
     axios
       .get(`${baseurl}/api/tasks`)
@@ -137,50 +135,9 @@ const AdminDashboard = () => {
         setError(err.response?.data?.message || "Failed to load tasks");
       })
       .finally(() => setTasksLoading(false));
+
+    fetchSubmissions();
   }, [baseurl]);
-
-  useEffect(() => {
-    setFiltered(
-      users.filter(
-        (u) =>
-          u.fname?.toLowerCase().includes(search.toLowerCase()) ||
-          u.ename?.toLowerCase().includes(search.toLowerCase()) ||
-          (u.studentId &&
-            u.studentId.toLowerCase().includes(search.toLowerCase()))
-      )
-    );
-  }, [search, users]);
-
-  const handleAward = async () => {
-    if (!awardData.studentId || !awardData.points) {
-      setError("Please select a student and enter points.");
-      return;
-    }
-    try {
-      const res = await axios.post(`${baseurl}/api/award-points`, awardData);
-      setSuccess(res.data.message);
-      setError("");
-      const updatedUsers = users.map((u) =>
-        u._id === awardData.studentId
-          ? { ...u, points: u.points + parseInt(awardData.points) }
-          : u
-      );
-      setUsers(updatedUsers);
-      setFiltered(updatedUsers);
-      setAwardData({ studentId: "", points: "", reason: "" });
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to award points.");
-    }
-  };
-
-  const handleEdit = (user) => {
-    setEditingUserId(user._id);
-    setEditForm({
-      fname: user.fname,
-      ename: user.ename,
-      yearClassDept: user.yearClassDept,
-    });
-  };
 
   const handleOpenTask = async (task) => {
     setSelectedTask(task);
@@ -191,7 +148,7 @@ const AdminDashboard = () => {
       setCandidates(res.data || []);
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || "Failed to load candidates");
+      setError(err.response?.data?.message || 'Failed to load candidates');
     } finally {
       setCandidatesLoading(false);
     }
@@ -245,6 +202,48 @@ const AdminDashboard = () => {
     }
   };
 
+  useEffect(() => {
+    setFiltered(
+      users.filter(
+        (u) =>
+          u.fname?.toLowerCase().includes(search.toLowerCase()) ||
+          u.ename?.toLowerCase().includes(search.toLowerCase()) ||
+          (u.studentId && u.studentId.toLowerCase().includes(search.toLowerCase()))
+      )
+    );
+  }, [search, users]);
+
+  const handleAward = async () => {
+    if (!awardData.studentId || !awardData.points) {
+      setError("Please select a student and enter points.");
+      return;
+    }
+    try {
+      const res = await axios.post(`${baseurl}/api/award-points`, awardData);
+      setSuccess(res.data.message);
+      setError("");
+      const updatedUsers = users.map((u) =>
+        u._id === awardData.studentId
+          ? { ...u, points: u.points + parseInt(awardData.points) }
+          : u
+      );
+      setUsers(updatedUsers);
+      setFiltered(updatedUsers);
+      setAwardData({ studentId: "", points: "", reason: "" });
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to award points.");
+    }
+  };
+
+  const handleEdit = (user) => {
+    setEditingUserId(user._id);
+    setEditForm({
+      fname: user.fname,
+      ename: user.ename,
+      yearClassDept: user.yearClassDept,
+    });
+  };
+
   const handleSave = async (id) => {
     try {
       const res = await axios.put(`${baseurl}/api/users/${id}`, editForm);
@@ -284,9 +283,10 @@ const AdminDashboard = () => {
   const topStudent =
     users.length > 0 ? [...users].sort((a, b) => b.points - a.points)[0] : null;
 
+  // Faculty style uses green accents
   const statCardStyles = {
-    bgcolor: "white",
-    color: "primary.main",
+    bgcolor: "#ffffff",
+    color: "#1b5e20",
     boxShadow: 4,
     borderRadius: 3,
     p: 3,
@@ -298,27 +298,9 @@ const AdminDashboard = () => {
   };
 
   return (
-    <Box
-      sx={{
-        p: { xs: 2, md: 5 },
-        bgcolor: "background.default",
-        minHeight: "100vh",
-        maxWidth: 1200,
-        mx: "auto",
-      }}
-    >
-      <Typography
-        variant="h3"
-        fontWeight="bold"
-        mb={2}
-        sx={{
-          letterSpacing: 2,
-          color: "primary.main",
-          textAlign: "center",
-          textShadow: "0 2px 8px #e3e3e3",
-        }}
-      >
-        Admin CampusCash
+    <Box sx={{ p: { xs: 2, md: 5 }, bgcolor: "#f3fff3", minHeight: "100vh", maxWidth: 1200, mx: "auto" }}>
+      <Typography variant="h3" fontWeight="bold" mb={2} sx={{ color: "#1b5e20", textAlign: "center" }}>
+        Faculty Dashboard
       </Typography>
       <Divider sx={{ mb: 4 }} />
 
@@ -328,30 +310,32 @@ const AdminDashboard = () => {
           <Card sx={statCardStyles} elevation={6}>
             <CardContent sx={{ textAlign: "center" }}>
               <Typography variant="h6" gutterBottom>
-                Total Users
+                Total Students
               </Typography>
               <Fade in timeout={600}>
-                <Typography variant="h2" color="primary">
+                <Typography variant="h2" sx={{ color: "#2e7d32" }}>
                   {totalUsers}
                 </Typography>
               </Fade>
             </CardContent>
           </Card>
         </Grid>
+
         <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={statCardStyles} elevation={6}>
             <CardContent sx={{ textAlign: "center" }}>
               <Typography variant="h6" gutterBottom>
-                Points Distributed
+                Points Given
               </Typography>
               <Fade in timeout={600}>
-                <Typography variant="h2" color="secondary">
+                <Typography variant="h2" sx={{ color: "#388e3c" }}>
                   {totalPoints}
                 </Typography>
               </Fade>
             </CardContent>
           </Card>
         </Grid>
+
         <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={statCardStyles} elevation={6}>
             <CardContent sx={{ textAlign: "center" }}>
@@ -391,14 +375,13 @@ const AdminDashboard = () => {
         </Grid>
       </Grid>
 
-      {/* Award Points Section */}
-      <Card sx={{ mb: 5, bgcolor: "white", boxShadow: 8, borderRadius: 4 }}>
+      {/* Award Points Section (same as admin) */}
+      <Card sx={{ mb: 5, bgcolor: "#ffffff", boxShadow: 8, borderRadius: 4 }}>
         <CardContent>
           <Typography
             variant="h6"
             gutterBottom
-            color="secondary"
-            sx={{ mb: 3, fontWeight: "bold", letterSpacing: 1 }}
+            sx={{ mb: 3, fontWeight: "bold", letterSpacing: 1, color: "#1b5e20" }}
           >
             Award Points
           </Typography>
@@ -443,7 +426,8 @@ const AdminDashboard = () => {
                   </Paper>
                 )}
               />
-            </Grid>
+            </Grid>  
+
             <Grid size={{ xs: 12, md: 2 }}>
               <TextField
                 label="Points"
@@ -456,6 +440,7 @@ const AdminDashboard = () => {
                 InputProps={{ inputProps: { min: 1 } }}
               />
             </Grid>
+
             <Grid size={{ xs: 12, md: 3 }}>
               <TextField
                 label="Reason"
@@ -466,10 +451,11 @@ const AdminDashboard = () => {
                 }
               />
             </Grid>
+
             <Grid size={{ xs: 12, md: 1 }}>
               <Button
                 variant="contained"
-                color="primary"
+                color="success"
                 fullWidth
                 sx={{
                   height: "100%",
@@ -487,7 +473,7 @@ const AdminDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Students List */}
+      {/* Students List (faculty can't edit roles) */}
       <Card sx={{ bgcolor: "white", boxShadow: 6, borderRadius: 3 }}>
         <CardContent>
           <Typography
@@ -672,291 +658,279 @@ const AdminDashboard = () => {
         </CardContent>
       </Card>
 
-              {/* Submissions */}
-              <Card sx={{ mt: 4, bgcolor: "white", boxShadow: 6, borderRadius: 3 }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom color="secondary" sx={{ fontWeight: "bold", letterSpacing: 1 }}>
-                    Submissions
-                  </Typography>
+      {/* Tasks List / Manage */}
+      <Card sx={{ mt: 4, bgcolor: "white", boxShadow: 6, borderRadius: 3 }}>
+        <CardContent>
+          <Box display="flex" alignItems="center" justifyContent="space-between">
+            <Typography variant="h6" gutterBottom color="secondary" sx={{ fontWeight: "bold", letterSpacing: 1 }}>
+              Tasks
+            </Typography>
+            <Button variant="contained" size="small" onClick={() => setCreateTaskOpen(true)}>Create Task</Button>
+          </Box>
 
-                  {subsLoading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>
-                  ) : submissions.length === 0 ? (
-                    <Typography color="text.secondary">No submissions yet.</Typography>
+          {tasksLoading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 2 }}>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: "primary.light" }}>
+                    <TableCell sx={{ fontWeight: "bold" }}>Title</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Points</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Due</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Years</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }} align="center">Awarded</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: "bold" }}>Action</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {tasks.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center">
+                        <Typography color="text.secondary">No tasks found</Typography>
+                      </TableCell>
+                    </TableRow>
                   ) : (
-                    <List>
-                      {submissions.map((s) => (
-                        <ListItem key={s._id} divider>
-                          <ListItemAvatar>
-                            <Avatar src={s.user?.profilePic ? `${baseurl}${s.user.profilePic}` : '/default-avatar.png'} />
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={s.task?.title || '—'}
-                            secondary={<>
-                              <Typography component="span" variant="body2" color="text.primary">{s.user?.fname || 'Student'}</Typography>
-                              <Typography component="span" variant="caption" sx={{ ml: 1 }}>{new Date(s.createdAt).toLocaleString()}</Typography>
-                              <Typography variant="body2" component="div" sx={{ mt: 1 }}>
-                              {s.type === 'text' ? (
-                                s.text
-                              ) : s.type === 'link' ? (
-                                <a href={s.link} target="_blank" rel="noreferrer">{s.link}</a>
-                              ) : s.type === 'file' && s.filePath ? (
-                                <a href={`${baseurl}${s.filePath}`} target="_blank" rel="noreferrer">Download</a>
-                              ) : s.type === 'quiz' ? (
-                                <>
-                                  <strong>Score:</strong> {s.score}% • {s.passed ? 'Passed' : 'Failed'}
-                                </>
-                              ) : null}
-                            </Typography>
-                            </>}
-                          />
-
-                          <ListItemSecondaryAction>
-                            <Chip label={s.status} color={s.status === 'pending' ? 'warning' : s.status === 'accepted' ? 'success' : 'default'} sx={{ mr: 1 }} />
-                            <Button size="small" variant="contained" color="success" sx={{ mr: 1 }} onClick={() => handleApproveSubmission(s)} disabled={s.status === 'accepted'}>Accept & Award</Button>
-                            <Button size="small" variant="outlined" color="error" onClick={() => handleRejectSubmission(s)} disabled={s.status === 'rejected'}>Reject</Button>
-                          </ListItemSecondaryAction>
-                        </ListItem>
-                      ))}
-                    </List>
+                    tasks.map((t) => (
+                      <TableRow key={t._id} hover>
+                        <TableCell>{t.title}</TableCell>
+                        <TableCell>{t.points}</TableCell>
+                        <TableCell>{new Date(t.dueDate).toLocaleDateString()}</TableCell>
+                        <TableCell>{(t.assignedYears || []).join(", ") || "All"}</TableCell>
+                        <TableCell align="center">{(t.awardedTo || []).length}</TableCell>
+                        <TableCell align="center">
+                          <Button variant="outlined" size="small" onClick={() => handleOpenTask(t)}>
+                            Manage
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
                   )}
-                </CardContent>
-              </Card>
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </CardContent>
+      </Card>
 
-              {/* Tasks List / Manage */}
-              <Card sx={{ mt: 4, bgcolor: "white", boxShadow: 6, borderRadius: 3 }}>
-                <CardContent>
-                  <Box display="flex" alignItems="center" justifyContent="space-between">
-                    <Typography variant="h6" gutterBottom color="secondary" sx={{ fontWeight: "bold", letterSpacing: 1 }}>
-                      Tasks
-                    </Typography>
-                    <Button variant="contained" size="small" onClick={() => setCreateTaskOpen(true)}>Create Task</Button>
-                  </Box>
+      <Dialog open={taskDialogOpen} onClose={() => setTaskDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Manage Task</DialogTitle>
+        <DialogContent>
+          {selectedTask && (
+            <Box>
+              <Typography variant="subtitle1" fontWeight={700}>{selectedTask.title}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{selectedTask.description}</Typography>
 
-                  {tasksLoading ? (
-                    <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-                      <CircularProgress />
-                    </Box>
-                  ) : (
-                    <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 2 }}>
-                      <Table>
-                        <TableHead>
-                          <TableRow sx={{ bgcolor: "primary.light" }}>
-                            <TableCell sx={{ fontWeight: "bold" }}>Title</TableCell>
-                            <TableCell sx={{ fontWeight: "bold" }}>Points</TableCell>
-                            <TableCell sx={{ fontWeight: "bold" }}>Due</TableCell>
-                            <TableCell sx={{ fontWeight: "bold" }}>Years</TableCell>
-                            <TableCell sx={{ fontWeight: "bold" }} align="center">Awarded</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: "bold" }}>Action</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {tasks.length === 0 ? (
-                            <TableRow>
-                              <TableCell colSpan={6} align="center">
-                                <Typography color="text.secondary">No tasks found</Typography>
-                              </TableCell>
-                            </TableRow>
-                          ) : (
-                            tasks.map((t) => (
-                              <TableRow key={t._id} hover>
-                                <TableCell>{t.title}</TableCell>
-                                <TableCell>{t.points}</TableCell>
-                                <TableCell>{new Date(t.dueDate).toLocaleDateString()}</TableCell>
-                                <TableCell>{(t.assignedYears || []).join(", ") || "All"}</TableCell>
-                                <TableCell align="center">{(t.awardedTo || []).length}</TableCell>
-                                <TableCell align="center">
-                                  <Button variant="outlined" size="small" onClick={() => handleOpenTask(t)}>
-                                    Manage
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          )}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Dialog open={taskDialogOpen} onClose={() => setTaskDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>Manage Task</DialogTitle>
-                <DialogContent>
-                  {selectedTask && (
-                    <Box>
-                      <Typography variant="subtitle1" fontWeight={700}>{selectedTask.title}</Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{selectedTask.description}</Typography>
-
-                      {candidatesLoading ? (
-                        <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}><CircularProgress size={28} /></Box>
+              {candidatesLoading ? (
+                <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}><CircularProgress size={28} /></Box>
+              ) : (
+                <List>
+                  {candidates.length === 0 ? (
+                        <Typography color="text.secondary">No students match this task. Try using values like "Year 3", "3rd Year", or set "All" to target all students.</Typography>
                       ) : (
-                        <List>
-                          {candidates.length === 0 ? (
-                                <Typography color="text.secondary">No students match this task. Try using values like "Year 3", "3rd Year", or set "All" to target all students.</Typography>
-                              ) : (
-                            candidates.map((c) => (
-                              <ListItem key={c._id} divider>
-                                <ListItemAvatar>
-                                  <Avatar src={c.profilePic ? `${baseurl}${c.profilePic}` : "/default-avatar.png"} />
-                                </ListItemAvatar>
-                                <ListItemText primary={`${c.fname} (${c.studentId || "--"})`} secondary={`${c.yearClassDept || ""} • ${c.points || 0} pts`} />
-                                <ListItemSecondaryAction>
-                                  <Button size="small" variant={c.awarded ? "outlined" : "contained"} disabled={c.awarded} onClick={() => handleAwardForTask(c)}>
-                                    {c.awarded ? "Awarded" : `Award ${selectedTask.points} pts`}
-                                  </Button>
-                                </ListItemSecondaryAction>
-                              </ListItem>
-                            ))
-                          )}
-                        </List>
-                      )}
-                    </Box>
+                    candidates.map((c) => (
+                      <ListItem key={c._id} divider>
+                        <ListItemAvatar>
+                          <Avatar src={c.profilePic ? `${baseurl}${c.profilePic}` : "/default-avatar.png"} />
+                        </ListItemAvatar>
+                        <ListItemText primary={`${c.fname} (${c.studentId || "--"})`} secondary={`${c.yearClassDept || ""} • ${c.points || 0} pts`} />
+                        <ListItemSecondaryAction>
+                          <Button size="small" variant={c.awarded ? "outlined" : "contained"} disabled={c.awarded} onClick={() => handleAwardForTask(c)}>
+                            {c.awarded ? "Awarded" : `Award ${selectedTask.points} pts`}
+                          </Button>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    ))
                   )}
-                </DialogContent>
-              </Dialog>
+                </List>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
 
-              {/* Create Task Dialog */}
-              <Dialog open={createTaskOpen} onClose={() => setCreateTaskOpen(false)} maxWidth="md" fullWidth>
-                <DialogTitle>Create Task</DialogTitle>
-                <DialogContent>
-                  <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column', mt: 1 }}>
-                    <TextField label="Title" fullWidth value={createTaskForm.title} onChange={(e) => setCreateTaskForm({ ...createTaskForm, title: e.target.value })} />
-                    <TextField label="Description" fullWidth multiline rows={3} value={createTaskForm.description} onChange={(e) => setCreateTaskForm({ ...createTaskForm, description: e.target.value })} />
-                    <TextField label="Due Date" type="datetime-local" fullWidth value={createTaskForm.dueDate} onChange={(e) => setCreateTaskForm({ ...createTaskForm, dueDate: e.target.value })} InputLabelProps={{ shrink: true }} />
-                    <TextField label="Points" type="number" fullWidth value={createTaskForm.points} onChange={(e) => setCreateTaskForm({ ...createTaskForm, points: Number(e.target.value) })} />
+      {/* Create Task Dialog (same as admin) */}
+      <Dialog open={createTaskOpen} onClose={() => setCreateTaskOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Create Task</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column', mt: 1 }}>
+            <TextField label="Title" fullWidth value={createTaskForm.title} onChange={(e) => setCreateTaskForm({ ...createTaskForm, title: e.target.value })} />
+            <TextField label="Description" fullWidth multiline rows={3} value={createTaskForm.description} onChange={(e) => setCreateTaskForm({ ...createTaskForm, description: e.target.value })} />
+            <TextField label="Due Date" type="datetime-local" fullWidth value={createTaskForm.dueDate} onChange={(e) => setCreateTaskForm({ ...createTaskForm, dueDate: e.target.value })} InputLabelProps={{ shrink: true }} />
+            <TextField label="Points" type="number" fullWidth value={createTaskForm.points} onChange={(e) => setCreateTaskForm({ ...createTaskForm, points: Number(e.target.value) })} />
 
-                    <FormControl fullWidth>
-                      <InputLabel>Category</InputLabel>
-                      <Select value={createTaskForm.category} label="Category" onChange={(e) => setCreateTaskForm({ ...createTaskForm, category: e.target.value })}>
-                        <MenuItem value="General">General</MenuItem>
-                        <MenuItem value="Quiz">Quiz</MenuItem>
-                      </Select>
-                    </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Category</InputLabel>
+              <Select value={createTaskForm.category} label="Category" onChange={(e) => setCreateTaskForm({ ...createTaskForm, category: e.target.value })}>
+                <MenuItem value="General">General</MenuItem>
+                <MenuItem value="Quiz">Quiz</MenuItem>
+              </Select>
+            </FormControl>
 
-                    <Autocomplete
-                      multiple
-                      freeSolo
-                      options={yearOptions}
-                      value={createTaskForm.assignedYears}
-                      onChange={(e, val) => setCreateTaskForm({ ...createTaskForm, assignedYears: val })}
-                      renderInput={(params) => (
-                        <TextField {...params} label="Assigned Years (select or add)" placeholder="Add or select..." fullWidth />
-                      )}
-                    />
+            <Autocomplete
+              multiple
+              freeSolo
+              options={yearOptions}
+              value={createTaskForm.assignedYears}
+              onChange={(e, val) => setCreateTaskForm({ ...createTaskForm, assignedYears: val })}
+              renderInput={(params) => (
+                <TextField {...params} label="Assigned Years (select or add)" placeholder="Add or select..." fullWidth />
+              )}
+            />
 
-                    {createTaskForm.category === 'Quiz' && (
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ mt: 1 }}>Quiz Builder</Typography>
-                        <TextField label="Passing Score (%)" type="number" value={createTaskForm.quiz.passingScore} onChange={(e) => setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, passingScore: Number(e.target.value) } })} sx={{ mt: 1 }} />
+            {createTaskForm.category === 'Quiz' && (
+              <Box>
+                <Typography variant="subtitle2" sx={{ mt: 1 }}>Quiz Builder</Typography>
+                <TextField label="Passing Score (%)" type="number" value={createTaskForm.quiz.passingScore} onChange={(e) => setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, passingScore: Number(e.target.value) } })} sx={{ mt: 1 }} />
 
-                        {createTaskForm.quiz.questions.map((q, qi) => (
-                          <Card key={qi} sx={{ mt: 2, p: 2 }}>
-                            <TextField fullWidth label={`Question ${qi + 1}`} value={q.text} onChange={(e) => {
-                              const qs = [...createTaskForm.quiz.questions]; qs[qi].text = e.target.value; setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
-                            }} />
+                {createTaskForm.quiz.questions.map((q, qi) => (
+                  <Card key={qi} sx={{ mt: 2, p: 2 }}>
+                    <TextField fullWidth label={`Question ${qi + 1}`} value={q.text} onChange={(e) => {
+                      const qs = [...createTaskForm.quiz.questions]; qs[qi].text = e.target.value; setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
+                    }} />
 
-                            <Box sx={{ mt: 1 }}>
-                              {q.options.map((opt, oi) => (
-                                <Box key={oi} sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 1 }}>
-                                  <TextField fullWidth value={opt} onChange={(e) => {
-                                    const qs = [...createTaskForm.quiz.questions]; qs[qi].options[oi] = e.target.value; setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
-                                  }} />
-                                  <Button size="small" variant={q.correctIndex === oi ? 'contained' : 'outlined'} onClick={() => {
-                                    const qs = [...createTaskForm.quiz.questions]; qs[qi].correctIndex = oi; setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
-                                  }}>Mark Correct</Button>
-                                  <Button size="small" color="error" onClick={() => {
-                                    const qs = [...createTaskForm.quiz.questions]; qs[qi].options = qs[qi].options.filter((_, idx) => idx !== oi); if (qs[qi].correctIndex >= qs[qi].options.length) qs[qi].correctIndex = 0; setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
-                                  }}>Remove</Button>
-                                </Box>
-                              ))}
-
-                              <Box sx={{ mt: 1 }}>
-                                <Button size="small" onClick={() => {
-                                  const qs = [...createTaskForm.quiz.questions]; qs[qi].options.push(''); setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
-                                }}>Add Option</Button>
-                              </Box>
-                            </Box>
-
-                            <Box sx={{ mt: 1 }}>
-                              <Button size="small" color="error" onClick={() => {
-                                const qs = createTaskForm.quiz.questions.filter((_, idx) => idx !== qi);
-                                setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
-                              }}>Remove Question</Button>
-                            </Box>
-                          </Card>
-                        ))}
-
-                        <Box sx={{ mt: 2 }}>
-                          <Button onClick={() => {
-                            const qs = createTaskForm.quiz.questions.concat([{ text: '', options: ['', ''], correctIndex: 0 }]);
-                            setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
-                          }}>Add Question</Button>
+                    <Box sx={{ mt: 1 }}>
+                      {q.options.map((opt, oi) => (
+                        <Box key={oi} sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 1 }}>
+                          <TextField fullWidth value={opt} onChange={(e) => {
+                            const qs = [...createTaskForm.quiz.questions]; qs[qi].options[oi] = e.target.value; setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
+                          }} />
+                          <Button size="small" variant={q.correctIndex === oi ? 'contained' : 'outlined'} onClick={() => {
+                            const qs = [...createTaskForm.quiz.questions]; qs[qi].correctIndex = oi; setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
+                          }}>Mark Correct</Button>
+                          <Button size="small" color="error" onClick={() => {
+                            const qs = [...createTaskForm.quiz.questions]; qs[qi].options = qs[qi].options.filter((_, idx) => idx !== oi); if (qs[qi].correctIndex >= qs[qi].options.length) qs[qi].correctIndex = 0; setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
+                          }}>Remove</Button>
                         </Box>
+                      ))}
+
+                      <Box sx={{ mt: 1 }}>
+                        <Button size="small" onClick={() => {
+                          const qs = [...createTaskForm.quiz.questions]; qs[qi].options.push(''); setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
+                        }}>Add Option</Button>
                       </Box>
-                    )}
-
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
-                      <Button onClick={() => setCreateTaskOpen(false)}>Cancel</Button>
-                      <Button variant="contained" onClick={async () => {
-                        try {
-                          const payload = {
-                            title: createTaskForm.title,
-                            description: createTaskForm.description,
-                            dueDate: new Date(createTaskForm.dueDate).toISOString(),
-                            points: createTaskForm.points,
-                            category: createTaskForm.category,
-                            assignedYears: Array.isArray(createTaskForm.assignedYears) ? createTaskForm.assignedYears.map(s => String(s).trim()).filter(Boolean) : [],
-                          };
-                          if (createTaskForm.category === 'Quiz') {
-                            payload.quiz = createTaskForm.quiz;
-                          }
-                          const res = await axios.post(`${baseurl}/api/tasks/addtask`, payload);
-                          setSuccess(res.data.message || 'Task created');
-                          // refresh tasks
-                          const tRes = await axios.get(`${baseurl}/api/tasks`);
-                          setTasks(tRes.data || []);
-                          setCreateTaskOpen(false);
-                          setCreateTaskForm({ title: '', description: '', dueDate: '', points: 10, category: 'General', assignedYears: [], quiz: { questions: [], passingScore: 70 } });
-                        } catch (err) {
-                          setError(err.response?.data?.message || 'Failed to create task');
-                        }
-                      }}>Create</Button>
                     </Box>
-                  </Box>
-                </DialogContent>
-              </Dialog>
 
-      {/* Success Snackbar */}
+                    <Box sx={{ mt: 1 }}>
+                      <Button size="small" color="error" onClick={() => {
+                        const qs = createTaskForm.quiz.questions.filter((_, idx) => idx !== qi);
+                        setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
+                      }}>Remove Question</Button>
+                    </Box>
+                  </Card>
+                ))}
+
+                <Box sx={{ mt: 2 }}>
+                  <Button onClick={() => {
+                    const qs = createTaskForm.quiz.questions.concat([{ text: '', options: ['', ''], correctIndex: 0 }]);
+                    setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
+                  }}>Add Question</Button>
+                </Box>
+              </Box>
+            )}
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
+              <Button onClick={() => setCreateTaskOpen(false)}>Cancel</Button>
+              <Button variant="contained" onClick={async () => {
+                try {
+                  const payload = {
+                    title: createTaskForm.title,
+                    description: createTaskForm.description,
+                    dueDate: new Date(createTaskForm.dueDate).toISOString(),
+                    points: createTaskForm.points,
+                    category: createTaskForm.category,
+                    assignedYears: Array.isArray(createTaskForm.assignedYears) ? createTaskForm.assignedYears.map(s => String(s).trim()).filter(Boolean) : [],
+                  };
+                  if (createTaskForm.category === 'Quiz') {
+                    payload.quiz = createTaskForm.quiz;
+                  }
+                  const res = await axios.post(`${baseurl}/api/tasks/addtask`, payload);
+                  setSuccess(res.data.message || 'Task created');
+                  // refresh tasks
+                  const tRes = await axios.get(`${baseurl}/api/tasks`);
+                  setTasks(tRes.data || []);
+                  setCreateTaskOpen(false);
+                  setCreateTaskForm({ title: '', description: '', dueDate: '', points: 10, category: 'General', assignedYears: [], quiz: { questions: [], passingScore: 70 } });
+                } catch (err) {
+                  setError(err.response?.data?.message || 'Failed to create task');
+                }
+              }}>Create</Button>
+            </Box>
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      {/* Submissions */}
+      <Card sx={{ mt: 4, bgcolor: "white", boxShadow: 6, borderRadius: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom color="secondary" sx={{ fontWeight: "bold", letterSpacing: 1 }}>
+            Submissions
+          </Typography>
+
+          {subsLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>
+          ) : submissions.length === 0 ? (
+            <Typography color="text.secondary">No submissions yet.</Typography>
+          ) : (
+            <List>
+              {submissions.map((s) => (
+                <ListItem key={s._id} divider>
+                  <ListItemAvatar>
+                    <Avatar src={s.user?.profilePic ? `${baseurl}${s.user.profilePic}` : '/default-avatar.png'} />
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={s.task?.title || '—'}
+                    secondary={<>
+                      <Typography component="span" variant="body2" color="text.primary">{s.user?.fname || 'Student'}</Typography>
+                      <Typography component="span" variant="caption" sx={{ ml: 1 }}>{new Date(s.createdAt).toLocaleString()}</Typography>
+                      <Typography variant="body2" component="div" sx={{ mt: 1 }}>
+                        {s.type === 'text' ? (
+                          s.text
+                        ) : s.type === 'link' ? (
+                          <a href={s.link} target="_blank" rel="noreferrer">{s.link}</a>
+                        ) : s.type === 'file' && s.filePath ? (
+                          <a href={`${baseurl}${s.filePath}`} target="_blank" rel="noreferrer">Download</a>
+                        ) : s.type === 'quiz' ? (
+                          <>
+                            <strong>Score:</strong> {s.score}% • {s.passed ? 'Passed' : 'Failed'}
+                          </>
+                        ) : null}
+                      </Typography>
+                    </>}
+                  />
+
+                  <ListItemSecondaryAction>
+                    <Chip label={s.status} color={s.status === 'pending' ? 'warning' : s.status === 'accepted' ? 'success' : 'default'} sx={{ mr: 1 }} />
+                    <Button size="small" variant="contained" color="success" sx={{ mr: 1 }} onClick={() => handleApproveSubmission(s)} disabled={s.status === 'accepted'}>Accept & Award</Button>
+                    <Button size="small" variant="outlined" color="error" onClick={() => handleRejectSubmission(s)} disabled={s.status === 'rejected'}>Reject</Button>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Alerts */}
       <Snackbar
         open={!!success}
         autoHideDuration={3000}
         onClose={() => setSuccess("")}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
-        <Alert
-          onClose={() => setSuccess("")}
-          severity="success"
-          variant="filled"
-          sx={{ width: "100%" }}
-        >
+        <Alert severity="success" onClose={() => setSuccess("")} variant="filled">
           {success}
         </Alert>
       </Snackbar>
-
-      {/* Error Snackbar */}
       <Snackbar
         open={!!error}
         autoHideDuration={3000}
         onClose={() => setError("")}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
-        <Alert
-          onClose={() => setError("")}
-          severity="error"
-          variant="filled"
-          sx={{ width: "100%" }}
-        >
+        <Alert severity="error" onClose={() => setError("")} variant="filled">
           {error}
         </Alert>
       </Snackbar>
@@ -964,4 +938,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard;
+export default FacultyDashboard;

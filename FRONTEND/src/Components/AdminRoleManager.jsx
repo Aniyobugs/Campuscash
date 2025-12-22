@@ -93,6 +93,7 @@ const AdminRoleManager = () => {
                     >
                       <MenuItem value="user">User</MenuItem>
                       <MenuItem value="admin">Admin</MenuItem>
+                      <MenuItem value="faculty">Faculty</MenuItem>
                       <MenuItem value="store">Store</MenuItem>
                     </Select>
                   </TableCell>
