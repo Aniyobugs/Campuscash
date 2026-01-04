@@ -7,7 +7,7 @@ const mongoose = require("mongoose");
 const { Readable } = require("stream");
 const Coupon = require("../model/coupon"); // <--- NEW: import coupon model
 
-const SECRET_KEY = process.env.SECRET_KEY || "mysecret"; // use env var SECRET_KEY in production (override default)
+const SECRET_KEY = "mysecret"; // move to .env in production
 // Default: 150 points ≈ ₹50 → point value = 50/150 (~0.3333333)
 const POINT_VALUE_INR = parseFloat(process.env.POINT_VALUE_INR) || (50 / 150); // INR per point (override via POINT_VALUE_INR)
 
