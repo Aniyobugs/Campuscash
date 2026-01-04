@@ -7,11 +7,27 @@ require("./connection")
 var app=express();
 var port = process.env.PORT || 3000;
 
+// Configure CORS to allow local dev and the deployed frontend. Use ALLOWED_ORIGINS env var (comma-separated) to override.
+const normalize = (u) => (u || '').toString().trim().replace(/\/+$/, '');
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:4000,http://localhost:5173,https://campuscash-pink.vercel.app')
+  .split(',')
+  .map(normalize);
+
 app.use(cors({
-    origin: "https://campuscash-pink.vercel.app/",
-    credentials: true
-  })
-);
+  origin: function(origin, callback) {
+    // allow requests with no origin (e.g., mobile apps, curl)
+    if (!origin) return callback(null, true);
+    const normalizedOrigin = normalize(origin);
+    if (allowedOrigins.indexOf(normalizedOrigin) !== -1) return callback(null, true);
+    // Log blocked origin for easier debugging
+    console.warn(`Blocked CORS origin: ${origin} (normalized: ${normalizedOrigin})`);
+    return callback(new Error(`CORS policy: Origin not allowed: ${origin}`), false);
+  },
+  credentials: true
+}));
+
+// Enable pre-flight for all routes
+app.options('*', cors());
 app.use(express.json());
 const userRoute=require("./routes/userRoute")
 const taskRoute=require("./routes/taskRoute")
