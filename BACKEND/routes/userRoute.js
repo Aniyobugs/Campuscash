@@ -8,6 +8,8 @@ const { Readable } = require("stream");
 const Coupon = require("../model/coupon"); // <--- NEW: import coupon model
 
 const SECRET_KEY = "mysecret"; // move to .env in production
+// Default: 150 points ≈ ₹50 → point value = 50/150 (~0.3333333)
+const POINT_VALUE_INR = parseFloat(process.env.POINT_VALUE_INR) || (50 / 150); // INR per point (override via POINT_VALUE_INR)
 
 // ==========================
 // Signup API
@@ -455,6 +457,50 @@ router.get("/files/:id", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Error fetching file", error: err.message });
+  }
+});
+
+// ==========================
+// ADMIN: Monthly coupon receipt/report
+// GET /api/users/coupons/monthly?year=YYYY&month=MM
+// Returns used coupons within the specified month, totals and grouping by store
+// ==========================
+router.get("/coupons/monthly", async (req, res) => {
+  try {
+    const year = parseInt(req.query.year);
+    const month = parseInt(req.query.month);
+    if (!year || !month) return res.status(400).json({ message: "Provide year and month query params" });
+
+    const start = new Date(year, month - 1, 1);
+    const end = new Date(year, month, 1);
+
+    const logs = await Coupon.find({
+      isUsed: true,
+      usedAt: { $gte: start, $lt: end }
+    })
+      .populate("userId", "fname ename studentId yearClassDept")
+      .sort({ usedAt: 1 });
+
+    const totalCount = logs.length;
+    const totalPoints = logs.reduce((s, l) => s + (l.pointsUsed || 0), 0);
+    const totalINR = +(totalPoints * POINT_VALUE_INR).toFixed(2);
+
+    const byStoreMap = {};
+    logs.forEach((l) => {
+      const s = l.usedByStore || "Unknown";
+      if (!byStoreMap[s]) byStoreMap[s] = { storeName: s, count: 0, totalPoints: 0 };
+      byStoreMap[s].count++;
+      byStoreMap[s].totalPoints += l.pointsUsed || 0;
+    });
+
+    const byStore = Object.values(byStoreMap).map((b) => ({
+      ...b,
+      totalINR: +(b.totalPoints * POINT_VALUE_INR).toFixed(2),
+    }));
+
+    res.json({ logs, totals: { totalCount, totalPoints, totalINR, pointValue: POINT_VALUE_INR }, byStore });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
