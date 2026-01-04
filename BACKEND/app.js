@@ -5,9 +5,13 @@ var dotenv=require("dotenv")
 dotenv.config();
 require("./connection")
 var app=express();
-var port=process.env.PORT;
+var port = process.env.PORT || 3000;
 
-app.use(cors())
+app.use(cors({
+    origin: "https://campuscash-pink.vercel.app/",
+    credentials: true
+  })
+);
 app.use(express.json());
 const userRoute=require("./routes/userRoute")
 const taskRoute=require("./routes/taskRoute")
@@ -20,7 +24,11 @@ app.use('/api/tasks',taskRoute);
 app.use('/api',submissionRoute);
 app.use('/api',userRoute);
 app.use("/uploads", express.static("uploads"));
+
+// Health check for monitoring
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
+
 app.listen(port,()=>{
-    console.log(`Server is up and Running ${port}`)
+    console.log(`Server is up and running on port ${port}`)
 })
 //test1

@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: campuscash-backend
+    env: node
+    repo: "<YOUR_GIT_REPO_URL>" # e.g. https://github.com/you/campuscash
+    branch: main
+    plan: free
+    buildCommand: cd BACKEND && npm install
+    startCommand: cd BACKEND && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Sensitive values should be configured in the Render dashboard as secrets
+      # - key: mongodb_url
+      #   value: <SET IN DASHBOARD>
+      # - key: SECRET_KEY
+      #   value: <SET IN DASHBOARD>
+      # - key: POINT_VALUE_INR
+      #   value: 0.3333333
