@@ -55,8 +55,39 @@ router.get("/active", async (req, res) => {
     // or are global (assignedYears is empty).
     const { year } = req.query;
     if (year) {
-      // include global tasks (no assignedYears) or tasks that include the year
-      filter.$or = [{ assignedYears: { $size: 0 } }, { assignedYears: year }];
+      console.debug("/api/tasks/active: filtering for year param:", year);
+
+      // Build a flexible set of match patterns for the user's year string so
+      // tasks assigned with tokens like "3", "3rd", "third" or "3rd year"
+      // will match.
+      const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&");
+      const tokens = new Set();
+      const y = String(year).trim();
+      if (y) tokens.add(escapeRegex(y));
+
+      // numeric part, e.g. "3rd year" -> "3"
+      const num = (y.match(/\d+/) || [])[0];
+      if (num) {
+        tokens.add(escapeRegex(num));
+        tokens.add(escapeRegex(num + "th"));
+        tokens.add(escapeRegex(num + "rd"));
+        tokens.add(escapeRegex(num + "st"));
+        tokens.add(escapeRegex(num + "nd"));
+      }
+
+      // common word numbers
+      const numberWords = { first: 1, second: 2, third: 3, fourth: 4, fifth: 5 };
+      const cleaned = y.replace(/[^a-zA-Z0-9 ]/g, "").toLowerCase();
+      Object.keys(numberWords).forEach((word) => {
+        if (cleaned.includes(word)) {
+          tokens.add(escapeRegex(word));
+          tokens.add(escapeRegex(String(numberWords[word])));
+        }
+      });
+
+      // match either global tasks or any assignedYears element matching one of the tokens
+      const pattern = Array.from(tokens).join("|");
+      filter.$or = [{ assignedYears: { $size: 0 } }, { assignedYears: { $regex: `\\b(${pattern})\\b`, $options: "i" } }];
     }
 
     const tasks = await Task.find(filter).sort({ dueDate: 1 });

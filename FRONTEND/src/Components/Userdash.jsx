@@ -298,6 +298,7 @@ const Userdash = () => {
   const [tasks, setTasks] = useState([]);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [userYear, setUserYear] = useState(null);
+  const [userLoaded, setUserLoaded] = useState(false); // becomes true once user info is fetched
 
   // Submission UI
   const [submissionOpen, setSubmissionOpen] = useState(false);
@@ -430,7 +431,14 @@ const Userdash = () => {
   /* ---------------- Fetch user & coupons ---------------- */
   useEffect(() => {
     const storedUser = sessionStorage.getItem("user");
-    if (storedUser) {
+    // If there is no logged-in user, still allow tasks to be fetched (global tasks)
+    if (!storedUser) {
+      console.debug("Userdash: no stored user found, proceeding to load tasks without year filter");
+      setUserLoaded(true);
+      return;
+    }
+
+    try {
       const parsedUser = JSON.parse(storedUser);
       setUserId(parsedUser.id);
 
@@ -472,8 +480,16 @@ const Userdash = () => {
           });
 
           fetchCoupons(parsedUser.id);
+          setUserLoaded(true);
         })
-        .catch((err) => console.error(err));
+        .catch((err) => {
+          console.error("User fetch failed:", err);
+          // still allow tasks to fetch even if user fetch failed
+          setUserLoaded(true);
+        });
+    } catch (parseErr) {
+      console.error("Could not parse stored user:", parseErr);
+      setUserLoaded(true);
     }
   }, [baseurl]);
 
@@ -481,13 +497,15 @@ const Userdash = () => {
   const fetchActiveTasks = async () => {
     try {
       setTasksLoading(true);
-      const res = await axios.get(`${baseurl}/api/tasks/active`, {
-        params: userYear ? { year: userYear } : {},
-      });
+      const params = userYear ? { year: userYear } : {};
+      console.debug("fetchActiveTasks: calling /api/tasks/active", { params });
+      const res = await axios.get(`${baseurl}/api/tasks/active`, { params });
+      console.debug("fetchActiveTasks: response length", (res.data || []).length);
       const now = new Date();
       const activeOnly = (res.data || []).filter(
         (t) => new Date(t.dueDate) >= now
       );
+      console.debug("fetchActiveTasks: activeOnly length", activeOnly.length);
       setTasks(activeOnly);
     } catch (err) {
       console.error("Error fetching tasks:", err);
@@ -497,11 +515,12 @@ const Userdash = () => {
   };
 
   useEffect(() => {
-    if (!baseurl) return;
+    // Wait for user info to be available before fetching tasks to avoid brief flicker
+    if (!baseurl || !userLoaded) return;
     fetchActiveTasks();
     const interval = setInterval(fetchActiveTasks, 60 * 1000);
     return () => clearInterval(interval);
-  }, [baseurl, userYear]);
+  }, [baseurl, userYear, userLoaded]);
   /* ---------------- Form Change ---------------- */
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
