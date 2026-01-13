@@ -125,7 +125,7 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName, isDark }, ref) => 
           }}
         />
 
-        {/* subtle pattern */}
+        {/* subtle patternnn */}
         <Box
           sx={{
             position: "absolute",
