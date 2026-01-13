@@ -17,8 +17,11 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import HomeIcon from "@mui/icons-material/Home";
+import Brightness4Icon from "@mui/icons-material/Brightness4";
+import Brightness7Icon from "@mui/icons-material/Brightness7";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useTheme } from "../contexts/ThemeContext";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -55,6 +58,7 @@ export default function Navbar() {
 
   // use AuthContext for role/user and logout
   const { role, user, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
     // keep local UI in sync with sessionStorage as a fallback
@@ -169,12 +173,16 @@ export default function Navbar() {
 
   return (
     <>
-      <AppBar position="sticky" elevation={0} sx={{ background: "#6444e6" }}>
+      <AppBar position="sticky" elevation={0} sx={{ 
+        background: isDark ? "#1a1a1a" : "#ffffff",
+        color: isDark ? "#ffffff" : "#212121",
+        borderBottom: `1px solid ${isDark ? "#333333" : "#e0e0e0"}`,
+      }}>
         <Container maxWidth="lg">
           <Toolbar disableGutters sx={{ width: "100%", px: 0 }}>
             {/* Home Button */}
             <Tooltip title="Home">
-              <IconButton component={Link} to="/" sx={{ color: 'white', mr: 1 }}>
+              <IconButton component={Link} to="/" sx={{ color: isDark ? '#ffffff' : '#212121', mr: 1 }}>
                 <HomeIcon />
               </IconButton>
             </Tooltip>
@@ -185,6 +193,7 @@ export default function Navbar() {
                 flexGrow: 1,
                 fontWeight: "bold",
                 letterSpacing: 1,
+                color: isDark ? '#8866ff' : '#6444e6',
               }}
             >
               Campus Cash
@@ -198,7 +207,14 @@ export default function Navbar() {
                   <Button
                     key={item.label}
                     color="inherit"
-                    sx={{ mx: 1, textTransform: "none" }}
+                    sx={{ 
+                      mx: 1, 
+                      textTransform: "none",
+                      color: isDark ? '#ffffff' : '#212121',
+                      '&:hover': {
+                        color: isDark ? '#8866ff' : '#6444e6',
+                      }
+                    }}
                     onClick={() => handleNav(item.id)}
                   >
                     {item.label}
@@ -208,50 +224,62 @@ export default function Navbar() {
               {/* Role-specific links */}
               {role === "admin" && (
                 <>
-                  <Button color="inherit" component={Link} to="/admin">
+                  <Button color="inherit" component={Link} to="/admin" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
                     Admin
                   </Button>
-                  <Button color="inherit" component={Link} to="/tsk">
+                  <Button color="inherit" component={Link} to="/tsk" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
                     Assign
                   </Button>
-                  <Button color="inherit" component={Link} to="/admin/roles">
+                  <Button color="inherit" component={Link} to="/admin/roles" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
                     Roles
                   </Button>
                 </>
               )}
 
               {role === "store" && (
-                <Button color="inherit" component={Link} to="/store">
+                <Button color="inherit" component={Link} to="/store" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
                   Store
                 </Button>
               )}
 
               {role === "faculty" && (
-                <Button color="inherit" component={Link} to="/faculty">
+                <Button color="inherit" component={Link} to="/faculty" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
                   Faculty
                 </Button>
               )}
 
               {role === "user" && (
                 <>
-                  <Button color="inherit" component={Link} to="/user">
+                  <Button color="inherit" component={Link} to="/user" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
                     Dashboard
                   </Button>
-                  <Button color="inherit" component={Link} to="/profile">
+                  <Button color="inherit" component={Link} to="/profile" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
                     Profile
                   </Button>
                 </>
               )}
 
+              {/* Theme Toggle Button */}
+              <Tooltip title={isDark ? "Light Mode" : "Dark Mode"}>
+                <IconButton color="inherit" onClick={toggleTheme} sx={{ 
+                  mx: 1,
+                  color: isDark ? '#8866ff' : '#6444e6',
+                  '&:hover': {
+                    backgroundColor: isDark ? 'rgba(136, 102, 255, 0.1)' : 'rgba(100, 68, 230, 0.1)',
+                  }
+                }}>
+                  {isDark ? <Brightness7Icon /> : <Brightness4Icon />}
+                </IconButton>
+              </Tooltip>
+
               {/* Auth actions */}
               {!role ? (
                 <>
-                  <Button component={Link} to="/L" sx={{ color: "white" }}>
+                  <Button component={Link} to="/L" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
                     Login
                   </Button>
                   <Button
                     variant="contained"
-                    color="success"
                     component={Link}
                     to="/s"
                     sx={{
@@ -261,6 +289,11 @@ export default function Navbar() {
                       fontWeight: "bold",
                       px: 3,
                       py: 1,
+                      backgroundColor: isDark ? '#6444e6' : '#6444e6',
+                      color: '#ffffff',
+                      '&:hover': {
+                        backgroundColor: isDark ? '#8866ff' : '#7d5ae6',
+                      }
                     }}
                   >
                     Get Started
@@ -269,15 +302,28 @@ export default function Navbar() {
               ) : (
                 <>
                   {/* Role badge */}
-                  <Button disabled sx={{ color: 'rgba(255,255,255,0.9)', textTransform: 'none', ml: 1 }}>
+                  <Button disabled sx={{ 
+                    color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(33, 33, 33, 0.7)', 
+                    textTransform: 'none', 
+                    ml: 1 
+                  }}>
                     {role && role.toUpperCase()}
                   </Button>
 
-                  <Button color="inherit" onClick={logout} sx={{ ml: 2 }}>
+                  <Button color="inherit" onClick={logout} sx={{ 
+                    ml: 2,
+                    color: isDark ? '#ffffff' : '#212121',
+                    '&:hover': {
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                    }
+                  }}>
                     Logout
                   </Button>
                   {user && (
-                    <Button color="inherit" component={Link} to="/profile" sx={{ ml: 1 }}>
+                    <Button color="inherit" component={Link} to="/profile" sx={{ 
+                      ml: 1,
+                      color: isDark ? '#ffffff' : '#212121',
+                    }}>
                       {user.fname || user.ename || user.email}
                     </Button>
                   )}

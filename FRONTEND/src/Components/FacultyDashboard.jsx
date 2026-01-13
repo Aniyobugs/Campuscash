@@ -84,6 +84,23 @@ const FacultyDashboard = () => {
     quiz: { questions: [], passingScore: 70 },
   });
 
+  // Edit Task state
+  const [editTaskOpen, setEditTaskOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [editTaskForm, setEditTaskForm] = useState({
+    title: '',
+    description: '',
+    dueDate: '',
+    points: 10,
+    category: 'General',
+    assignedYears: [],
+    quiz: { questions: [], passingScore: 70 },
+  });
+
+  // Delete Task confirmation
+  const [deleteTaskOpen, setDeleteTaskOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState(null);
+
   // derive year options from existing users (plus common defaults)
   const yearOptions = Array.from(new Set([
     'All',
@@ -275,6 +292,52 @@ const FacultyDashboard = () => {
       }
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update status");
+    }
+  };
+
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setEditTaskForm({
+      title: task.title,
+      description: task.description,
+      dueDate: task.dueDate.slice(0, 16), // format for datetime-local
+      points: task.points,
+      category: task.category || 'General',
+      assignedYears: task.assignedYears || [],
+      quiz: task.quiz || { questions: [], passingScore: 70 },
+    });
+    setEditTaskOpen(true);
+  };
+
+  const handleSaveEditedTask = async () => {
+    if (!editingTask || !editTaskForm.title) {
+      setError('Please fill in all required fields');
+      return;
+    }
+    try {
+      const res = await axios.put(`${baseurl}/api/tasks/${editingTask._id}`, editTaskForm);
+      setSuccess('Task updated successfully');
+      setError('');
+      setEditTaskOpen(false);
+      setTasks((prev) => prev.map((t) => (t._id === editingTask._id ? res.data : t)));
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update task');
+      setSuccess('');
+    }
+  };
+
+  const handleDeleteTask = async () => {
+    if (!taskToDelete) return;
+    try {
+      await axios.delete(`${baseurl}/api/tasks/${taskToDelete._id}`);
+      setSuccess('Task deleted successfully');
+      setError('');
+      setDeleteTaskOpen(false);
+      setTasks((prev) => prev.filter((t) => t._id !== taskToDelete._id));
+      setTaskToDelete(null);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to delete task');
+      setSuccess('');
     }
   };
 
@@ -682,7 +745,7 @@ const FacultyDashboard = () => {
                     <TableCell sx={{ fontWeight: "bold" }}>Due</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Years</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }} align="center">Awarded</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: "bold" }}>Action</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: "bold" }}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -701,9 +764,19 @@ const FacultyDashboard = () => {
                         <TableCell>{(t.assignedYears || []).join(", ") || "All"}</TableCell>
                         <TableCell align="center">{(t.awardedTo || []).length}</TableCell>
                         <TableCell align="center">
-                          <Button variant="outlined" size="small" onClick={() => handleOpenTask(t)}>
+                          <Button variant="outlined" size="small" onClick={() => handleOpenTask(t)} sx={{ mr: 1 }}>
                             Manage
                           </Button>
+                          <Tooltip title="Edit Task">
+                            <IconButton size="small" onClick={() => handleEditTask(t)} color="primary">
+                              <Edit fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete Task">
+                            <IconButton size="small" onClick={() => { setTaskToDelete(t); setDeleteTaskOpen(true); }} color="error">
+                              <Cancel fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                         </TableCell>
                       </TableRow>
                     ))
@@ -862,7 +935,56 @@ const FacultyDashboard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Submissions */}
+      {/* Edit Task Dialog */}
+      <Dialog open={editTaskOpen} onClose={() => setEditTaskOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Edit Task</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column', mt: 1 }}>
+            <TextField label="Title" fullWidth value={editTaskForm.title} onChange={(e) => setEditTaskForm({ ...editTaskForm, title: e.target.value })} />
+            <TextField label="Description" fullWidth multiline rows={3} value={editTaskForm.description} onChange={(e) => setEditTaskForm({ ...editTaskForm, description: e.target.value })} />
+            <TextField label="Due Date" type="datetime-local" fullWidth value={editTaskForm.dueDate} onChange={(e) => setEditTaskForm({ ...editTaskForm, dueDate: e.target.value })} InputLabelProps={{ shrink: true }} />
+            <TextField label="Points" type="number" fullWidth value={editTaskForm.points} onChange={(e) => setEditTaskForm({ ...editTaskForm, points: Number(e.target.value) })} />
+
+            <FormControl fullWidth>
+              <InputLabel>Category</InputLabel>
+              <Select value={editTaskForm.category} label="Category" onChange={(e) => setEditTaskForm({ ...editTaskForm, category: e.target.value })}>
+                <MenuItem value="General">General</MenuItem>
+                <MenuItem value="Quiz">Quiz</MenuItem>
+              </Select>
+            </FormControl>
+
+            <Autocomplete
+              multiple
+              freeSolo
+              options={yearOptions}
+              value={editTaskForm.assignedYears}
+              onChange={(e, val) => setEditTaskForm({ ...editTaskForm, assignedYears: val })}
+              renderInput={(params) => (
+                <TextField {...params} label="Assigned Years (select or add)" placeholder="Add or select..." fullWidth />
+              )}
+            />
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
+              <Button onClick={() => setEditTaskOpen(false)}>Cancel</Button>
+              <Button variant="contained" color="primary" onClick={handleSaveEditedTask}>Save Changes</Button>
+            </Box>
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Task Confirmation Dialog */}
+      <Dialog open={deleteTaskOpen} onClose={() => setDeleteTaskOpen(false)}>
+        <DialogTitle>Delete Task</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete the task "<strong>{taskToDelete?.title}</strong>"? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, p: 2 }}>
+          <Button onClick={() => setDeleteTaskOpen(false)}>Cancel</Button>
+          <Button variant="contained" color="error" onClick={handleDeleteTask}>Delete</Button>
+        </Box>
+      </Dialog>
       <Card sx={{ mt: 4, bgcolor: "white", boxShadow: 6, borderRadius: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom color="secondary" sx={{ fontWeight: "bold", letterSpacing: 1 }}>

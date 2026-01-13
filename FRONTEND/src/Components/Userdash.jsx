@@ -1,5 +1,7 @@
 // src/components/Userdash.jsx
 import React, { useState, useEffect, useRef } from "react";
+import { useTheme as useMuiTheme } from "@mui/material/styles";
+import { useTheme } from "../contexts/ThemeContext";
 import {
   Box,
   Typography,
@@ -28,7 +30,7 @@ import QRCode from "react-qr-code";
 import html2canvas from "html2canvas";
 
 /* ---------- Beautiful Coupon Component ---------- */
-const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
+const BeautifulCoupon = React.forwardRef(({ coupon, userName, isDark }, ref) => {
   if (!coupon) return null;
 
   const expiresText = coupon.expiresAt
@@ -44,6 +46,14 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
     userId: coupon.userId,
   });
 
+  // Theme-aware colors
+  const bgGradient = isDark
+    ? "linear-gradient(135deg, #111827 0%, #1f2937 40%, #0f766e 100%)"
+    : "linear-gradient(135deg, #e0f2fe 0%, #cffafe 40%, #99f6e4 100%)";
+  const textColor = isDark ? "white" : "#0c4a3e";
+  const textOpacity = isDark ? 0.9 : 0.85;
+  const textOpacityDark = isDark ? 0.8 : 0.75;
+
   return (
     <Box
       ref={ref}
@@ -57,12 +67,11 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
         sx={{
           position: "relative",
           width: { xs: "100%", sm: 420 },
-          background:
-            "linear-gradient(135deg, #111827 0%, #1f2937 40%, #0f766e 100%)",
-          color: "white",
+          background: bgGradient,
+          color: textColor,
           borderRadius: 4,
           overflow: "hidden",
-          boxShadow: "0 18px 40px rgba(15,23,42,0.6)",
+          boxShadow: isDark ? "0 18px 40px rgba(15,23,42,0.6)" : "0 8px 24px rgba(0,0,0,0.15)",
         }}
       >
 
@@ -98,7 +107,8 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
             width: 32,
             height: 32,
             borderRadius: "50%",
-            backgroundColor: "#f9fafb",
+            backgroundColor: isDark ? "#f9fafb" : "#0f172a",
+            opacity: isDark ? 1 : 0.8,
           }}
         />
         <Box
@@ -110,7 +120,8 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
             width: 32,
             height: 32,
             borderRadius: "50%",
-            backgroundColor: "#f9fafb",
+            backgroundColor: isDark ? "#f9fafb" : "#0f172a",
+            opacity: isDark ? 1 : 0.8,
           }}
         />
 
@@ -119,8 +130,9 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
           sx={{
             position: "absolute",
             inset: 0,
-            backgroundImage:
-              "radial-gradient(circle at 2px 2px, rgba(255,255,255,0.08) 1px, transparent 0)",
+            backgroundImage: isDark
+              ? "radial-gradient(circle at 2px 2px, rgba(255,255,255,0.08) 1px, transparent 0)"
+              : "radial-gradient(circle at 2px 2px, rgba(0,0,0,0.05) 1px, transparent 0)",
             backgroundSize: "14px 14px",
             opacity: 0.7,
             pointerEvents: "none",
@@ -142,7 +154,7 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
         >
           <Typography
             variant="caption"
-            sx={{ fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}
+            sx={{ fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "#000" }}
           >
             Campus Cash Reward
           </Typography>
@@ -154,7 +166,7 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
           <Box sx={{ flex: 1, pr: 1 }}>
             <Typography
               variant="overline"
-              sx={{ opacity: 0.8, letterSpacing: 2 }}
+              sx={{ opacity: textOpacityDark, letterSpacing: 2, color: textColor }}
             >
               COUPON CODE
             </Typography>
@@ -167,33 +179,34 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
                 mt: 0.5,
                 mb: 1,
                 fontFamily: "monospace",
+                color: textColor,
               }}
             >
               {coupon.code}
             </Typography>
 
-            <Typography variant="body2" sx={{ opacity: 0.9, mb: 0.5 }}>
+            <Typography variant="body2" sx={{ opacity: textOpacity, mb: 0.5, color: textColor }}>
               Reward:
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5, color: textColor }}>
               {coupon.rewardName}
             </Typography>
 
-            <Typography variant="body2" sx={{ opacity: 0.85 }}>
+            <Typography variant="body2" sx={{ opacity: textOpacity, color: textColor }}>
               Issued to:{" "}
               <Box component="span" sx={{ fontWeight: 600 }}>
                 {userName || "Student"}
               </Box>
             </Typography>
 
-            <Typography variant="body2" sx={{ opacity: 0.8 }}>
+            <Typography variant="body2" sx={{ opacity: textOpacityDark, color: textColor }}>
               Points used:{" "}
               <Box component="span" sx={{ fontWeight: 600 }}>
                 {coupon.pointsUsed}
               </Box>
             </Typography>
 
-            <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.5 }}>
+            <Typography variant="body2" sx={{ opacity: textOpacityDark, mt: 0.5, color: textColor }}>
               Expires on:{" "}
               <Box component="span" sx={{ fontWeight: 600 }}>
                 {expiresText}
@@ -204,14 +217,14 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
               <>
                 <Typography
                   variant="body2"
-                  sx={{ color: "#fca5a5", mt: 1, fontWeight: 600 }}
+                  sx={{ color: isDark ? "#fca5a5" : "#dc2626", mt: 1, fontWeight: 600 }}
                 >
                   Used At: {usedAtText}
                 </Typography>
 
                 <Typography
                   variant="body2"
-                  sx={{ color: "#fca5a5", fontWeight: 600 }}
+                  sx={{ color: isDark ? "#fca5a5" : "#dc2626", fontWeight: 600 }}
                 >
                   Used By: {coupon.usedBy || "Store"}
                 </Typography>
@@ -224,14 +237,14 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
             sx={{
               width: 120,
               minWidth: 120,
-              bgcolor: "rgba(15,23,42,0.9)",
+              bgcolor: isDark ? "rgba(15,23,42,0.9)" : "rgba(255,255,255,0.95)",
               borderRadius: 3,
               p: 1.2,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "space-between",
-              border: "1px solid rgba(148,163,184,0.6)",
+              border: isDark ? "1px solid rgba(148,163,184,0.6)" : "1px solid rgba(0,0,0,0.2)",
             }}
           >
             <Box sx={{ p: 1, bgcolor: "white", borderRadius: 2, mb: 1 }}>
@@ -243,7 +256,7 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
             </Box>
             <Typography
               variant="caption"
-              sx={{ textAlign: "center", fontSize: "0.65rem", opacity: 0.85 }}
+              sx={{ textAlign: "center", fontSize: "0.65rem", opacity: 0.85, color: isDark ? "white" : "#0c4a3e" }}
             >
               Scan at counter
             </Typography>
@@ -280,6 +293,7 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName }, ref) => {
 
 /* ---------- Main Dashboard Component ---------- */
 const Userdash = () => {
+  const { isDark } = useTheme();
   const [data, setData] = useState(null);
   const [form, setForm] = useState({
     fullName: "",
@@ -914,7 +928,7 @@ Status: ${c.isUsed ? "USED" : "ACTIVE"}
 
       {/* ---------------- COUPON LIST ---------------- */}
       <Box mt={4}>
-        <Typography variant="h6" fontWeight="bold" mb={2}>
+        <Typography variant="h6" fontWeight="bold" mb={2} sx={{ color: isDark ? "#ffffff" : "#212121" }}>
           My Coupons
         </Typography>
 
@@ -932,16 +946,23 @@ Status: ${c.isUsed ? "USED" : "ACTIVE"}
                     sx={{
                       borderRadius: 3,
                       cursor: "pointer",
+                      backgroundColor: isDark ? "#1e1e2e" : "#ffffff",
+                      color: isDark ? "#ffffff" : "#212121",
                       border:
                         used ? "2px solid #fca5a5" :
                         expired ? "2px solid #fcd34d" :
                         "2px solid #86efac",
+                      transition: "transform 0.2s, boxShadow 0.2s",
+                      "&:hover": {
+                        transform: "translateY(-4px)",
+                        boxShadow: isDark ? "0 8px 24px rgba(100, 68, 230, 0.3)" : "0 8px 24px rgba(100, 68, 230, 0.15)",
+                      }
                     }}
                     onClick={() => setSelectedCoupon(c)}
                   >
                     <CardContent>
                       <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Typography variant="subtitle1" fontWeight="bold" noWrap>
+                        <Typography variant="subtitle1" fontWeight="bold" noWrap sx={{ color: isDark ? "#ffffff" : "#212121" }}>
                           {c.rewardName}
                         </Typography>
 
@@ -960,16 +981,16 @@ Status: ${c.isUsed ? "USED" : "ACTIVE"}
                         />
                       </Box>
 
-                      <Typography variant="body2" sx={{ mt: 1 }}>
-                        Code: <strong>{c.code}</strong>
+                      <Typography variant="body2" sx={{ mt: 1, color: isDark ? "#b0b0b0" : "#666666" }}>
+                        Code: <strong style={{ color: isDark ? "#ffffff" : "#212121" }}>{c.code}</strong>
                       </Typography>
 
-                      <Typography variant="body2">
-                        Points: <strong>{c.pointsUsed}</strong>
+                      <Typography variant="body2" sx={{ color: isDark ? "#b0b0b0" : "#666666" }}>
+                        Points: <strong style={{ color: isDark ? "#ffffff" : "#212121" }}>{c.pointsUsed}</strong>
                       </Typography>
 
                       {c.expiresAt && (
-                        <Typography variant="body2" sx={{ mt: 1 }}>
+                        <Typography variant="body2" sx={{ mt: 1, color: isDark ? "#b0b0b0" : "#666666" }}>
                           Expiry: {new Date(c.expiresAt).toLocaleDateString()}
                         </Typography>
                       )}
@@ -990,6 +1011,7 @@ Status: ${c.isUsed ? "USED" : "ACTIVE"}
             ref={couponRef}
             coupon={selectedCoupon}
             userName={data.user.name}
+            isDark={isDark}
           />
 
           <Box

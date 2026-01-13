@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTheme as useMuiTheme } from '@mui/material/styles';
+import { useTheme } from '../contexts/ThemeContext';
 import {
   AppBar, Toolbar, Typography, Button, Box, Container, Card,
   Grid, Paper, Divider, Stack, Chip, Link, Avatar, Rating
@@ -100,6 +102,8 @@ const parallax = {
 export default function Home() {
   const location = useLocation();
   const navigate = useNavigate();
+  const muiTheme = useMuiTheme();
+  const { isDark } = useTheme();
 
   useEffect(() => {
     const id = location.state?.scrollTo;
@@ -117,8 +121,17 @@ export default function Home() {
       }
     }
   }, [location]);
+
+  const bgColor = isDark ? '#1a1a2e' : '#f8f8ff';
+  const textPrimary = isDark ? '#ffffff' : '#0b1a4a';
+  const textSecondary = isDark ? '#b0b0b0' : '#233';
+  const textTertiary = isDark ? '#888888' : '#0b3a66';
+  const cardBg = isDark ? '#1e1e2e' : '#ffffff';
+  const accentColor = '#6444e6';
+  const yellowAccent = '#ffe600';
+
   return (
-    <Box sx={{ bgcolor: '#f8f8ff', minHeight: '100vh', overflowX: 'hidden' }}>
+    <Box sx={{ bgcolor: bgColor, minHeight: '100vh', overflowX: 'hidden' }}>
       {/* Navbar is now rendered globally in App.jsx */}
 
 
@@ -187,20 +200,20 @@ export default function Home() {
           <Grid container spacing={4} alignItems="center">
             <Grid size={{ xs: 12, md: 6 }}>
               <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                <Typography variant="h2" sx={{ fontWeight: 800, mb: 2, fontSize: { xs: '2rem', md: '3rem' }, color: '#0b1a4a' }}>
+                <Typography variant="h2" sx={{ fontWeight: 800, mb: 2, fontSize: { xs: '2rem', md: '3rem' }, color: textPrimary }}>
                   Study. Earn. Redeem. Repeat!
                 </Typography>
 
-                <Typography variant="h6" sx={{ mb: 3, color: '#233' }}>
+                <Typography variant="h6" sx={{ mb: 3, color: textSecondary }}>
                   Campus Cash rewards students with meaningful benefits—turn your campus activity into real value.
                 </Typography>
 
-                <Typography variant="body1" sx={{ color: '#0b3a66', mb: 4 }}>
+                <Typography variant="body1" sx={{ color: textTertiary, mb: 4 }}>
                   Complete tasks, earn points, and redeem them for food, books, and exclusive campus perks.
                 </Typography>
 
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                  <Button variant="contained" sx={{ background: '#ffde59', color: '#1a0f47', px: 4, py: 1.25, fontWeight: 700 }} onClick={() => navigate('/s')}>
+                  <Button variant="contained" sx={{ background: yellowAccent, color: '#1a0f47', px: 4, py: 1.25, fontWeight: 700 }} onClick={() => navigate('/s')}>
                     Join Now
                   </Button>
                   <Button variant="outlined" onClick={() => { const el = document.getElementById('how'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }}>
@@ -215,7 +228,7 @@ export default function Home() {
 
             <Grid size={{ xs: 12, md: 6 }}>
               <motion.div variants={parallax} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                <Box sx={{ borderRadius: 4, overflow: 'hidden', boxShadow: 8, bgcolor: '#fff' }}>
+                <Box sx={{ borderRadius: 4, overflow: 'hidden', boxShadow: 8, bgcolor: cardBg }}>
                   <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1400&auto=format&fit=crop&ixlib=rb-4.0.3&s=3b7d9b2b8c2d3f2b6b9a" alt="students" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', maxHeight: 380 }} />
                 </Box>
               </motion.div>
@@ -247,14 +260,15 @@ export default function Home() {
               py: 4,
               transition: 'box-shadow 0.3s, transform 0.3s',
               '&:hover': { boxShadow: 12, transform: 'translateY(-8px) scale(1.04)' },
-              background: 'linear-gradient(120deg, #fff 80%, #f3f3ff 100%)',
+              background: isDark ? 'linear-gradient(120deg, #1e1e2e 80%, #2d2d3d 100%)' : 'linear-gradient(120deg, #fff 80%, #f3f3ff 100%)',
+              color: textPrimary,
             }}
               >
             {icon}
-            <Typography variant="h6" sx={{ mt: 3, fontWeight: 'bold', color: '#6444e6' }}>
+            <Typography variant="h6" sx={{ mt: 3, fontWeight: 'bold', color: accentColor }}>
               {title}
             </Typography>
-            <Typography variant="body2" sx={{ mt: 1 }}>
+            <Typography variant="body2" sx={{ mt: 1, color: textSecondary }}>
               {text}
             </Typography>
               </Card>
@@ -275,12 +289,12 @@ export default function Home() {
             <Typography
           variant="h4"
           sx={{
-            color: '#6444e6',
+            color: accentColor,
             fontWeight: 'bold',
             textAlign: 'center',
             mb: 6,
             fontSize: { xs: '2rem', md: '2.5rem' },
-            textShadow: '0 2px 12px #ffe600',
+            textShadow: isDark ? '0 2px 12px #6444e655' : '0 2px 12px #ffe600',
           }}
             >
           Popular Rewards
@@ -331,7 +345,8 @@ export default function Home() {
               justifyContent: 'center',
               transition: 'box-shadow 0.25s, transform 0.25s',
               '&:hover': { boxShadow: 14, transform: 'scale(1.04)' },
-              background: 'linear-gradient(120deg, #fff 80%, #f3f3ff 100%)',
+              background: isDark ? 'linear-gradient(120deg, #1e1e2e 80%, #2d2d3d 100%)' : 'linear-gradient(120deg, #fff 80%, #f3f3ff 100%)',
+              color: textPrimary,
             }}
               >
             <Box sx={{ width: '100%', height: 140, overflow: 'hidden' }}>
@@ -339,10 +354,10 @@ export default function Home() {
             </Box>
             <Box sx={{ p: 3, textAlign: 'center' }}>
               {icon}
-              <Typography fontWeight="bold" sx={{ mt: 2, color: '#6444e6' }}>
+              <Typography fontWeight="bold" sx={{ mt: 2, color: accentColor }}>
                 {title}
               </Typography>
-              <Typography variant="body2" sx={{ mt: 1 }}>{desc}</Typography>
+              <Typography variant="body2" sx={{ mt: 1, color: textSecondary }}>{desc}</Typography>
               <Typography variant="caption" sx={{ color: '#97d700', fontWeight: 'bold', display: 'block', mt: 1 }}>
                 {points}
               </Typography>
@@ -364,7 +379,7 @@ export default function Home() {
         >
           <Box
             sx={{
-              background: 'linear-gradient(120deg, #ffe600 70%, #fffde7 100%)',
+              background: isDark ? 'linear-gradient(120deg, #2d2d3d 70%, #3d3d4d 100%)' : 'linear-gradient(120deg, #ffe600 70%, #fffde7 100%)',
               borderRadius: 6,
               py: 6,
               px: 5,
@@ -388,15 +403,15 @@ export default function Home() {
             >
               <DiamondIcon sx={{ fontSize: 60, color: '#6444e6', opacity: 0.15 }} />
             </motion.div>
-            <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#6444e6', mb: 4 }}>
+            <Typography variant="h4" sx={{ fontWeight: 'bold', color: isDark ? '#8866ff' : '#6444e6', mb: 4 }}>
               Why Campus Cash?
             </Typography>
             <Stack spacing={3} alignItems="center">
-              <Chip label="Motivates you with real rewards you care about" sx={{ fontWeight: 'bold', px: 3, py: 1.5, bgcolor: '#fff', fontSize: '1.25rem', boxShadow: 2 }} />
-              <Chip label="Track points and progress easily—never miss a reward opportunity" sx={{ px: 3, py: 1.5, bgcolor: '#fff', fontSize: '1.25rem', boxShadow: 1 }} />
-              <Chip label="Leaderboard and badges for extra fun and friendly competition" sx={{ px: 3, py: 1.5, bgcolor: '#fff', fontSize: '1.25rem', boxShadow: 1 }} />
-              <Chip label="Easy for both students and faculty" sx={{ px: 3, py: 1.5, bgcolor: '#fff', fontSize: '1.25rem', boxShadow: 1 }} />
-              <Chip label="Always adding new perks and partners" sx={{ px: 3, py: 1.5, bgcolor: '#fff', fontSize: '1.25rem', boxShadow: 1 }} />
+              <Chip label="Motivates you with real rewards you care about" sx={{ fontWeight: 'bold', px: 3, py: 1.5, bgcolor: isDark ? '#1a1a2e' : '#fff', color: textPrimary, fontSize: '1.25rem', boxShadow: 2 }} />
+              <Chip label="Track points and progress easily—never miss a reward opportunity" sx={{ px: 3, py: 1.5, bgcolor: isDark ? '#1a1a2e' : '#fff', color: textPrimary, fontSize: '1.25rem', boxShadow: 1 }} />
+              <Chip label="Leaderboard and badges for extra fun and friendly competition" sx={{ px: 3, py: 1.5, bgcolor: isDark ? '#1a1a2e' : '#fff', color: textPrimary, fontSize: '1.25rem', boxShadow: 1 }} />
+              <Chip label="Easy for both students and faculty" sx={{ px: 3, py: 1.5, bgcolor: isDark ? '#1a1a2e' : '#fff', color: textPrimary, fontSize: '1.25rem', boxShadow: 1 }} />
+              <Chip label="Always adding new perks and partners" sx={{ px: 3, py: 1.5, bgcolor: isDark ? '#1a1a2e' : '#fff', color: textPrimary, fontSize: '1.25rem', boxShadow: 1 }} />
             </Stack>
           </Box>
         </motion.div>
@@ -420,15 +435,16 @@ export default function Home() {
                 p: 4,
                 fontStyle: 'italic',
                 textAlign: 'center',
-                bgcolor: '#f6f6fa',
+                bgcolor: isDark ? '#1e1e2e' : '#f6f6fa',
+                color: textPrimary,
                 fontSize: '1.1rem',
-                boxShadow: '0 8px 32px #6444e622',
+                boxShadow: isDark ? '0 8px 32px #6444e633' : '0 8px 32px #6444e622',
                 transition: 'box-shadow 0.3s',
-                '&:hover': { boxShadow: '0 12px 48px #6444e644' },
+                '&:hover': { boxShadow: isDark ? '0 12px 48px #6444e655' : '0 12px 48px #6444e644' },
               }}
             >
-              “Campus Cash made me excited to finish assignments—I used my first points for coffee and a study buddy snack!”<br />
-              <Typography variant="body2" component="span" sx={{ fontStyle: 'normal', color: '#888', fontWeight: 'bold' }}>
+              "Campus Cash made me excited to finish assignments—I used my first points for coffee and a study buddy snack!"<br />
+              <Typography variant="body2" component="span" sx={{ fontStyle: 'normal', color: isDark ? '#888888' : '#888', fontWeight: 'bold' }}>
                 – Priya S., Second-year student
               </Typography>
             </Paper>
@@ -448,15 +464,16 @@ export default function Home() {
                 p: 4,
                 fontStyle: 'italic',
                 textAlign: 'center',
-                bgcolor: '#f6f6fa',
+                bgcolor: isDark ? '#1e1e2e' : '#f6f6fa',
+                color: textPrimary,
                 fontSize: '1.1rem',
-                boxShadow: '0 8px 32px #6444e622',
+                boxShadow: isDark ? '0 8px 32px #6444e633' : '0 8px 32px #6444e622',
                 transition: 'box-shadow 0.3s',
-                '&:hover': { boxShadow: '0 12px 48px #6444e644' },
+                '&:hover': { boxShadow: isDark ? '0 12px 48px #6444e655' : '0 12px 48px #6444e644' },
               }}
             >
-              “It’s so easy to recognize student effort now. Tasks get done, students are happier, and engagement is up!”<br />
-              <Typography variant="body2" component="span" sx={{ fontStyle: 'normal', color: '#888', fontWeight: 'bold' }}>
+              "It's so easy to recognize student effort now. Tasks get done, students are happier, and engagement is up!"<br />
+              <Typography variant="body2" component="span" sx={{ fontStyle: 'normal', color: isDark ? '#888888' : '#888', fontWeight: 'bold' }}>
                 – Dr. Anil Kumar, Faculty Advisor
               </Typography>
             </Paper>
@@ -465,7 +482,7 @@ export default function Home() {
       </Container>
 
       {/* FOOTER */}
-      <Box sx={{ bgcolor: '#6444e6', color: '#fff', py: 6 }}>
+      <Box sx={{ bgcolor: accentColor, color: '#fff', py: 6 }}>
         <Container maxWidth="lg">
           <Grid container spacing={4} justifyContent="center" alignItems="flex-start">
             <Grid size={{ xs: 12, md: 4 }}>
@@ -484,7 +501,7 @@ export default function Home() {
                 {['How It Works', 'Rewards', 'Why Us', 'Testimonials'].map((text) => (
                   <Link key={text} href="#" color="inherit" underline="hover" sx={{
                     transition: 'color 0.2s',
-                    '&:hover': { color: '#ffe600' }
+                    '&:hover': { color: yellowAccent }
                   }}>
                     {text}
                   </Link>
@@ -501,7 +518,7 @@ export default function Home() {
               </Stack>
             </Grid>
           </Grid>
-          <Divider sx={{ my: 4, bgcolor: '#8765e6' }} />
+          <Divider sx={{ my: 4, bgcolor: 'rgba(255, 255, 255, 0.2)' }} />
           <Typography variant="caption" display="block" align="center">
             © 2025 Campus Cash. All rights reserved.
           </Typography>

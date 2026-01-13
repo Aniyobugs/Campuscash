@@ -226,4 +226,59 @@ router.post("/:id/award", async (req, res) => {
   }
 });
 
+// ADMIN: update a task (PUT /api/tasks/:id)
+router.put("/:id", async (req, res) => {
+  try {
+    const { title, description, dueDate, points, category, assignedYears, quiz } = req.body;
+    
+    if (!title || !dueDate || !points) {
+      return res.status(400).json({ message: "Please fill all required fields" });
+    }
+
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    // Update fields
+    task.title = title;
+    task.description = description;
+    task.dueDate = new Date(dueDate);
+    task.points = points;
+    task.category = category || "General";
+    task.assignedYears = Array.isArray(assignedYears) ? assignedYears : [];
+
+    // Update quiz if category is Quiz
+    if (category && String(category).toLowerCase() === 'quiz') {
+      if (!quiz || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {
+        return res.status(400).json({ message: 'Quiz requires at least one question' });
+      }
+      task.quiz = quiz;
+    } else {
+      task.quiz = undefined;
+    }
+
+    await task.save();
+
+    res.json({
+      message: "Task updated successfully!",
+      ...task.toObject(),
+    });
+  } catch (error) {
+    console.error("Error updating task:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// ADMIN: delete a task (DELETE /api/tasks/:id)
+router.delete("/:id", async (req, res) => {
+  try {
+    const task = await Task.findByIdAndDelete(req.params.id);
+    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    res.json({ message: "Task deleted successfully!", task });
+  } catch (error) {
+    console.error("Error deleting task:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 module.exports = router;
