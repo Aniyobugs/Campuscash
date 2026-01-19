@@ -28,7 +28,7 @@
 //   };
 
 //   return (
-    
+
 //     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f5f7fa' }}>
 //   <Box
 //     sx={{
@@ -76,7 +76,7 @@
 //     />
 
 //     <Button
-  
+
 //       onClick={addhandler}
 //       fullWidth
 //       variant="contained"
@@ -278,10 +278,10 @@ const Signup = () => {
 
             <TextField select fullWidth label="Year / Class / Department" name="yearClassDept" value={input.yearClassDept || ''} onChange={inputHandler} error={!!errors.yearClassDept} helperText={errors.yearClassDept}>
               <MenuItem value="">Select Year / Class / Dept</MenuItem>
-              <MenuItem value="Year 1">First Year</MenuItem>
-              <MenuItem value="Year 2">Second Year</MenuItem>
-              <MenuItem value="Year 3">Third Year</MenuItem>
-              <MenuItem value="Year 4">Final Year</MenuItem>
+              <MenuItem value="Year 1">Year 1</MenuItem>
+              <MenuItem value="Year 2">Year 2</MenuItem>
+              <MenuItem value="Year 3">Year 3</MenuItem>
+              <MenuItem value="Year 4">Year 4</MenuItem>
               <MenuItem value="Other">Other</MenuItem>
             </TextField>
 

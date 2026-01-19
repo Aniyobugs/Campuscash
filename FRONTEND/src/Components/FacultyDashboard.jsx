@@ -110,7 +110,6 @@ const FacultyDashboard = () => {
     'Year 2',
     'Year 3',
     'Year 4',
-    'Year 5',
     ...(users || []).map((u) => u.yearClassDept).filter(Boolean),
   ]));
 
@@ -363,7 +362,7 @@ const FacultyDashboard = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 5 }, bgcolor: isDark ? "#0f172a" : "#f3fff3", minHeight: "100vh", maxWidth: 1200, mx: "auto", color: isDark ? "#ffffff" : "#212121" }}>
+    <Box sx={{ p: { xs: 2, md: 5 }, bgcolor: isDark ? "#0f172a" : "#f9fafb", minHeight: "100vh", maxWidth: 1200, mx: "auto", color: isDark ? "#ffffff" : "#212121" }}>
       <Typography variant="h3" fontWeight="bold" mb={2} sx={{ color: isDark ? "#86efac" : "#1b5e20", textAlign: "center" }}>
         Faculty Dashboard
       </Typography>
@@ -378,7 +377,7 @@ const FacultyDashboard = () => {
                 Total Students
               </Typography>
               <Fade in timeout={600}>
-                <Typography variant="h2" sx={{ color: "#2e7d32" }}>
+                <Typography variant="h2" sx={{ color: isDark ? "#86efac" : "#2e7d32" }}>
                   {totalUsers}
                 </Typography>
               </Fade>
@@ -393,7 +392,7 @@ const FacultyDashboard = () => {
                 Points Given
               </Typography>
               <Fade in timeout={600}>
-                <Typography variant="h2" sx={{ color: "#388e3c" }}>
+                <Typography variant="h2" sx={{ color: isDark ? "#86efac" : "#388e3c" }}>
                   {totalPoints}
                 </Typography>
               </Fade>
@@ -446,7 +445,7 @@ const FacultyDashboard = () => {
           <Typography
             variant="h6"
             gutterBottom
-            sx={{ mb: 3, fontWeight: "bold", letterSpacing: 1, color: "#1b5e20" }}
+            sx={{ mb: 3, fontWeight: "bold", letterSpacing: 1, color: isDark ? "#86efac" : "#1b5e20" }}
           >
             Award Points
           </Typography>
@@ -491,7 +490,7 @@ const FacultyDashboard = () => {
                   </Paper>
                 )}
               />
-            </Grid>  
+            </Grid>
 
             <Grid size={{ xs: 12, md: 2 }}>
               <TextField
@@ -803,8 +802,8 @@ const FacultyDashboard = () => {
               ) : (
                 <List>
                   {candidates.length === 0 ? (
-                        <Typography color="text.secondary">No students match this task. Try using values like "Year 3", "3rd Year", or set "All" to target all students.</Typography>
-                      ) : (
+                    <Typography color="text.secondary">No students match this task. Try using values like "Year 3", "3rd Year", or set "All" to target all students.</Typography>
+                  ) : (
                     candidates.map((c) => (
                       <ListItem key={c._id} divider>
                         <ListItemAvatar>

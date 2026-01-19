@@ -34,6 +34,12 @@ router.post('/tasks/:id/submit', upload.single('file'), async (req, res) => {
       return res.status(400).json({ message: 'Invalid submission type' });
     }
 
+    // Check if duplicate submission
+    const existingSub = await Submission.findOne({ task: taskId, user: userId });
+    if (existingSub) {
+      return res.status(400).json({ message: 'You have already submitted this task.' });
+    }
+
     const submissionData = { task: taskId, user: userId, type };
 
     if (type === 'text') submissionData.text = text || '';
@@ -127,6 +133,17 @@ router.get('/submissions', async (req, res) => {
 router.get('/tasks/:id/submissions', async (req, res) => {
   try {
     const subs = await Submission.find({ task: req.params.id }).populate('user').sort({ createdAt: -1 });
+    res.json(subs);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// GET /api/submissions/user/:userId - get submissions by user
+router.get('/submissions/user/:userId', async (req, res) => {
+  try {
+    const subs = await Submission.find({ user: req.params.userId });
     res.json(subs);
   } catch (err) {
     console.error(err);

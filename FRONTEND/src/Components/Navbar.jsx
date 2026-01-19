@@ -22,6 +22,7 @@ import Brightness7Icon from "@mui/icons-material/Brightness7";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -38,6 +39,15 @@ export default function Navbar() {
   ];
   const location = useLocation();
   const navigate = useNavigate();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const scrollToId = (id) => {
     const el = document.getElementById(id);
@@ -171,13 +181,28 @@ export default function Navbar() {
     </Box>
   );
 
+  // Dynamic check for Home page transparency
+  const isHome = location.pathname === "/";
+  const isTransparent = isHome && !scrolled;
+
   return (
     <>
-      <AppBar position="sticky" elevation={0} sx={{ 
-        background: isDark ? "#1a1a1a" : "#ffffff",
-        color: isDark ? "#ffffff" : "#212121",
-        borderBottom: `1px solid ${isDark ? "#333333" : "#e0e0e0"}`,
-      }}>
+      <AppBar
+        position={isHome ? "fixed" : "sticky"}
+        elevation={isTransparent ? 0 : 4}
+        sx={{
+          background: isTransparent
+            ? 'transparent'
+            : (isDark ? "rgba(26, 26, 26, 0.95)" : "rgba(255, 255, 255, 0.95)"),
+          color: isDark ? "#ffffff" : "#212121",
+          borderBottom: isTransparent ? 'none' : `1px solid ${isDark ? "#333333" : "#e0e0e0"}`,
+          transition: 'all 0.3s ease-in-out',
+          backdropFilter: isTransparent ? 'none' : 'blur(10px)',
+          width: '100%',
+          top: 0,
+          left: 0,
+          zIndex: 1100, // Ensure it stays on top
+        }}>
         <Container maxWidth="lg">
           <Toolbar disableGutters sx={{ width: "100%", px: 0 }}>
             {/* Home Button */}
@@ -207,8 +232,8 @@ export default function Navbar() {
                   <Button
                     key={item.label}
                     color="inherit"
-                    sx={{ 
-                      mx: 1, 
+                    sx={{
+                      mx: 1,
                       textTransform: "none",
                       color: isDark ? '#ffffff' : '#212121',
                       '&:hover': {
@@ -261,14 +286,25 @@ export default function Navbar() {
 
               {/* Theme Toggle Button */}
               <Tooltip title={isDark ? "Light Mode" : "Dark Mode"}>
-                <IconButton color="inherit" onClick={toggleTheme} sx={{ 
+                <IconButton color="inherit" onClick={toggleTheme} sx={{
                   mx: 1,
                   color: isDark ? '#8866ff' : '#6444e6',
                   '&:hover': {
                     backgroundColor: isDark ? 'rgba(136, 102, 255, 0.1)' : 'rgba(100, 68, 230, 0.1)',
                   }
                 }}>
-                  {isDark ? <Brightness7Icon /> : <Brightness4Icon />}
+                  <AnimatePresence mode='wait' initial={false}>
+                    <motion.div
+                      style={{ display: 'inline-flex' }}
+                      key={isDark ? 'dark' : 'light'}
+                      initial={{ y: -20, opacity: 0, rotate: -90 }}
+                      animate={{ y: 0, opacity: 1, rotate: 0 }}
+                      exit={{ y: 20, opacity: 0, rotate: 90 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {isDark ? <Brightness7Icon /> : <Brightness4Icon />}
+                    </motion.div>
+                  </AnimatePresence>
                 </IconButton>
               </Tooltip>
 
@@ -302,15 +338,15 @@ export default function Navbar() {
               ) : (
                 <>
                   {/* Role badge */}
-                  <Button disabled sx={{ 
-                    color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(33, 33, 33, 0.7)', 
-                    textTransform: 'none', 
-                    ml: 1 
+                  <Button disabled sx={{
+                    color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(33, 33, 33, 0.7)',
+                    textTransform: 'none',
+                    ml: 1
                   }}>
                     {role && role.toUpperCase()}
                   </Button>
 
-                  <Button color="inherit" onClick={logout} sx={{ 
+                  <Button color="inherit" onClick={logout} sx={{
                     ml: 2,
                     color: isDark ? '#ffffff' : '#212121',
                     '&:hover': {
@@ -320,7 +356,7 @@ export default function Navbar() {
                     Logout
                   </Button>
                   {user && (
-                    <Button color="inherit" component={Link} to="/profile" sx={{ 
+                    <Button color="inherit" component={Link} to="/profile" sx={{
                       ml: 1,
                       color: isDark ? '#ffffff' : '#212121',
                     }}>

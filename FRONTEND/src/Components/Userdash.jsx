@@ -28,6 +28,10 @@ import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartment";
 import axios from "axios";
 import QRCode from "react-qr-code";
 import html2canvas from "html2canvas";
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import LocalCafeIcon from "@mui/icons-material/LocalCafe";
+import { motion, AnimatePresence } from "framer-motion";
 
 /* ---------- Beautiful Coupon Component ---------- */
 const BeautifulCoupon = React.forwardRef(({ coupon, userName, isDark }, ref) => {
@@ -290,6 +294,23 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName, isDark }, ref) => 
     </Box>
   );
 });
+
+/* ---------- Animation Variants ---------- */
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+};
 
 /* ---------- Main Dashboard Component ---------- */
 const Userdash = () => {
@@ -646,9 +667,8 @@ const Userdash = () => {
 Coupon Code: ${c.code}
 Reward: ${c.rewardName}
 Points Used: ${c.pointsUsed}
-Expires At: ${
-      c.expiresAt ? new Date(c.expiresAt).toLocaleString() : "N/A"
-    }
+Expires At: ${c.expiresAt ? new Date(c.expiresAt).toLocaleString() : "N/A"
+      }
 User ID: ${c.userId}
 Status: ${c.isUsed ? "USED" : "ACTIVE"}
 `;
@@ -701,467 +721,528 @@ Status: ${c.isUsed ? "USED" : "ACTIVE"}
   if (!data) return <Typography>Loading...</Typography>;
 
   return (
-    <Box sx={{ p: 4, bgcolor: isDark ? "#0f172a" : "#f9f9ff", minHeight: "100vh", color: isDark ? "#ffffff" : "#212121" }}>
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <Box sx={{ p: { xs: 2, md: 4 }, bgcolor: isDark ? "#0f172a" : "#f8fafc", minHeight: "100vh", color: isDark ? "#ffffff" : "#1e293b" }}>
 
-      {/* Profile Header */}
-      <Box display="flex" alignItems="center" gap={2} mb={3}>
-        <Avatar src={data.user.avatar} sx={{ width: 60, height: 60 }} />
-        <Box>
-          <Typography variant="h6" fontWeight="bold">
-            Welcome back, {data.user.name}!
-          </Typography>
-          <Typography color="green">
-            You’ve earned {data.progress.points} points 🎉
-          </Typography>
-          <Typography variant="body2">
-            Leaderboard Rank: #{data.progress.rank}
-          </Typography>
-          <Button variant="outlined" sx={{ mt: 1 }} onClick={() => setOpenDialog(true)}>
-            Edit Profile
-          </Button>
-        </Box>
-      </Box>
-
-
-      {/* ---------------- POINTS CARD ---------------- */}
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6">My Points</Typography>
-              <Typography variant="h4" color="primary" fontWeight="bold">
-                {data.progress.points} pts
+        {/* Profile Header */}
+        <motion.div variants={itemVariants}>
+          <Box display="flex" alignItems="center" gap={3} mb={6} sx={{
+            p: 3,
+            borderRadius: 4,
+            background: isDark ? 'linear-gradient(145deg, #1e293b, #0f172a)' : 'white',
+            boxShadow: isDark ? '0 10px 30px rgba(0,0,0,0.2)' : '0 10px 30px rgba(148,163,184,0.1)',
+          }}>
+            <Avatar
+              src={data.user.avatar}
+              sx={{
+                width: 80, height: 80,
+                border: '3px solid',
+                borderColor: 'primary.main',
+                boxShadow: '0 0 20px rgba(99, 102, 241, 0.3)'
+              }}
+            />
+            <Box flex={1}>
+              <Typography variant="h4" fontWeight="800" sx={{
+                background: isDark ? 'linear-gradient(to right, #fff, #94a3b8)' : 'linear-gradient(to right, #1e293b, #475569)',
+                backgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                mb: 0.5
+              }}>
+                Welcome back, {data.user.name}!
               </Typography>
-
-              <Typography variant="body2" color="text.secondary">
-                {data.progress.nextReward.remaining} pts to next reward ({data.progress.nextReward.name})
-              </Typography>
-
-              <LinearProgress
-                variant="determinate"
-                value={(data.progress.points / data.progress.nextReward.total) * 100}
-                sx={{ mt: 2, height: 10, borderRadius: 5 }}
-              />
-
-              <Button
-                variant="contained"
-                sx={{ mt: 2 }}
-                disabled={data.progress.points < 100}
-                onClick={() => {
-                  setRedeemOpen(true);
-                  setRedeemPoints(rewardPointsMap[selectedReward] || 100);
-                }}
-              >
-                Redeem Points
-              </Button>
-
-              {data.progress.points < 100 && (
-                <Typography variant="caption" color="text.secondary" display="block" mt={1}>
-                  You need at least 100 points to redeem.
+              <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
+                <Typography variant="body1" sx={{
+                  color: isDark ? '#4ade80' : '#059669',
+                  fontWeight: 600,
+                  display: 'flex', alignItems: 'center', gap: 0.5
+                }}>
+                  ✨ {data.progress.points} Points Earned
                 </Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-
-        {/* ------------------- STREAK CARD ------------------- */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6">Streak</Typography>
-              <Box display="flex" alignItems="center" gap={1}>
-                <LocalFireDepartmentIcon color="error" />
-                <Typography>{data.progress.streak.days}-day streak!</Typography>
-              </Box>
-              <Chip label={`Badge: ${data.progress.streak.badge}`} color="success" sx={{ mt: 2 }} />
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-
-      {/* ---------------- TASK LIST ---------------- */}
-      <Box mt={4}>
-        <Typography variant="h6" fontWeight="bold" mb={2}>
-          Assigned Tasks
-        </Typography>
-
-        {tasksLoading && <LinearProgress sx={{ mb: 2 }} />}
-
-        {!tasksLoading && tasks.length === 0 && (
-          <Typography color="text.secondary">🎉 No active tasks right now.</Typography>
-        )}
-
-        <Grid container spacing={2}>
-          {tasks.map((t) => (
-            <Grid size={{ xs: 12, md: 6 }} key={t._id}>
-              <Card sx={{ borderRadius: 3, boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}>
-                <CardContent>
-                  <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography variant="h6" fontWeight="bold">{t.title}</Typography>
-
-                    <Chip label={t.category || "General"} size="small" color="primary" variant="outlined" />
-                  </Box>
-
-                  {t.description && (
-                    <Typography variant="body2" color="text.secondary" sx={{ my: 1 }}>
-                      {t.description}
-                    </Typography>
-                  )}
-
-                  <Typography variant="body2">
-                    <strong>Due:</strong> {new Date(t.dueDate).toLocaleString()}
-                  </Typography>
-
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    <strong>Points:</strong> {t.points}
-                  </Typography>
-
-                  <Chip label={getRemainingTime(t.dueDate)} size="small" color="secondary" />
-
-                  {/* Action Buttons */}
-                  <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                    {t.category === 'Quiz' ? (
-                      <>
-                        <Button variant="contained" size="small" onClick={() => openQuiz(t)}>Take Quiz</Button>
-                        <Button variant="outlined" size="small" onClick={() => window.open(`/task-info/${t._id}`, '_blank')}>View</Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button variant="contained" size="small" onClick={() => {
-                          setSelectedTaskToSubmit(t);
-                          setSubmissionType('link');
-                          setSubmissionOpen(true);
-                        }}>
-                          Submit
-                        </Button>
-                        <Button variant="outlined" size="small" onClick={() => window.open(`/task-info/${t._id}`, '_blank')}>View</Button>
-                      </>
-                    )}
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
-
-      {/* Submission dialog */}
-      <Dialog open={submissionOpen} onClose={() => setSubmissionOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Submit work for task</DialogTitle>
-        <DialogContent>
-          {selectedTaskToSubmit && (
-            <Box>
-              <Typography variant="subtitle1" fontWeight={700}>{selectedTaskToSubmit.title}</Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{selectedTaskToSubmit.description}</Typography>
-
-              <FormControl fullWidth sx={{ mt: 2 }}>
-                <InputLabel>Submission Type</InputLabel>
-                <Select
-                  value={submissionType}
-                  label="Submission Type"
-                  onChange={(e) => setSubmissionType(e.target.value)}
-                >
-                  <MenuItem value="file">File Upload</MenuItem>
-                  <MenuItem value="link">Link / URL</MenuItem>
-                  <MenuItem value="text">Text / Comment</MenuItem>
-                </Select>
-              </FormControl>
-
-              {submissionType === 'file' && (
-                <Box sx={{ mt: 2 }}>
-                  <Button variant="outlined" component="label">Upload File
-                    <input type="file" hidden onChange={(e) => setSubmissionFile(e.target.files[0])} />
-                  </Button>
-                  {submissionFile && <Typography variant="caption" sx={{ ml: 2 }}>{submissionFile.name}</Typography>}
-                </Box>
-              )}
-
-              {submissionType === 'link' && (
-                <TextField fullWidth label="Link (URL)" sx={{ mt: 2 }} value={submissionLink} onChange={(e) => setSubmissionLink(e.target.value)} />
-              )}
-
-              {submissionType === 'text' && (
-                <TextField fullWidth multiline rows={4} label="Comments" sx={{ mt: 2 }} value={submissionText} onChange={(e) => setSubmissionText(e.target.value)} />
-              )}
-
-              <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                <Button onClick={() => setSubmissionOpen(false)}>Cancel</Button>
-                <Button variant="contained" onClick={handleSubmitSubmission} disabled={submissionLoading}>{submissionLoading ? 'Submitting...' : 'Submit'}</Button>
+                <Chip
+                  label={`Rank #${data.progress.rank}`}
+                  size="small"
+                  sx={{
+                    bgcolor: isDark ? 'rgba(251, 191, 36, 0.1)' : 'rgba(251, 191, 36, 0.2)',
+                    color: isDark ? '#fbbf24' : '#d97706',
+                    fontWeight: 'bold',
+                    border: '1px solid',
+                    borderColor: isDark ? 'rgba(251, 191, 36, 0.2)' : 'rgba(251, 191, 36, 0.3)'
+                  }}
+                />
               </Box>
             </Box>
-          )}
-        </DialogContent>
-      </Dialog>
+            <Button variant="text" onClick={() => setOpenDialog(true)}>
+              Edit Profile
+            </Button>
+          </Box>
+        </motion.div>
 
 
-      {/* Quiz dialog */}
-      <Dialog open={quizOpen} onClose={() => setQuizOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Take Quiz</DialogTitle>
-        <DialogContent>
-          {selectedQuizTask && (
-            <Box>
-              <Typography variant="subtitle1" fontWeight={700}>{selectedQuizTask.title}</Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{selectedQuizTask.description}</Typography>
-
-              {selectedQuizTask.quiz?.questions?.map((q, idx) => (
-                <Box key={idx} sx={{ mt: 2 }}>
-                  <Typography variant="subtitle2">{idx + 1}. {q.text}</Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', mt: 1 }}>
-                    {q.options.map((opt, oi) => (
-                      <Button key={oi} size="small" variant={quizAnswers[idx] === oi ? 'contained' : 'outlined'} sx={{ mb: 1, textTransform: 'none' }} onClick={() => setQuizAnswers(prev => { const arr = [...prev]; arr[idx] = oi; return arr; })}>{opt}</Button>
-                    ))}
+        {/* ---------------- POINTS CARD ---------------- */}
+        <Grid container spacing={3}>
+          {/* Points Card - Now Full Width */}
+          <Grid size={{ xs: 12 }}>
+            <motion.div variants={itemVariants} whileHover={{ y: -5 }}>
+              <Card sx={{
+                borderRadius: 5,
+                background: isDark ? 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)' : 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)',
+                color: isDark ? 'white' : '#1e1b4b',
+                boxShadow: isDark ? '0 10px 30px -10px rgba(49, 46, 129, 0.5)' : '0 10px 20px -10px rgba(199, 210, 254, 1)',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.5)'}`,
+                overflow: 'visible'
+              }}>
+                <CardContent sx={{ p: 4, position: 'relative' }}>
+                  <Box sx={{ position: 'absolute', top: -15, right: -15, opacity: 0.1, transform: 'rotate(15deg)' }}>
+                    <AssignmentIcon sx={{ fontSize: 160 }} />
                   </Box>
-                </Box>
-              ))}
 
-              <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                <Button onClick={() => setQuizOpen(false)}>Cancel</Button>
-                <Button variant="contained" onClick={submitQuiz} disabled={quizLoading}>{quizLoading ? 'Submitting...' : 'Submit Quiz'}</Button>
-              </Box>
-            </Box>
-          )}
-        </DialogContent>
-      </Dialog>
+                  <Typography variant="h6" fontWeight="bold" sx={{ opacity: 0.8, mb: 1 }}>
+                    Current Balance
+                  </Typography>
+                  <Typography variant="h2" fontWeight="800" sx={{ mb: 2 }}>
+                    {data.progress.points} <span style={{ fontSize: '1.5rem', opacity: 0.6 }}>pts</span>
+                  </Typography>
 
+                  <Box sx={{ mb: 3 }}>
+                    <Box display="flex" justifyContent="space-between" mb={1}>
+                      <Typography variant="caption" fontWeight="bold">Next: {data.progress.nextReward.name}</Typography>
+                      <Typography variant="caption">{data.progress.nextReward.remaining} pts left</Typography>
+                    </Box>
+                    <LinearProgress
+                      variant="determinate"
+                      value={(data.progress.points / data.progress.nextReward.total) * 100}
+                      sx={{
+                        height: 10,
+                        borderRadius: 5,
+                        bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'white',
+                        '& .MuiLinearProgress-bar': {
+                          bgcolor: isDark ? '#818cf8' : '#4f46e5'
+                        }
+                      }}
+                    />
+                  </Box>
 
-      {/* ---------------- COUPON LIST ---------------- */}
-      <Box mt={4}>
-        <Typography variant="h6" fontWeight="bold" mb={2} sx={{ color: isDark ? "#ffffff" : "#212121" }}>
-          My Coupons
-        </Typography>
-
-        {coupons.length === 0 ? (
-          <Typography color="text.secondary">You have not redeemed any coupons yet.</Typography>
-        ) : (
-          <Grid container spacing={2}>
-            {coupons.map((c) => {
-              const expired = isExpired(c);
-              const used = c.isUsed;
-
-              return (
-                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={c._id}>
-                  <Card
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    size="large"
                     sx={{
+                      bgcolor: isDark ? 'white' : '#1e1b4b',
+                      color: isDark ? '#1e1b4b' : 'white',
+                      fontWeight: 'bold',
+                      py: 1.5,
                       borderRadius: 3,
-                      cursor: "pointer",
-                      backgroundColor: isDark ? "#1e1e2e" : "#ffffff",
-                      color: isDark ? "#ffffff" : "#212121",
-                      border:
-                        used ? "2px solid #fca5a5" :
-                        expired ? "2px solid #fcd34d" :
-                        "2px solid #86efac",
-                      transition: "transform 0.2s, boxShadow 0.2s",
-                      "&:hover": {
-                        transform: "translateY(-4px)",
-                        boxShadow: isDark ? "0 8px 24px rgba(100, 68, 230, 0.3)" : "0 8px 24px rgba(100, 68, 230, 0.15)",
+                      '&:hover': {
+                        bgcolor: isDark ? '#e0e7ff' : '#312e81'
                       }
                     }}
-                    onClick={() => setSelectedCoupon(c)}
+                    disabled={data.progress.points < 100}
+                    onClick={() => {
+                      setRedeemOpen(true);
+                      setRedeemPoints(rewardPointsMap[selectedReward] || 100);
+                    }}
                   >
-                    <CardContent>
-                      <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Typography variant="subtitle1" fontWeight="bold" noWrap sx={{ color: isDark ? "#ffffff" : "#212121" }}>
-                          {c.rewardName}
-                        </Typography>
-
-                        <Chip
-                          label={
-                            used ? "USED" :
-                            expired ? "EXPIRED" :
-                            "ACTIVE"
-                          }
-                          size="small"
-                          color={
-                            used ? "error" :
-                            expired ? "warning" :
-                            "success"
-                          }
-                        />
-                      </Box>
-
-                      <Typography variant="body2" sx={{ mt: 1, color: isDark ? "#b0b0b0" : "#666666" }}>
-                        Code: <strong style={{ color: isDark ? "#ffffff" : "#212121" }}>{c.code}</strong>
-                      </Typography>
-
-                      <Typography variant="body2" sx={{ color: isDark ? "#b0b0b0" : "#666666" }}>
-                        Points: <strong style={{ color: isDark ? "#ffffff" : "#212121" }}>{c.pointsUsed}</strong>
-                      </Typography>
-
-                      {c.expiresAt && (
-                        <Typography variant="body2" sx={{ mt: 1, color: isDark ? "#b0b0b0" : "#666666" }}>
-                          Expiry: {new Date(c.expiresAt).toLocaleDateString()}
-                        </Typography>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Grid>
-              );
-            })}
+                    Redeem Points
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
           </Grid>
-        )}
-      </Box>
+        </Grid>
 
 
-      {/* ---------------- SELECTED COUPON DISPLAY ---------------- */}
-      {selectedCoupon && (
-        <>
-          <BeautifulCoupon
-            ref={couponRef}
-            coupon={selectedCoupon}
-            userName={data.user.name}
-            isDark={isDark}
-          />
+        {/* ---------------- TASK LIST CTA ---------------- */}
+        <motion.div variants={itemVariants}>
+          <Box mt={6} sx={{
+            textAlign: 'center',
+            py: 8, px: 3,
+            borderRadius: 6,
+            position: 'relative',
+            overflow: 'hidden',
+            background: isDark ? 'linear-gradient(145deg, #1e293b, #0f172a)' : 'white',
+            border: `1px solid ${isDark ? 'rgba(99, 102, 241, 0.2)' : 'rgba(99, 102, 241, 0.1)'}`,
+            boxShadow: isDark ? '0 20px 40px -10px rgba(0,0,0,0.3)' : '0 20px 40px -10px rgba(0,0,0,0.05)',
+          }}>
+            <Box sx={{
+              position: 'absolute', top: 0, left: 0, right: 0, height: 4,
+              background: 'linear-gradient(90deg, #6366f1, #a855f7)'
+            }} />
 
-          <Box
-            sx={{
-              textAlign: "center",
-              mt: 2,
-              display: "flex",
-              justifyContent: "center",
-              gap: 2,
-            }}
-          >
-            <Button variant="outlined" onClick={handleDownloadCouponTxt}>
-              Download (.txt)
-            </Button>
+            <AssignmentIcon sx={{
+              fontSize: 70,
+              color: '#6366f1',
+              mb: 3,
+              filter: 'drop-shadow(0 4px 10px rgba(99, 102, 241, 0.3))'
+            }} />
 
-            <Button variant="contained" color="success" onClick={downloadCouponImage}>
-              Download (Image)
-            </Button>
+            <Typography variant="h4" fontWeight="800" gutterBottom sx={{
+              background: isDark ? 'linear-gradient(to right, #fff, #94a3b8)' : 'linear-gradient(to right, #1e293b, #334155)',
+              backgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}>
+              Ready to learn and earn?
+            </Typography>
+
+            <Typography color="text.secondary" sx={{ mb: 4, maxWidth: 600, mx: 'auto', fontSize: '1.1rem' }}>
+              Check out your pending assignments and quizzes to boost your score and leaderboard rank.
+              Compete with your peers and earn rewards!
+            </Typography>
+
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ display: 'inline-block' }}>
+              <Button
+                variant="contained"
+                size="large"
+                href="/tasks"
+                endIcon={<ArrowForwardIosIcon />}
+                sx={{
+                  px: 5, py: 1.5,
+                  borderRadius: 3,
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                  boxShadow: '0 8px 20px -5px rgba(99, 102, 241, 0.5)'
+                }}
+              >
+                View Assignments & Quizzes
+              </Button>
+            </motion.div>
           </Box>
-        </>
-      )}
+        </motion.div>
+
+        {/* Submission dialog */}
+        <Dialog open={submissionOpen} onClose={() => setSubmissionOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Submit work for task</DialogTitle>
+          <DialogContent>
+            {selectedTaskToSubmit && (
+              <Box>
+                <Typography variant="subtitle1" fontWeight={700}>{selectedTaskToSubmit.title}</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{selectedTaskToSubmit.description}</Typography>
+
+                <FormControl fullWidth sx={{ mt: 2 }}>
+                  <InputLabel>Submission Type</InputLabel>
+                  <Select
+                    value={submissionType}
+                    label="Submission Type"
+                    onChange={(e) => setSubmissionType(e.target.value)}
+                  >
+                    <MenuItem value="file">File Upload</MenuItem>
+                    <MenuItem value="link">Link / URL</MenuItem>
+                    <MenuItem value="text">Text / Comment</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {submissionType === 'file' && (
+                  <Box sx={{ mt: 2 }}>
+                    <Button variant="outlined" component="label">Upload File
+                      <input type="file" hidden onChange={(e) => setSubmissionFile(e.target.files[0])} />
+                    </Button>
+                    {submissionFile && <Typography variant="caption" sx={{ ml: 2 }}>{submissionFile.name}</Typography>}
+                  </Box>
+                )}
+
+                {submissionType === 'link' && (
+                  <TextField fullWidth label="Link (URL)" sx={{ mt: 2 }} value={submissionLink} onChange={(e) => setSubmissionLink(e.target.value)} />
+                )}
+
+                {submissionType === 'text' && (
+                  <TextField fullWidth multiline rows={4} label="Comments" sx={{ mt: 2 }} value={submissionText} onChange={(e) => setSubmissionText(e.target.value)} />
+                )}
+
+                <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                  <Button onClick={() => setSubmissionOpen(false)}>Cancel</Button>
+                  <Button variant="contained" onClick={handleSubmitSubmission} disabled={submissionLoading}>{submissionLoading ? 'Submitting...' : 'Submit'}</Button>
+                </Box>
+              </Box>
+            )}
+          </DialogContent>
+        </Dialog>
 
 
-      {/* ---------------- PROFILE DIALOG ---------------- */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Update Profile</DialogTitle>
-        <DialogContent>
-          <Box display="flex" justifyContent="center" mb={2}>
-            <Avatar src={preview || data.user.avatar} sx={{ width: 100, height: 100 }} />
-          </Box>
+        {/* Quiz dialog */}
+        <Dialog open={quizOpen} onClose={() => setQuizOpen(false)} maxWidth="md" fullWidth>
+          <DialogTitle>Take Quiz</DialogTitle>
+          <DialogContent>
+            {selectedQuizTask && (
+              <Box>
+                <Typography variant="subtitle1" fontWeight={700}>{selectedQuizTask.title}</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{selectedQuizTask.description}</Typography>
 
-          <Button variant="outlined" component="label" fullWidth>
-            Upload Profile Picture
-            <input type="file" hidden onChange={handleFileChange} />
-          </Button>
+                {selectedQuizTask.quiz?.questions?.map((q, idx) => (
+                  <Box key={idx} sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2">{idx + 1}. {q.text}</Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', mt: 1 }}>
+                      {q.options.map((opt, oi) => (
+                        <Button key={oi} size="small" variant={quizAnswers[idx] === oi ? 'contained' : 'outlined'} sx={{ mb: 1, textTransform: 'none' }} onClick={() => setQuizAnswers(prev => { const arr = [...prev]; arr[idx] = oi; return arr; })}>{opt}</Button>
+                      ))}
+                    </Box>
+                  </Box>
+                ))}
 
-          <TextField
-            fullWidth
-            label="Full Name"
-            name="fullName"
-            value={form.fullName}
-            onChange={handleChange}
-            sx={{ mt: 3 }}
-          />
-
-          <TextField
-            fullWidth
-            label="Email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            sx={{ mt: 3 }}
-          />
-
-          <TextField
-            fullWidth
-            label="Current Password"
-            name="currentPassword"
-            type="password"
-            value={form.currentPassword}
-            onChange={handleChange}
-            sx={{ mt: 3 }}
-          />
-
-          <TextField
-            fullWidth
-            label="New Password"
-            name="newPassword"
-            type="password"
-            value={form.newPassword}
-            onChange={handleChange}
-            sx={{ mt: 3 }}
-          />
-
-          <Button
-            fullWidth
-            variant="contained"
-            sx={{ mt: 4, py: 1.5 }}
-            onClick={handleSubmit}
-          >
-            Save Changes
-          </Button>
-        </DialogContent>
-      </Dialog>
+                <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                  <Button onClick={() => setQuizOpen(false)}>Cancel</Button>
+                  <Button variant="contained" onClick={submitQuiz} disabled={quizLoading}>{quizLoading ? 'Submitting...' : 'Submit Quiz'}</Button>
+                </Box>
+              </Box>
+            )}
+          </DialogContent>
+        </Dialog>
 
 
-      {/* ---------------- REDEEM DIALOG ---------------- */}
-      <Dialog open={redeemOpen} onClose={() => setRedeemOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Redeem Points</DialogTitle>
-
-        <DialogContent>
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            You currently have <strong>{data.progress.points}</strong> points.
+        {/* ---------------- COUPON LIST ---------------- */}
+        <Box mt={4}>
+          <Typography variant="h6" fontWeight="bold" mb={2} sx={{ color: isDark ? "#ffffff" : "#212121" }}>
+            My Coupons
           </Typography>
 
-          <FormControl fullWidth>
-            <InputLabel>Reward</InputLabel>
-            <Select
-              value={selectedReward}
-              label="Reward"
-              onChange={(e) => {
-                const v = e.target.value;
-                setSelectedReward(v);
-                setRedeemPoints(rewardPointsMap[v]);
+          {coupons.length === 0 ? (
+            <Typography color="text.secondary">You have not redeemed any coupons yet.</Typography>
+          ) : (
+            <Grid container spacing={2}>
+              {coupons.map((c) => {
+                const expired = isExpired(c);
+                const used = c.isUsed;
+
+                return (
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={c._id}>
+                    <Card
+                      sx={{
+                        borderRadius: 3,
+                        cursor: "pointer",
+                        backgroundColor: isDark ? "#1e1e2e" : "#ffffff",
+                        color: isDark ? "#ffffff" : "#212121",
+                        border:
+                          used ? "2px solid #fca5a5" :
+                            expired ? "2px solid #fcd34d" :
+                              "2px solid #86efac",
+                        transition: "transform 0.2s, boxShadow 0.2s",
+                        "&:hover": {
+                          transform: "translateY(-4px)",
+                          boxShadow: isDark ? "0 8px 24px rgba(100, 68, 230, 0.3)" : "0 8px 24px rgba(100, 68, 230, 0.15)",
+                        }
+                      }}
+                      onClick={() => setSelectedCoupon(c)}
+                    >
+                      <CardContent>
+                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                          <Typography variant="subtitle1" fontWeight="bold" noWrap sx={{ color: isDark ? "#ffffff" : "#212121" }}>
+                            {c.rewardName}
+                          </Typography>
+
+                          <Chip
+                            label={
+                              used ? "USED" :
+                                expired ? "EXPIRED" :
+                                  "ACTIVE"
+                            }
+                            size="small"
+                            color={
+                              used ? "error" :
+                                expired ? "warning" :
+                                  "success"
+                            }
+                          />
+                        </Box>
+
+                        <Typography variant="body2" sx={{ mt: 1, color: isDark ? "#b0b0b0" : "#666666" }}>
+                          Code: <strong style={{ color: isDark ? "#ffffff" : "#212121" }}>{c.code}</strong>
+                        </Typography>
+
+                        <Typography variant="body2" sx={{ color: isDark ? "#b0b0b0" : "#666666" }}>
+                          Points: <strong style={{ color: isDark ? "#ffffff" : "#212121" }}>{c.pointsUsed}</strong>
+                        </Typography>
+
+                        {c.expiresAt && (
+                          <Typography variant="body2" sx={{ mt: 1, color: isDark ? "#b0b0b0" : "#666666" }}>
+                            Expiry: {new Date(c.expiresAt).toLocaleDateString()}
+                          </Typography>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          )}
+        </Box>
+
+
+        {/* ---------------- SELECTED COUPON DISPLAY ---------------- */}
+        {selectedCoupon && (
+          <>
+            <BeautifulCoupon
+              ref={couponRef}
+              coupon={selectedCoupon}
+              userName={data.user.name}
+              isDark={isDark}
+            />
+
+            <Box
+              sx={{
+                textAlign: "center",
+                mt: 2,
+                display: "flex",
+                justifyContent: "center",
+                gap: 2,
               }}
             >
-              <MenuItem value="Free Coffee">Free Coffee (100 pts)</MenuItem>
-              <MenuItem value="Canteen Voucher ₹50">Canteen Voucher ₹50 (150 pts)</MenuItem>
-              <MenuItem value="Library Pass">Library Pass (200 pts)</MenuItem>
-            </Select>
-          </FormControl>
+              <Button variant="outlined" onClick={handleDownloadCouponTxt}>
+                Download (.txt)
+              </Button>
 
-          <TextField
-            fullWidth
-            type="number"
-            label="Points to Redeem"
-            value={redeemPoints}
-            onChange={(e) => setRedeemPoints(Number(e.target.value))}
-            sx={{ mt: 2 }}
-            inputProps={{
-              min: 50,
-              max: data.progress.points,
-            }}
-          />
-        </DialogContent>
-
-        <DialogActions>
-          <Button onClick={() => setRedeemOpen(false)}>Cancel</Button>
-
-          <Button
-            variant="contained"
-            onClick={handleRedeem}
-            disabled={redeemLoading || redeemPoints < 50}
-          >
-            {redeemLoading ? "Processing..." : "Redeem"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+              <Button variant="contained" color="success" onClick={downloadCouponImage}>
+                Download (Image)
+              </Button>
+            </Box>
+          </>
+        )}
 
 
-      {/* ---------------- SNACKBARS ---------------- */}
-      <Snackbar open={!!success} autoHideDuration={3000} onClose={() => setSuccess("")}>
-        <Alert severity="success">{success}</Alert>
-      </Snackbar>
+        {/* ---------------- PROFILE DIALOG ---------------- */}
+        <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Update Profile</DialogTitle>
+          <DialogContent>
+            <Box display="flex" justifyContent="center" mb={2}>
+              <Avatar src={preview || data.user.avatar} sx={{ width: 100, height: 100 }} />
+            </Box>
 
-      <Snackbar open={!!error} autoHideDuration={3000} onClose={() => setError("")}>
-        <Alert severity="error">{error}</Alert>
-      </Snackbar>
+            <Button variant="outlined" component="label" fullWidth>
+              Upload Profile Picture
+              <input type="file" hidden onChange={handleFileChange} />
+            </Button>
 
-    </Box>
+            <TextField
+              fullWidth
+              label="Full Name"
+              name="fullName"
+              value={form.fullName}
+              onChange={handleChange}
+              sx={{ mt: 3 }}
+            />
+
+            <TextField
+              fullWidth
+              label="Email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              sx={{ mt: 3 }}
+            />
+
+            <TextField
+              fullWidth
+              label="Current Password"
+              name="currentPassword"
+              type="password"
+              value={form.currentPassword}
+              onChange={handleChange}
+              sx={{ mt: 3 }}
+            />
+
+            <TextField
+              fullWidth
+              label="New Password"
+              name="newPassword"
+              type="password"
+              value={form.newPassword}
+              onChange={handleChange}
+              sx={{ mt: 3 }}
+            />
+
+            <Button
+              fullWidth
+              variant="contained"
+              sx={{ mt: 4, py: 1.5 }}
+              onClick={handleSubmit}
+            >
+              Save Changes
+            </Button>
+          </DialogContent>
+        </Dialog>
+
+
+        {/* ---------------- REDEEM DIALOG ---------------- */}
+        <Dialog open={redeemOpen} onClose={() => setRedeemOpen(false)} maxWidth="xs" fullWidth>
+          <DialogTitle>Redeem Points</DialogTitle>
+
+          <DialogContent sx={{ position: 'relative', overflow: 'hidden' }}>
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              You currently have <strong>{data.progress.points}</strong> points.
+            </Typography>
+
+            {/* Background Coffee Animation */}
+            {selectedReward === 'Free Coffee' && (
+              <Box sx={{ position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', zIndex: 0, opacity: 0.1, pointerEvents: 'none' }}>
+                <Box className="coffee-cup" sx={{ position: 'relative' }}>
+                  <LocalCafeIcon sx={{ fontSize: 180, color: '#6f4e37' }} />
+                  <Box sx={{ position: 'absolute', top: -40, left: 30, display: 'flex', gap: 2 }}>
+                    <Box className="steam-1" sx={{ width: 8, height: 20, bgcolor: '#d6d3d1', borderRadius: 4 }} />
+                    <Box className="steam-2" sx={{ width: 8, height: 30, bgcolor: '#d6d3d1', borderRadius: 4 }} />
+                    <Box className="steam-3" sx={{ width: 8, height: 20, bgcolor: '#d6d3d1', borderRadius: 4 }} />
+                  </Box>
+                </Box>
+              </Box>
+            )}
+
+            <FormControl fullWidth sx={{ position: 'relative', zIndex: 1 }}>
+              <InputLabel>Reward</InputLabel>
+              <Select
+                value={selectedReward}
+                label="Reward"
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setSelectedReward(v);
+                  setRedeemPoints(rewardPointsMap[v]);
+                }}
+              >
+                <MenuItem value="Free Coffee">Free Coffee (100 pts)</MenuItem>
+                <MenuItem value="Canteen Voucher ₹50">Canteen Voucher ₹50 (150 pts)</MenuItem>
+                <MenuItem value="Library Pass">Library Pass (200 pts)</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              fullWidth
+              type="number"
+              label="Points to Redeem"
+              value={redeemPoints}
+              onChange={(e) => setRedeemPoints(Number(e.target.value))}
+              sx={{ mt: 2 }}
+              inputProps={{
+                min: 50,
+                max: data.progress.points,
+              }}
+            />
+          </DialogContent>
+
+          <DialogActions>
+            <Button onClick={() => setRedeemOpen(false)}>Cancel</Button>
+
+            <Button
+              variant="contained"
+              onClick={handleRedeem}
+              disabled={redeemLoading || redeemPoints < 50}
+            >
+              {redeemLoading ? "Processing..." : "Redeem"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+
+        {/* ---------------- SNACKBARS ---------------- */}
+        <Snackbar open={!!success} autoHideDuration={3000} onClose={() => setSuccess("")}>
+          <Alert severity="success">{success}</Alert>
+        </Snackbar>
+
+        <Snackbar open={!!error} autoHideDuration={3000} onClose={() => setError("")}>
+          <Alert severity="error">{error}</Alert>
+        </Snackbar>
+
+      </Box>
+    </motion.div>
   );
 };
 

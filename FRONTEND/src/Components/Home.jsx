@@ -17,19 +17,28 @@ import { motion } from 'framer-motion';
 
 const featureData = [
   {
-    icon: <CheckCircleIcon color="success" sx={{ fontSize: 48 }} />,
+    icon: <CheckCircleIcon sx={{ fontSize: 48 }} />,
     title: '1. Complete Tasks',
     text: 'Assignments, projects, and campus activities earn you points—effort counts everywhere.',
+    color: '#6366f1', // Indigo
+    bgGradient: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+    shadow: '0 10px 30px -10px rgba(99, 102, 241, 0.4)'
   },
   {
-    icon: <DiamondIcon sx={{ color: '#07c8f9', fontSize: 48 }} />,
+    icon: <DiamondIcon sx={{ fontSize: 48 }} />,
     title: '2. Earn Points',
     text: 'Track your progress and see your point balance grow in your personalized dashboard.',
+    color: '#10b981', // Emerald
+    bgGradient: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
+    shadow: '0 10px 30px -10px rgba(16, 185, 129, 0.4)'
   },
   {
-    icon: <RedeemIcon color="warning" sx={{ fontSize: 48 }} />,
+    icon: <RedeemIcon sx={{ fontSize: 48 }} />,
     title: '3. Redeem Rewards',
     text: 'Use your points for discounts at the bookstore, free coffee, library perks, or admin services!',
+    color: '#f59e0b', // Amber
+    bgGradient: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
+    shadow: '0 10px 30px -10px rgba(245, 158, 11, 0.4)'
   },
 ];
 
@@ -87,16 +96,90 @@ const testimonials = [
 
 // Animation variants
 const fadeUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7 } }
+  hidden: { opacity: 0, y: 50 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } }
+};
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+      delayChildren: 0.1
+    }
+  }
 };
 const scaleIn = {
-  hidden: { opacity: 0, scale: 0.85 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.6 } }
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: "easeOut" } }
 };
 const parallax = {
   hidden: { opacity: 0, y: 60 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, type: 'spring' } }
+  visible: { opacity: 1, y: 0, transition: { duration: 0.8, type: 'spring', damping: 20 } }
+};
+
+// --- Animated Text Component ---
+const AnimatedText = ({ text, className, sx }) => {
+  // Split text into words, then characters
+  const words = text.split(" ");
+
+  const container = {
+    hidden: { opacity: 0 },
+    visible: (i = 1) => ({
+      opacity: 1,
+      transition: { staggerChildren: 0.05, delayChildren: 0.04 * i },
+    }),
+  };
+
+  const child = {
+    visible: {
+      opacity: 1,
+      y: 0,
+      rotateX: 0,
+      transition: {
+        type: "spring",
+        damping: 12,
+        stiffness: 100,
+      },
+    },
+    hidden: {
+      opacity: 0,
+      y: 20,
+      rotateX: -90,
+      transition: {
+        type: "spring",
+        damping: 12,
+        stiffness: 100,
+      },
+    },
+  };
+
+  return (
+    <motion.div
+      style={{ overflow: "hidden", display: "flex", flexWrap: "wrap", ...sx }}
+      variants={container}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true }}
+    >
+      {words.map((word, index) => (
+        <motion.div
+          key={index}
+          style={{ marginRight: "0.25em", whiteSpace: "nowrap" }}
+        >
+          {Array.from(word).map((character, index) => (
+            <motion.span
+              style={{ display: "inline-block" }}
+              variants={child}
+              key={index}
+            >
+              {character}
+            </motion.span>
+          ))}
+        </motion.div>
+      ))}
+    </motion.div>
+  );
 };
 
 export default function Home() {
@@ -122,53 +205,57 @@ export default function Home() {
     }
   }, [location]);
 
-  const bgColor = isDark ? '#1a1a2e' : '#f8f8ff';
-  const textPrimary = isDark ? '#ffffff' : '#0b1a4a';
-  const textSecondary = isDark ? '#b0b0b0' : '#233';
-  const textTertiary = isDark ? '#888888' : '#0b3a66';
-  const cardBg = isDark ? '#1e1e2e' : '#ffffff';
-  const accentColor = '#6444e6';
-  const yellowAccent = '#ffe600';
+  const bgColor = isDark ? '#0f172a' : '#f8fafc'; // Darker slate for premium dark mode
+  const textPrimary = isDark ? '#ffffff' : '#0f172a';
+  const textSecondary = isDark ? '#94a3b8' : '#475569';
+  const cardBg = isDark ? '#1e293b' : '#ffffff';
+  const accentColor = '#6366f1';
+  const yellowAccent = '#fbbf24';
 
   return (
     <Box sx={{ bgcolor: bgColor, minHeight: '100vh', overflowX: 'hidden' }}>
       {/* Navbar is now rendered globally in App.jsx */}
 
-
-
       {/* HERO SECTION */}
-      <Box sx={{ py: { xs: 6, md: 10 }, position: 'relative', overflow: 'hidden' }}>
+      <Box className="animate-gradient-bg" sx={{
+        py: { xs: 8, md: 16 },
+        position: 'relative',
+        overflow: 'hidden',
+        background: isDark
+          ? 'linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #1e293b)'
+          : 'linear-gradient(-45deg, #f8fafc, #eef2ff, #fae8ff, #f0f9ff)',
+      }}>
         {/* Animated floating shapes */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 0.2, scale: 1 }}
-          transition={{ duration: 2, yoyo: Infinity }}
+          initial={{ opacity: 0, scale: 0.8, y: 0 }}
+          animate={{ opacity: 0.3, scale: 1, y: [0, -20, 0] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           style={{
             position: 'absolute',
-            top: 40,
-            left: 60,
-            width: 80,
-            height: 80,
-            background: '#ffe600',
+            top: '10%',
+            left: '5%',
+            width: 120,
+            height: 120,
+            background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
             borderRadius: '50%',
-            zIndex: 2,
-            filter: 'blur(2px)'
+            zIndex: 1,
+            filter: 'blur(40px)'
           }}
         />
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 0.15, scale: 1 }}
-          transition={{ duration: 2, yoyo: Infinity }}
+          initial={{ opacity: 0, scale: 0.8, y: 0 }}
+          animate={{ opacity: 0.2, scale: 1, y: [0, 30, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
           style={{
             position: 'absolute',
-            bottom: 30,
-            right: 80,
-            width: 60,
-            height: 60,
-            background: '#fff',
+            bottom: '15%',
+            right: '10%',
+            width: 180,
+            height: 180,
+            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
             borderRadius: '50%',
-            zIndex: 2,
-            filter: 'blur(2px)'
+            zIndex: 1,
+            filter: 'blur(50px)'
           }}
         />
 
@@ -180,7 +267,10 @@ export default function Home() {
             position: 'absolute',
             inset: 0,
             zIndex: 0,
-            backgroundImage: "url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1200&auto=format&fit=crop&ixlib=rb-4.0.3&s=3d9f9a')",
+            zIndex: 0,
+            backgroundImage: isDark
+              ? "url('https://images.unsplash.com/photo-1470790376778-125758a68401?q=80&w=1200&auto=format&fit=crop')"
+              : "url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1200&auto=format&fit=crop&ixlib=rb-4.0.3&s=3d9f9a')",
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             filter: 'blur(8px)',
@@ -200,22 +290,53 @@ export default function Home() {
           <Grid container spacing={4} alignItems="center">
             <Grid size={{ xs: 12, md: 6 }}>
               <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-                <Typography variant="h2" sx={{ fontWeight: 800, mb: 2, fontSize: { xs: '2rem', md: '3rem' }, color: textPrimary }}>
-                  Study. Earn. Redeem. Repeat!
-                </Typography>
 
-                <Typography variant="h6" sx={{ mb: 3, color: textSecondary }}>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="h2" component="div" sx={{
+                    fontWeight: 900,
+                    fontSize: { xs: '2.5rem', md: '4rem' },
+                    color: textPrimary,
+                    lineHeight: 1.1,
+                    letterSpacing: '-0.02em',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}>
+                    <AnimatedText text="Study. Earn." />
+                    <span className="animate-text-gradient" style={{
+                      backgroundImage: 'linear-gradient(to right, #6366f1, #a855f7, #ec4899, #6366f1)',
+                      display: 'inline-block',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text'
+                    }}>
+                      <AnimatedText text="Redeem." />
+                    </span>
+                    <AnimatedText text="Repeat!" />
+                  </Typography>
+                </Box>
+
+                <Typography variant="h6" sx={{ mb: 3, color: textSecondary, fontWeight: 500, maxWidth: 500, lineHeight: 1.6 }}>
                   Campus Cash rewards students with meaningful benefits—turn your campus activity into real value.
                 </Typography>
 
-                <Typography variant="body1" sx={{ color: textTertiary, mb: 4 }}>
+                <Typography variant="body1" sx={{ color: textSecondary, mb: 4, opacity: 0.8 }}>
                   Complete tasks, earn points, and redeem them for food, books, and exclusive campus perks.
                 </Typography>
 
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                  <Button variant="contained" sx={{ background: yellowAccent, color: '#1a0f47', px: 4, py: 1.25, fontWeight: 700 }} onClick={() => navigate('/s')}>
-                    Join Now
-                  </Button>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button variant="contained" size="large" sx={{
+                      background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                      color: 'white',
+                      px: 4, py: 1.5,
+                      borderRadius: 3,
+                      fontSize: '1.1rem',
+                      fontWeight: 700,
+                      boxShadow: '0 10px 25px -10px rgba(99, 102, 241, 0.5)'
+                    }} onClick={() => navigate('/s')}>
+                      Join Now
+                    </Button>
+                  </motion.div>
                   <Button variant="outlined" onClick={() => { const el = document.getElementById('how'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }}>
                     How it works
                   </Button>
@@ -238,138 +359,182 @@ export default function Home() {
       </Box>
 
       { /* FEATURES (How It Works) */}
-        <Container id="how" maxWidth="lg" sx={{ mt: 8 }}>
-          <Grid container spacing={6} justifyContent="center">
-            {featureData.map(({ icon, title, text }, index) => (
-          <Grid size={{ xs: 12, sm: 6, md: 4 }} sx={{ display: 'flex', justifyContent: 'center' }} key={index}>
-            <motion.div
-              variants={parallax}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ delay: index * 0.2 }}
-              style={{ width: '100%' }}
-            >
-              <Card
-            elevation={6}
-            sx={{
-              borderRadius: 4,
-              maxWidth: 340,
-              textAlign: 'center',
-              px: 3,
-              py: 4,
-              transition: 'box-shadow 0.3s, transform 0.3s',
-              '&:hover': { boxShadow: 12, transform: 'translateY(-8px) scale(1.04)' },
-              background: isDark ? 'linear-gradient(120deg, #1e1e2e 80%, #2d2d3d 100%)' : 'linear-gradient(120deg, #fff 80%, #f3f3ff 100%)',
-              color: textPrimary,
-            }}
-              >
-            {icon}
-            <Typography variant="h6" sx={{ mt: 3, fontWeight: 'bold', color: accentColor }}>
-              {title}
-            </Typography>
-            <Typography variant="body2" sx={{ mt: 1, color: textSecondary }}>
-              {text}
-            </Typography>
-              </Card>
-            </motion.div>
-          </Grid>
-            ))}
-          </Grid>
-        </Container>
-
-        {/* POPULAR REWARDS */}
-        <Container id="rewards" maxWidth="lg" sx={{ mt: 10, mb: 10 }}>
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.5 }}
-          >
-            <Typography
-          variant="h4"
-          sx={{
-            color: accentColor,
-            fontWeight: 'bold',
+      <Container id="how" maxWidth="lg" sx={{ mt: 12, mb: 12 }}>
+        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+          <Typography variant="h3" sx={{
             textAlign: 'center',
-            mb: 6,
-            fontSize: { xs: '2rem', md: '2.5rem' },
-            textShadow: isDark ? '0 2px 12px #6444e655' : '0 2px 12px #ffe600',
-          }}
-            >
-          Popular Rewards
-            </Typography>
-          </motion.div>
-          <Grid
-            container
-            spacing={4}
-            justifyContent="center"
-            alignItems="stretch"
-          >
-            {rewardsData.map(({ img, icon, title, desc, points }, idx) => (
-          <Grid
-            item
-            xs={12}
-            sm={6}
-            md={3}
-            key={idx}
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'stretch',
-              width: '100%',
-              maxWidth: { xs: '100%', sm: 340, md: 320 },
-            }}
-          >
-            <motion.div
-              variants={scaleIn}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ delay: idx * 0.15 }}
-              style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
-            >
-              <Card
-            elevation={6}
-            sx={{
-              maxWidth: 320,
-              width: '100%',
-              borderRadius: 3,
-              borderTop: '6px solid #ffe600',
-              textAlign: 'center',
-              px: 0,
-              py: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'stretch',
-              justifyContent: 'center',
-              transition: 'box-shadow 0.25s, transform 0.25s',
-              '&:hover': { boxShadow: 14, transform: 'scale(1.04)' },
-              background: isDark ? 'linear-gradient(120deg, #1e1e2e 80%, #2d2d3d 100%)' : 'linear-gradient(120deg, #fff 80%, #f3f3ff 100%)',
-              color: textPrimary,
-            }}
-              >
-            <Box sx={{ width: '100%', height: 140, overflow: 'hidden' }}>
-              <img src={img} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} loading="lazy" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=placeholder'; }} />
-            </Box>
-            <Box sx={{ p: 3, textAlign: 'center' }}>
-              {icon}
-              <Typography fontWeight="bold" sx={{ mt: 2, color: accentColor }}>
-                {title}
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1, color: textSecondary }}>{desc}</Typography>
-              <Typography variant="caption" sx={{ color: '#97d700', fontWeight: 'bold', display: 'block', mt: 1 }}>
-                {points}
-              </Typography>
-            </Box>
-              </Card>
-            </motion.div>
-          </Grid>
+            fontWeight: 800,
+            mb: 8,
+            background: isDark ? 'linear-gradient(to right, #ffffff, #94a3b8)' : 'linear-gradient(to right, #0f172a, #334155)',
+            backgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>
+            How it works
+          </Typography>
+        </motion.div>
+
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+        >
+          <Grid container spacing={6} justifyContent="center">
+            {featureData.map(({ icon, title, text, color, bgGradient, shadow }, index) => (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} sx={{ display: 'flex', justifyContent: 'center' }} key={index}>
+                <motion.div variants={fadeUp} style={{ width: '100%' }}>
+                  <Card
+                    elevation={0}
+                    sx={{
+                      height: '100%',
+                      borderRadius: 5,
+                      textAlign: 'center',
+                      px: 3,
+                      py: 5,
+                      transition: 'all 0.4s ease-out',
+                      border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
+                      background: isDark ? 'linear-gradient(145deg, #1e293b, #0f172a)' : 'linear-gradient(145deg, #ffffff, #f8fafc)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      '&:hover': {
+                        transform: 'translateY(-12px)',
+                        boxShadow: shadow,
+                        borderColor: color
+                      },
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '4px',
+                        background: bgGradient,
+                        opacity: 0,
+                        transition: 'opacity 0.3s'
+                      },
+                      '&:hover::before': {
+                        opacity: 1
+                      }
+                    }}
+                  >
+                    <Box sx={{
+                      mb: 3,
+                      display: 'inline-flex',
+                      p: 2.5,
+                      borderRadius: '50%',
+                      background: isDark ? `rgba(255,255,255,0.03)` : `rgba(0,0,0,0.03)`,
+                      // For colored glow effect on icon background
+                      boxShadow: isDark ? `inset 0 0 20px ${color}22` : `none`,
+                    }}>
+                      {React.cloneElement(icon, { sx: { fontSize: 44, color: color, filter: `drop-shadow(0 4px 8px ${color}44)` } })}
+                    </Box>
+                    <Typography variant="h5" sx={{ mt: 1, mb: 2, fontWeight: 700, color: textPrimary }}>
+                      {title}
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: textSecondary, lineHeight: 1.6 }}>
+                      {text}
+                    </Typography>
+                  </Card>
+                </motion.div>
+              </Grid>
             ))}
           </Grid>
-        </Container>
+        </motion.div>
+      </Container>
 
-        {/* WHY CAMPUS CASH */}
+      {/* POPULAR REWARDS */}
+      <Container id="rewards" maxWidth="lg" sx={{ mt: 10, mb: 16 }}>
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.5 }}
+        >
+          <Typography
+            variant="h3"
+            sx={{
+              fontWeight: 800,
+              textAlign: 'center',
+              mb: 8,
+              background: isDark ? 'linear-gradient(to right, #fbbf24, #f59e0b)' : 'linear-gradient(to right, #d97706, #b45309)',
+              backgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textShadow: '0 2px 10px rgba(245, 158, 11, 0.2)'
+            }}
+          >
+            Popular Rewards
+          </Typography>
+        </motion.div>
+        <Grid
+          container
+          spacing={4}
+          justifyContent="center"
+          alignItems="stretch"
+        >
+          {rewardsData.map(({ img, icon, title, desc, points }, idx) => (
+            <Grid
+              item
+              xs={12}
+              sm={6}
+              md={3}
+              key={idx}
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'stretch',
+                width: '100%',
+                maxWidth: { xs: '100%', sm: 340, md: 320 },
+              }}
+            >
+              <motion.div
+                variants={scaleIn}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ delay: idx * 0.15 }}
+                style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
+              >
+                <Card
+                  elevation={6}
+                  sx={{
+                    maxWidth: 320,
+                    width: '100%',
+                    borderRadius: 3,
+                    borderTop: '6px solid #ffe600',
+                    textAlign: 'center',
+                    px: 0,
+                    py: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'stretch',
+                    justifyContent: 'center',
+                    transition: 'box-shadow 0.25s, transform 0.25s',
+                    '&:hover': { boxShadow: 14, transform: 'scale(1.04)' },
+                    background: isDark ? 'linear-gradient(120deg, #1e1e2e 80%, #2d2d3d 100%)' : 'linear-gradient(120deg, #fff 80%, #f3f3ff 100%)',
+                    color: textPrimary,
+                  }}
+                >
+                  <Box sx={{ width: '100%', height: 140, overflow: 'hidden' }}>
+                    <img src={img} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} loading="lazy" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=placeholder'; }} />
+                  </Box>
+                  <Box sx={{ p: 3, textAlign: 'center' }}>
+                    {icon}
+                    <Typography fontWeight="bold" sx={{ mt: 2, color: accentColor }}>
+                      {title}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 1, color: textSecondary }}>{desc}</Typography>
+                    <Typography variant="caption" sx={{ color: '#97d700', fontWeight: 'bold', display: 'block', mt: 1 }}>
+                      {points}
+                    </Typography>
+                  </Box>
+                </Card>
+              </motion.div>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+
+      {/* WHY CAMPUS CASH */}
       <Container id="why" maxWidth="md" sx={{ mb: 10 }}>
         <motion.div
           variants={fadeUp}
@@ -481,49 +646,7 @@ export default function Home() {
         </Stack>
       </Container>
 
-      {/* FOOTER */}
-      <Box sx={{ bgcolor: accentColor, color: '#fff', py: 6 }}>
-        <Container maxWidth="lg">
-          <Grid container spacing={4} justifyContent="center" alignItems="flex-start">
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Typography variant="h6" fontWeight="bold">
-                Campus Cash
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                Where every achievement pays off. Motivate. Reward. Succeed.
-              </Typography>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Typography variant="h6" fontWeight="bold">
-                Explore
-              </Typography>
-              <Stack sx={{ mt: 1 }} spacing={1}>
-                {['How It Works', 'Rewards', 'Why Us', 'Testimonials'].map((text) => (
-                  <Link key={text} href="#" color="inherit" underline="hover" sx={{
-                    transition: 'color 0.2s',
-                    '&:hover': { color: yellowAccent }
-                  }}>
-                    {text}
-                  </Link>
-                ))}
-              </Stack>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Typography variant="h6" fontWeight="bold">
-                Contact
-              </Typography>
-              <Stack sx={{ mt: 1 }} spacing={1}>
-                <Typography variant="body2">info@campuscash.edu</Typography>
-                <Typography variant="body2">@campuscash_app</Typography>
-              </Stack>
-            </Grid>
-          </Grid>
-          <Divider sx={{ my: 4, bgcolor: 'rgba(255, 255, 255, 0.2)' }} />
-          <Typography variant="caption" display="block" align="center">
-            © 2025 Campus Cash. All rights reserved.
-          </Typography>
-        </Container>
-      </Box>
+
     </Box>
   );
 }

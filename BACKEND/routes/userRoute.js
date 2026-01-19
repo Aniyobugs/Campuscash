@@ -9,7 +9,7 @@ const Coupon = require("../model/coupon"); // <--- NEW: import coupon model
 
 const SECRET_KEY = "mysecret"; // move to .env in production
 // Default: 150 points ≈ ₹50 → point value = 50/150 (~0.3333333)
-const POINT_VALUE_INR = parseFloat(process.env.POINT_VALUE_INR) || (50 / 150); // INR per point (override via POINT_VALUE_INR)
+const POINT_VALUE_INR = parseFloat(process.env.POINT_VALUE_INR) || (15 / 100); // 100 pts = 15 INR (0.15)
 
 // ==========================
 // Signup API
@@ -131,8 +131,8 @@ router.put("/users/:id", upload.single("profilePic"), async (req, res) => {
       });
 
       const fileId = uploadStream.id.toString();
-  // Save path that frontend can use: baseurl + profilePic -> will become e.g. http://host/api/files/<id>
-  user.profilePic = `/api/files/${fileId}`;
+      // Save path that frontend can use: baseurl + profilePic -> will become e.g. http://host/api/files/<id>
+      user.profilePic = `/api/files/${fileId}`;
     }
 
     await user.save();
@@ -229,9 +229,8 @@ router.post("/award-points", async (req, res) => {
     await user.save();
 
     res.status(200).json({
-      message: `✅ Awarded ${points} points to ${user.fname} (${
-        reason || "No reason"
-      })`,
+      message: `✅ Awarded ${points} points to ${user.fname} (${reason || "No reason"
+        })`,
       user,
     });
   } catch (error) {

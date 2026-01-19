@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Box } from '@mui/material'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
@@ -24,6 +25,11 @@ import FacultyDashboard from './Components/FacultyDashboard'
 import StoreVerify from './Components/StoreVerify'
 import AdminRoleManager from './Components/AdminRoleManager'
 
+import Footer from './Components/Footer'
+import AboutUs from './Components/AboutUs'
+import ContactUs from './Components/ContactUs'
+import StudentTasks from './Components/StudentTasks'
+
 function AppContent() {
   const { isDark } = useTheme()
   const muiTheme = isDark ? darkTheme : lightTheme
@@ -32,20 +38,28 @@ function AppContent() {
     <MuiThemeProvider theme={muiTheme}>
       <CssBaseline />
       <AuthProvider>
-        <Navbar />
-        <Routes>
-          <Route path ='/' element={<Home/>}/>
-          <Route path ='/s' element={<Signup/>}/>
-          <Route path ='/L' element={<Login/>}/>
-          <Route path ='/user' element={<ProtectedRoute allowedRoles={["user"]}><Userdash/></ProtectedRoute>} />
-          <Route path ='/tsk' element={<ProtectedRoute allowedRoles={["admin","faculty"]}><AssignTask/></ProtectedRoute>} />
-          <Route path ='/award' element={<ProtectedRoute allowedRoles={["admin","faculty"]}><Awardpoints/></ProtectedRoute>} />
-          <Route path ='/profile' element={<ProtectedRoute allowedRoles={["user","admin","store","faculty"]}><ProfileUpdate/></ProtectedRoute>} />
-          <Route path ='/admin' element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard/></ProtectedRoute>} />
-          <Route path ='/faculty' element={<ProtectedRoute allowedRoles={["admin","faculty"]}><FacultyDashboard/></ProtectedRoute>} />
-          <Route path ='/store' element={<ProtectedRoute allowedRoles={["store"]}><StoreVerify/></ProtectedRoute>} />
-          <Route path="/admin/roles" element={<ProtectedRoute allowedRoles={["admin"]}><AdminRoleManager /></ProtectedRoute>} />
-        </Routes>
+        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+          <Navbar />
+          <Box sx={{ flex: 1 }}>
+            <Routes>
+              <Route path='/' element={<Home />} />
+              <Route path='/s' element={<Signup />} />
+              <Route path='/L' element={<Login />} />
+              <Route path='/about' element={<AboutUs />} />
+              <Route path='/contact' element={<ContactUs />} />
+              <Route path='/user' element={<ProtectedRoute allowedRoles={["user"]}><Userdash /></ProtectedRoute>} />
+              <Route path='/tsk' element={<ProtectedRoute allowedRoles={["admin", "faculty"]}><AssignTask /></ProtectedRoute>} />
+              <Route path='/award' element={<ProtectedRoute allowedRoles={["admin", "faculty"]}><Awardpoints /></ProtectedRoute>} />
+              <Route path='/profile' element={<ProtectedRoute allowedRoles={["user", "admin", "store", "faculty"]}><ProfileUpdate /></ProtectedRoute>} />
+              <Route path='/admin' element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
+              <Route path='/faculty' element={<ProtectedRoute allowedRoles={["admin", "faculty"]}><FacultyDashboard /></ProtectedRoute>} />
+              <Route path='/store' element={<ProtectedRoute allowedRoles={["store"]}><StoreVerify /></ProtectedRoute>} />
+              <Route path="/admin/roles" element={<ProtectedRoute allowedRoles={["admin"]}><AdminRoleManager /></ProtectedRoute>} />
+              <Route path="/tasks" element={<ProtectedRoute allowedRoles={["user"]}><StudentTasks /></ProtectedRoute>} />
+            </Routes>
+          </Box>
+          <Footer />
+        </Box>
       </AuthProvider>
     </MuiThemeProvider>
   )
@@ -60,4 +74,3 @@ function App() {
 }
 
 export default App
-    
