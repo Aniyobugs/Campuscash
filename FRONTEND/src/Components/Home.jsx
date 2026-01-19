@@ -285,7 +285,7 @@ export default function Home() {
           }}
         />
 
-        <Box aria-hidden sx={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0.12))', pointerEvents: 'none' }} />
+        <Box aria-hidden sx={{ position: 'absolute', inset: 0, zIndex: 1, background: isDark ? 'transparent' : 'linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0.12))', pointerEvents: 'none' }} />
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 3 }}>
           <Grid container spacing={4} alignItems="center">
             <Grid size={{ xs: 12, md: 6 }}>

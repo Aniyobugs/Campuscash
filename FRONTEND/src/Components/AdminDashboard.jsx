@@ -365,7 +365,7 @@ const AdminDashboard = () => {
   );
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: isDark ? "#0f172a" : "#f8fafc" }}>
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: isDark ? 'linear-gradient(-45deg, #0f172a 0%, #111827 100%)' : "#f8fafc" }}>
       {/* Messages / Alerts */}
       <Snackbar open={!!success} autoHideDuration={3000} onClose={() => setSuccess("")}>
         <Alert severity="success">{success}</Alert>
@@ -382,7 +382,7 @@ const AdminDashboard = () => {
         ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: "block", md: "none" },
-          "& .MuiDrawer-paper": { boxSizing: "border-box", width: 280, bgcolor: isDark ? "#1e293b" : "#fff" },
+          "& .MuiDrawer-paper": { boxSizing: "border-box", width: 280, bgcolor: isDark ? "#0f172a" : "#fff" },
         }}
       >
         {SidebarContent}
@@ -394,8 +394,8 @@ const AdminDashboard = () => {
           width: 280,
           flexShrink: 0,
           display: { xs: "none", md: "block" },
-          bgcolor: isDark ? "#1e293b" : "#fff",
-          borderRight: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"}`,
+          bgcolor: isDark ? "#0f172a" : "#fff",
+          borderRight: `1px solid ${isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.05)"}`,
         }}
       >
         {SidebarContent}
@@ -444,18 +444,18 @@ const AdminDashboard = () => {
                   placeholder="Search students..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  sx={{ width: 300, bgcolor: isDark ? "rgba(255,255,255,0.05)" : "white" }}
+                  sx={{ width: 300, bgcolor: isDark ? "rgba(255,255,255,0.04)" : "white", color: isDark ? '#e6eef8' : undefined }}
                 />
               </Box>
-              <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 2 }}>
+              <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 2, bgcolor: isDark ? '#1e293b' : undefined, color: isDark ? '#e6eef8' : undefined }}>
                 <Table>
-                  <TableHead sx={{ bgcolor: isDark ? "#334155" : "#f1f5f9" }}>
+                  <TableHead sx={{ bgcolor: isDark ? "#0b1220" : "#f1f5f9" }}>
                     <TableRow>
-                      <TableCell sx={{ color: isDark ? "#fff" : "#475569", fontWeight: "bold" }}>Name</TableCell>
-                      <TableCell sx={{ color: isDark ? "#fff" : "#475569", fontWeight: "bold" }}>ID</TableCell>
-                      <TableCell sx={{ color: isDark ? "#fff" : "#475569", fontWeight: "bold" }}>Points</TableCell>
-                      <TableCell sx={{ color: isDark ? "#fff" : "#475569", fontWeight: "bold" }}>Status</TableCell>
-                      <TableCell align="right" sx={{ color: isDark ? "#fff" : "#475569", fontWeight: "bold" }}>Actions</TableCell>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#475569", fontWeight: "bold" }}>Name</TableCell>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#475569", fontWeight: "bold" }}>ID</TableCell>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#475569", fontWeight: "bold" }}>Points</TableCell>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#475569", fontWeight: "bold" }}>Status</TableCell>
+                      <TableCell align="right" sx={{ color: isDark ? "#e6eef8" : "#475569", fontWeight: "bold" }}>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -511,7 +511,7 @@ const AdminDashboard = () => {
                   variant="contained"
                   startIcon={<AddIcon />}
                   onClick={() => setCreateTaskOpen(true)}
-                  sx={{ bgcolor: "#3b82f6", borderRadius: 2 }}
+                  sx={{ background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: '#fff', borderRadius: 2 }}
                 >
                   New Task
                 </Button>
@@ -553,7 +553,7 @@ const AdminDashboard = () => {
           {activeTab === "submissions" && (
             <motion.div key="submissions" variants={contentVariants} initial="hidden" animate="visible" exit="exit">
               <Typography variant="h5" fontWeight="bold" gutterBottom>Review Submissions</Typography>
-              <Paper sx={{ borderRadius: 3, overflow: "hidden" }}>
+              <Paper sx={{ borderRadius: 3, overflow: "hidden", bgcolor: isDark ? '#0f172a' : undefined, color: isDark ? '#e6eef8' : undefined }}>
                 <List>
                   {submissions.map((s, i) => (
                     <React.Fragment key={s._id}>
@@ -677,7 +677,7 @@ const AdminDashboard = () => {
               <Grid container spacing={2}>
                 {messages.map((msg) => (
                   <Grid item xs={12} md={6} key={msg._id}>
-                    <Card sx={{ borderRadius: 3, p: 2 }}>
+                    <Card sx={{ borderRadius: 3, p: 2, bgcolor: isDark ? '#1e293b' : undefined, color: isDark ? '#e6eef8' : undefined }}>
                       <Box display="flex" justifyContent="space-between" mb={1}>
                         <Typography fontWeight="bold">{msg.firstName} {msg.lastName}</Typography>
                         <Typography variant="caption" color="text.secondary">{new Date(msg.createdAt).toLocaleDateString()}</Typography>
@@ -697,7 +697,7 @@ const AdminDashboard = () => {
       </Box>
 
       {/* Create Task Dialog */}
-      <Dialog open={createTaskOpen} onClose={() => setCreateTaskOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={createTaskOpen} onClose={() => setCreateTaskOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { bgcolor: isDark ? '#0f172a' : undefined, color: isDark ? '#e6eef8' : undefined } }}>
         <DialogTitle>Create New Task</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -711,7 +711,7 @@ const AdminDashboard = () => {
       </Dialog>
 
       {/* Edit Task Dialog */}
-      <Dialog open={editTaskOpen} onClose={() => setEditTaskOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={editTaskOpen} onClose={() => setEditTaskOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { bgcolor: isDark ? '#0f172a' : undefined, color: isDark ? '#e6eef8' : undefined } }}>
         <DialogTitle>Edit Task</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -725,7 +725,7 @@ const AdminDashboard = () => {
       </Dialog>
 
       {/* Delete Task Confirmation */}
-      <Dialog open={deleteTaskOpen} onClose={() => setDeleteTaskOpen(false)}>
+      <Dialog open={deleteTaskOpen} onClose={() => setDeleteTaskOpen(false)} PaperProps={{ sx: { bgcolor: isDark ? '#0f172a' : undefined, color: isDark ? '#e6eef8' : undefined } }}>
         <DialogTitle>Delete Task</DialogTitle>
         <DialogContent>
           <Typography>Are you sure you want to delete <strong>{taskToDelete?.title}</strong>?</Typography>
@@ -737,7 +737,7 @@ const AdminDashboard = () => {
       </Dialog>
 
       {/* Edit User Dialog */}
-      <Dialog open={editUserOpen} onClose={() => setEditUserOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog open={editUserOpen} onClose={() => setEditUserOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { bgcolor: isDark ? '#0f172a' : undefined, color: isDark ? '#e6eef8' : undefined } }}>
         <DialogTitle>Edit Student</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
