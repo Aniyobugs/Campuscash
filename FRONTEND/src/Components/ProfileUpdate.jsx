@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useTheme } from "../contexts/ThemeContext";
 import {
   Box,
   Typography,
@@ -12,6 +13,7 @@ import {
 import axios from "axios";
 
 const ProfileUpdate = ({ userId: propUserId }) => {
+  const { isDark } = useTheme();
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -99,7 +101,7 @@ const ProfileUpdate = ({ userId: propUserId }) => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%)",
+        background: isDark ? "linear-gradient(135deg, #1a3a52 0%, #2d5a7b 100%)" : "linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%)",
         p: 3,
       }}
     >
@@ -107,16 +109,17 @@ const ProfileUpdate = ({ userId: propUserId }) => {
         sx={{
           width: 500,
           p: 4,
-          bgcolor: "white",
+          bgcolor: isDark ? "#1e293b" : "white",
           borderRadius: 3,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+          boxShadow: isDark ? "0 8px 32px rgba(0,0,0,0.5)" : "0 8px 32px rgba(0,0,0,0.15)",
+          color: isDark ? "#ffffff" : "#212121",
         }}
       >
         <Typography
           variant="h4"
           gutterBottom
           fontWeight="bold"
-          sx={{ textAlign: "center", color: "#1b3a57" }}
+          sx={{ textAlign: "center", color: isDark ? "#60a5fa" : "#1b3a57" }}
         >
           Update Profile
         </Typography>

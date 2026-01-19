@@ -38,10 +38,12 @@ import {
   MenuItem,
 } from "@mui/material";
 import { Edit, Save, Cancel, PersonOff, Person } from "@mui/icons-material";
+import { useTheme } from "../contexts/ThemeContext";
 import axios from "axios";
 
 // Faculty Dashboard — same functionality as Admin but without role editing/toggling and with different styling
 const FacultyDashboard = () => {
+  const { isDark } = useTheme();
   const baseurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
   const [users, setUsers] = useState([]);
@@ -348,8 +350,8 @@ const FacultyDashboard = () => {
 
   // Faculty style uses green accents
   const statCardStyles = {
-    bgcolor: "#ffffff",
-    color: "#1b5e20",
+    bgcolor: isDark ? "#1e293b" : "#ffffff",
+    color: isDark ? "#86efac" : "#1b5e20",
     boxShadow: 4,
     borderRadius: 3,
     p: 3,
@@ -361,8 +363,8 @@ const FacultyDashboard = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 5 }, bgcolor: "#f3fff3", minHeight: "100vh", maxWidth: 1200, mx: "auto" }}>
-      <Typography variant="h3" fontWeight="bold" mb={2} sx={{ color: "#1b5e20", textAlign: "center" }}>
+    <Box sx={{ p: { xs: 2, md: 5 }, bgcolor: isDark ? "#0f172a" : "#f3fff3", minHeight: "100vh", maxWidth: 1200, mx: "auto", color: isDark ? "#ffffff" : "#212121" }}>
+      <Typography variant="h3" fontWeight="bold" mb={2} sx={{ color: isDark ? "#86efac" : "#1b5e20", textAlign: "center" }}>
         Faculty Dashboard
       </Typography>
       <Divider sx={{ mb: 4 }} />
@@ -439,7 +441,7 @@ const FacultyDashboard = () => {
       </Grid>
 
       {/* Award Points Section (same as admin) */}
-      <Card sx={{ mb: 5, bgcolor: "#ffffff", boxShadow: 8, borderRadius: 4 }}>
+      <Card sx={{ mb: 5, bgcolor: isDark ? "#1e293b" : "#ffffff", boxShadow: 8, borderRadius: 4 }}>
         <CardContent>
           <Typography
             variant="h6"
@@ -537,7 +539,7 @@ const FacultyDashboard = () => {
       </Card>
 
       {/* Students List (faculty can't edit roles) */}
-      <Card sx={{ bgcolor: "white", boxShadow: 6, borderRadius: 3 }}>
+      <Card sx={{ bgcolor: isDark ? "#1e293b" : "white", boxShadow: 6, borderRadius: 3 }}>
         <CardContent>
           <Typography
             variant="h6"
@@ -554,7 +556,7 @@ const FacultyDashboard = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             InputProps={{
-              sx: { bgcolor: "#f5f5f5", borderRadius: 2 },
+              sx: { bgcolor: isDark ? "#1e293b" : "#f5f5f5", borderRadius: 2, color: isDark ? "#ffffff" : "#212121" },
             }}
           />
           <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 2 }}>
@@ -605,7 +607,7 @@ const FacultyDashboard = () => {
                                 fname: e.target.value,
                               })
                             }
-                            sx={{ bgcolor: "#f5f5f5", borderRadius: 1 }}
+                            sx={{ bgcolor: isDark ? "#1e293b" : "#f5f5f5", borderRadius: 1 }}
                           />
                         ) : (
                           <Typography fontWeight="bold">{u.fname}</Typography>
@@ -622,7 +624,7 @@ const FacultyDashboard = () => {
                                 ename: e.target.value,
                               })
                             }
-                            sx={{ bgcolor: "#f5f5f5", borderRadius: 1 }}
+                            sx={{ bgcolor: isDark ? "#1e293b" : "#f5f5f5", borderRadius: 1 }}
                           />
                         ) : (
                           <Typography>{u.ename}</Typography>
@@ -647,7 +649,7 @@ const FacultyDashboard = () => {
                                 yearClassDept: e.target.value,
                               })
                             }
-                            sx={{ bgcolor: "#f5f5f5", borderRadius: 1 }}
+                            sx={{ bgcolor: isDark ? "#1e293b" : "#f5f5f5", borderRadius: 1 }}
                           />
                         ) : (
                           <Typography>{u.yearClassDept}</Typography>
@@ -722,7 +724,7 @@ const FacultyDashboard = () => {
       </Card>
 
       {/* Tasks List / Manage */}
-      <Card sx={{ mt: 4, bgcolor: "white", boxShadow: 6, borderRadius: 3 }}>
+      <Card sx={{ mt: 4, bgcolor: isDark ? "#1e293b" : "white", boxShadow: 6, borderRadius: 3 }}>
         <CardContent>
           <Box display="flex" alignItems="center" justifyContent="space-between">
             <Typography variant="h6" gutterBottom color="secondary" sx={{ fontWeight: "bold", letterSpacing: 1 }}>
@@ -985,7 +987,7 @@ const FacultyDashboard = () => {
           <Button variant="contained" color="error" onClick={handleDeleteTask}>Delete</Button>
         </Box>
       </Dialog>
-      <Card sx={{ mt: 4, bgcolor: "white", boxShadow: 6, borderRadius: 3 }}>
+      <Card sx={{ mt: 4, bgcolor: isDark ? "#1e293b" : "white", boxShadow: 6, borderRadius: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom color="secondary" sx={{ fontWeight: "bold", letterSpacing: 1 }}>
             Submissions

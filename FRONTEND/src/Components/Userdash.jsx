@@ -280,7 +280,7 @@ const BeautifulCoupon = React.forwardRef(({ coupon, userName, isDark }, ref) => 
           />
           <Typography
             variant="caption"
-            sx={{ opacity: 0.7, fontSize: "0.7rem" }}
+            sx={{ opacity: 0.7, fontSize: "0.7rem", color: textColor }}
           >
             Terms: This coupon is valid once and must be shown at the campus
             store before expiry.
@@ -701,7 +701,7 @@ Status: ${c.isUsed ? "USED" : "ACTIVE"}
   if (!data) return <Typography>Loading...</Typography>;
 
   return (
-    <Box sx={{ p: 4, bgcolor: "#f9f9ff", minHeight: "100vh" }}>
+    <Box sx={{ p: 4, bgcolor: isDark ? "#0f172a" : "#f9f9ff", minHeight: "100vh", color: isDark ? "#ffffff" : "#212121" }}>
 
       {/* Profile Header */}
       <Box display="flex" alignItems="center" gap={2} mb={3}>

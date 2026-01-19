@@ -38,9 +38,11 @@ import {
   MenuItem,
 } from "@mui/material";
 import { Edit, Save, Cancel, PersonOff, Person } from "@mui/icons-material";
+import { useTheme } from "../contexts/ThemeContext";
 import axios from "axios";
 
 const AdminDashboard = () => {
+  const { isDark } = useTheme();
   const baseurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
   const [users, setUsers] = useState([]);
@@ -348,8 +350,8 @@ const AdminDashboard = () => {
     users.length > 0 ? [...users].sort((a, b) => b.points - a.points)[0] : null;
 
   const statCardStyles = {
-    bgcolor: "white",
-    color: "primary.main",
+    bgcolor: isDark ? "#1e293b" : "white",
+    color: isDark ? "#60a5fa" : "primary.main",
     boxShadow: 4,
     borderRadius: 3,
     p: 3,
@@ -364,10 +366,11 @@ const AdminDashboard = () => {
     <Box
       sx={{
         p: { xs: 2, md: 5 },
-        bgcolor: "background.default",
+        bgcolor: isDark ? "#0f172a" : "background.default",
         minHeight: "100vh",
         maxWidth: 1200,
         mx: "auto",
+        color: isDark ? "#ffffff" : "#212121",
       }}
     >
       <Typography
@@ -376,9 +379,9 @@ const AdminDashboard = () => {
         mb={2}
         sx={{
           letterSpacing: 2,
-          color: "primary.main",
+          color: isDark ? "#60a5fa" : "primary.main",
           textAlign: "center",
-          textShadow: "0 2px 8px #e3e3e3",
+          textShadow: isDark ? "0 2px 8px rgba(0,0,0,0.5)" : "0 2px 8px #e3e3e3",
         }}
       >
         Admin CampusCash
@@ -455,7 +458,7 @@ const AdminDashboard = () => {
       </Grid>
 
       {/* Award Points Section */}
-      <Card sx={{ mb: 5, bgcolor: "white", boxShadow: 8, borderRadius: 4 }}>
+      <Card sx={{ mb: 5, bgcolor: isDark ? "#1e293b" : "white", boxShadow: 8, borderRadius: 4 }}>
         <CardContent>
           <Typography
             variant="h6"
@@ -551,7 +554,7 @@ const AdminDashboard = () => {
       </Card>
 
       {/* Students List */}
-      <Card sx={{ bgcolor: "white", boxShadow: 6, borderRadius: 3 }}>
+      <Card sx={{ bgcolor: isDark ? "#1e293b" : "white", boxShadow: 6, borderRadius: 3 }}>
         <CardContent>
           <Typography
             variant="h6"
@@ -568,7 +571,7 @@ const AdminDashboard = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             InputProps={{
-              sx: { bgcolor: "#f5f5f5", borderRadius: 2 },
+              sx: { bgcolor: isDark ? "#1e293b" : "#f5f5f5", borderRadius: 2, color: isDark ? "#ffffff" : "#212121" },
             }}
           />
           <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 2 }}>
@@ -619,7 +622,7 @@ const AdminDashboard = () => {
                                 fname: e.target.value,
                               })
                             }
-                            sx={{ bgcolor: "#f5f5f5", borderRadius: 1 }}
+                            sx={{ bgcolor: isDark ? "#1e293b" : "#f5f5f5", borderRadius: 1 }}
                           />
                         ) : (
                           <Typography fontWeight="bold">{u.fname}</Typography>
@@ -636,7 +639,7 @@ const AdminDashboard = () => {
                                 ename: e.target.value,
                               })
                             }
-                            sx={{ bgcolor: "#f5f5f5", borderRadius: 1 }}
+                            sx={{ bgcolor: isDark ? "#1e293b" : "#f5f5f5", borderRadius: 1 }}
                           />
                         ) : (
                           <Typography>{u.ename}</Typography>
@@ -661,7 +664,7 @@ const AdminDashboard = () => {
                                 yearClassDept: e.target.value,
                               })
                             }
-                            sx={{ bgcolor: "#f5f5f5", borderRadius: 1 }}
+                            sx={{ bgcolor: isDark ? "#1e293b" : "#f5f5f5", borderRadius: 1 }}
                           />
                         ) : (
                           <Typography>{u.yearClassDept}</Typography>
@@ -736,7 +739,7 @@ const AdminDashboard = () => {
       </Card>
 
               {/* Submissions */}
-              <Card sx={{ mt: 4, bgcolor: "white", boxShadow: 6, borderRadius: 3 }}>
+              <Card sx={{ mt: 4, bgcolor: isDark ? "#1e293b" : "white", boxShadow: 6, borderRadius: 3 }}>
                 <CardContent>
                   <Typography variant="h6" gutterBottom color="secondary" sx={{ fontWeight: "bold", letterSpacing: 1 }}>
                     Submissions
@@ -787,7 +790,7 @@ const AdminDashboard = () => {
               </Card>
 
               {/* Tasks List / Manage */}
-              <Card sx={{ mt: 4, bgcolor: "white", boxShadow: 6, borderRadius: 3 }}>
+              <Card sx={{ mt: 4, bgcolor: isDark ? "#1e293b" : "white", boxShadow: 6, borderRadius: 3 }}>
                 <CardContent>
                   <Box display="flex" alignItems="center" justifyContent="space-between">
                     <Typography variant="h6" gutterBottom color="secondary" sx={{ fontWeight: "bold", letterSpacing: 1 }}>

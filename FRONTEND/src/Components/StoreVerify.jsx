@@ -45,6 +45,13 @@ dayjs.extend(relativeTime);
 const StorePage = () => {
   const baseurl = import.meta.env.VITE_API_BASE_URL;
 
+  // Store information
+  const [storeName, setStoreName] = useState(() => {
+    return localStorage.getItem("storeName") || "";
+  });
+  const [editingStore, setEditingStore] = useState(false);
+  const [tempStoreName, setTempStoreName] = useState(storeName);
+
   const [code, setCode] = useState("");
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
@@ -166,15 +173,19 @@ const StorePage = () => {
   // Accept coupon
   const acceptCoupon = async () => {
     if (!result?.code) return;
+    if (!storeName.trim()) {
+      setSnack({ open: true, message: "Please enter a store name first", severity: "warning" });
+      return;
+    }
     setAccepting(true);
     try {
       const res = await axios.post(`${baseurl}/api/coupons/use`, {
         code: result.code,
-        storeName: "SNS Store",
+        storeName: storeName,
       });
       setResult(res.data.coupon);
       setError("");
-      setSnack({ open: true, message: "Coupon accepted", severity: "success" });
+      setSnack({ open: true, message: `Coupon accepted at ${storeName}`, severity: "success" });
       fetchLogs();
     } catch (err) {
       console.error(err);
@@ -184,6 +195,18 @@ const StorePage = () => {
       setAccepting(false);
       setConfirmOpen(false);
     }
+  };
+
+  // Handle store name save
+  const handleSaveStore = () => {
+    if (!tempStoreName.trim()) {
+      setSnack({ open: true, message: "Store name cannot be empty", severity: "warning" });
+      return;
+    }
+    setStoreName(tempStoreName);
+    localStorage.setItem("storeName", tempStoreName);
+    setEditingStore(false);
+    setSnack({ open: true, message: `Store name updated to: ${tempStoreName}`, severity: "success" });
   };
 
   // When QR code is scanned
@@ -395,7 +418,11 @@ const StorePage = () => {
   });
 
   // Accept coupon from a log (store action)
-  const acceptLogCoupon = async (couponCode, storeName = "SNS Store") => {
+  const acceptLogCoupon = async (couponCode) => {
+    if (!storeName.trim()) {
+      setSnack({ open: true, message: "Please set store name first", severity: "warning" });
+      return;
+    }
     try {
       await axios.post(`${baseurl}/api/coupons/use`, { code: couponCode, storeName });
       setSnack({ open: true, message: "Coupon accepted", severity: "success" });
@@ -417,9 +444,47 @@ const StorePage = () => {
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
-      <Typography variant="h4" fontWeight="700" mb={3}>
-        Store Coupon Verification
-      </Typography>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+        <Box>
+          <Typography variant="h4" fontWeight="700">
+            Store Coupon Verification
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Store: <Chip label={storeName || "Not Set"} color={storeName ? "success" : "error"} size="small" />
+          </Typography>
+        </Box>
+        <Button
+          variant={editingStore ? "contained" : "outlined"}
+          onClick={() => {
+            if (editingStore) {
+              handleSaveStore();
+            } else {
+              setTempStoreName(storeName);
+              setEditingStore(true);
+            }
+          }}
+        >
+          {editingStore ? "Save Store" : "Change Store"}
+        </Button>
+      </Box>
+
+      {editingStore && (
+        <Paper sx={{ p: 2, mb: 3, bgcolor: "info.light" }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <TextField
+              label="Store Name"
+              value={tempStoreName}
+              onChange={(e) => setTempStoreName(e.target.value)}
+              placeholder="e.g., SNS Store, Main Campus Store"
+              fullWidth
+              size="small"
+            />
+            <Button variant="outlined" onClick={() => setEditingStore(false)}>
+              Cancel
+            </Button>
+          </Stack>
+        </Paper>
+      )}
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 5 }}>
@@ -491,6 +556,12 @@ const StorePage = () => {
                     <Typography variant="body2">Points: {result.pointsUsed}</Typography>
                     <Typography variant="body2">Expires: {new Date(result.expiresAt).toLocaleDateString()}</Typography>
                     <Typography variant="body2">Redeemed By: {result.userId?.fname} ({result.userId?.ename})</Typography>
+                    
+                    <Box sx={{ p: 1, bgcolor: "info.lighter", borderRadius: 1 }}>
+                      <Typography variant="body2" fontWeight={600}>
+                        Store to Accept At: <Chip label={storeName || "Not Set"} size="small" color={storeName ? "success" : "error"} />
+                      </Typography>
+                    </Box>
 
                     {result.isUsed ? (
                       <Alert severity="warning">Already used at {result.usedByStore} on {result.usedAt ? new Date(result.usedAt).toLocaleString() : "-"}</Alert>
@@ -667,10 +738,28 @@ const StorePage = () => {
 
       {/* Confirm accept dialog */}
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>Accept Coupon</DialogTitle>
+        <DialogTitle>Confirm Coupon Redemption</DialogTitle>
         <DialogContent>
-          <Typography>Are you sure you want to accept this coupon for <strong>{result?.rewardName}</strong>?</Typography>
-          <Stack direction="row" spacing={2} mt={2}>
+          <Stack spacing={2} sx={{ mt: 2 }}>
+            <Box>
+              <Typography variant="body2" color="text.secondary">Reward:</Typography>
+              <Typography variant="h6">{result?.rewardName}</Typography>
+            </Box>
+            <Box>
+              <Typography variant="body2" color="text.secondary">Store Name:</Typography>
+              <Typography variant="h6" color={storeName ? "success.main" : "error.main"}>
+                {storeName || "Not Set"}
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="body2" color="text.secondary">User:</Typography>
+              <Typography variant="body2">{result?.userId?.fname} ({result?.userId?.ename})</Typography>
+            </Box>
+            <Alert severity="info">
+              Accepting this coupon will mark it as used at {storeName || "the store"}.
+            </Alert>
+          </Stack>
+          <Stack direction="row" spacing={2} mt={3}>
             <Button onClick={() => setConfirmOpen(false)}>Cancel</Button>
             <Button variant="contained" color="success" onClick={acceptCoupon} disabled={accepting} startIcon={accepting ? <CircularProgress size={14} /> : <Check />}>
               Yes, Accept
