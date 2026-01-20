@@ -85,9 +85,13 @@ router.get("/active", async (req, res) => {
         }
       });
 
-      // match either global tasks or any assignedYears element matching one of the tokens
+      // match either global tasks (empty assignedYears), explicit "All", or any assignedYears element matching one of the tokens
       const pattern = Array.from(tokens).join("|");
-      filter.$or = [{ assignedYears: { $size: 0 } }, { assignedYears: { $regex: `\\b(${pattern})\\b`, $options: "i" } }];
+      filter.$or = [
+        { assignedYears: { $size: 0 } },
+        { assignedYears: { $regex: /^all$/i } },
+        { assignedYears: { $regex: `\\b(${pattern})\\b`, $options: "i" } }
+      ];
     }
 
     const tasks = await Task.find(filter).sort({ dueDate: 1 });

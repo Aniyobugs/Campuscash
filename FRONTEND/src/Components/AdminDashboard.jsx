@@ -210,12 +210,11 @@ const AdminDashboard = () => {
   }, []);
 
   useEffect(() => {
-    const hiddenEmails = ['nimishabalan@gmail.com', 'nigil@gmail.com', 'store@gmail.com'];
     setFilteredUsers(
       users.filter(u => {
         const matchesSearch = (u.fname?.toLowerCase() || "").includes(search.toLowerCase()) || (u.studentId?.toLowerCase() || "").includes(search.toLowerCase());
-        const isHidden = hiddenEmails.includes((u.ename || "").toLowerCase());
-        return matchesSearch && !isHidden;
+        const isStudent = u.role === 'user';
+        return matchesSearch && isStudent;
       })
     );
   }, [search, users]);
@@ -291,6 +290,24 @@ const AdminDashboard = () => {
       setSuccess("Submission rejected");
       setSubmissions(prev => prev.map(sub => sub._id === s._id ? { ...sub, status: 'rejected' } : sub));
     } catch (err) { setError("Failed to reject"); }
+  };
+
+  const handleClearSubmissions = async () => {
+    if (!window.confirm("Are you sure you want to delete ALL submissions? This cannot be undone.")) return;
+    try {
+      await axios.delete(`${baseurl}/api/submissions`);
+      setSuccess("All submissions cleared");
+      setSubmissions([]);
+    } catch (err) { setError("Failed to clear submissions"); }
+  };
+
+  const handleClearMessages = async () => {
+    if (!window.confirm("Are you sure you want to delete ALL messages? This cannot be undone.")) return;
+    try {
+      await axios.delete(`${baseurl}/api/contact/all`);
+      setSuccess("All messages cleared");
+      setMessages([]);
+    } catch (err) { setError("Failed to clear messages"); }
   };
 
   const handleEditTaskClick = (task) => {
@@ -485,10 +502,10 @@ const AdminDashboard = () => {
               {/* Stat Cards */}
               <Grid container spacing={4} sx={{ mb: 4 }}>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <DashboardStatCard title="Total Students" value={users.length} icon={<PeopleIcon />} color="#3b82f6" isDark={isDark} />
+                  <DashboardStatCard title="Total Students" value={users.filter(u => u.role === 'user' && u.status === 'active').length} icon={<PeopleIcon />} color="#3b82f6" isDark={isDark} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <DashboardStatCard title="Points Awarded" value={users.reduce((a, b) => a + (b.points || 0), 0)} icon={<AwardIcon />} color="#f59e0b" isDark={isDark} />
+                  <DashboardStatCard title="Points Awarded" value={users.filter(u => u.role === 'user').reduce((a, b) => a + (b.points || 0), 0)} icon={<AwardIcon />} color="#f59e0b" isDark={isDark} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <DashboardStatCard title="Pending Submissions" value={submissions.filter(s => s.status === 'pending').length} icon={<SubmissionIcon />} color="#ec4899" isDark={isDark} />
@@ -498,10 +515,10 @@ const AdminDashboard = () => {
               {/* Visualizations */}
               <Grid container spacing={4}>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <PointsPieChart users={users} isDark={isDark} />
+                  <PointsPieChart users={users.filter(u => u.status !== 'inactive')} isDark={isDark} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <TopPodium users={users.filter(u => !['nimishabalan@gmail.com', 'nigil@gmail.com', 'store@gmail.com'].includes((u.ename || "").toLowerCase()))} isDark={isDark} />
+                  <TopPodium users={users.filter(u => u.role === 'user' && u.status !== 'inactive')} isDark={isDark} />
                 </Grid>
               </Grid>
             </motion.div>
@@ -518,14 +535,14 @@ const AdminDashboard = () => {
                     <TableRow>
                       <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Name</TableCell>
                       <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>ID</TableCell>
-
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Role</TableCell>
                       <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Status</TableCell>
                       <TableCell align="right" sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {users
-                      .filter(u => ['nimishabalan@gmail.com', 'nigil@gmail.com', 'store@gmail.com'].includes((u.ename || "").toLowerCase()))
+                      .filter(u => ['admin', 'faculty', 'store'].includes(u.role))
                       .map((user) => (
                         <TableRow key={user._id} hover>
                           <TableCell>
@@ -538,17 +555,19 @@ const AdminDashboard = () => {
                             </Box>
                           </TableCell>
                           <TableCell>
-                            {user.ename === 'nimishabalan@gmail.com' ? (
+                            {user.studentId || "—"}
+                          </TableCell>
+                          <TableCell>
+                            {user.role === 'admin' ? (
                               <Chip label="ADMIN" size="small" color="secondary" sx={{ fontWeight: 'bold' }} />
-                            ) : user.ename === 'nigil@gmail.com' ? (
+                            ) : user.role === 'faculty' ? (
                               <Chip label="Faculty" size="small" color="info" sx={{ fontWeight: 'bold' }} />
-                            ) : user.ename === 'store@gmail.com' ? (
+                            ) : user.role === 'store' ? (
                               <Chip label="Store" size="small" color="warning" sx={{ fontWeight: 'bold' }} />
                             ) : (
-                              user.studentId
+                              <Chip label="User" size="small" />
                             )}
                           </TableCell>
-
                           <TableCell>
                             <Chip
                               label={user.status || "active"}
@@ -694,7 +713,14 @@ const AdminDashboard = () => {
 
           {activeTab === "submissions" && (
             <motion.div key="submissions" variants={contentVariants} initial="hidden" animate="visible" exit="exit">
-              <Typography variant="h5" fontWeight="bold" gutterBottom>Review Submissions</Typography>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h5" fontWeight="bold">Review Submissions</Typography>
+                {submissions.length > 0 && (
+                  <Button variant="outlined" color="error" onClick={handleClearSubmissions}>
+                    Clear All
+                  </Button>
+                )}
+              </Box>
               <Paper sx={{ borderRadius: 3, overflow: "hidden", bgcolor: isDark ? '#0f172a' : undefined, color: isDark ? '#e6eef8' : undefined }}>
                 <List>
                   {submissions.map((s, i) => (
@@ -764,7 +790,7 @@ const AdminDashboard = () => {
 
                     <Stack spacing={3}>
                       <Autocomplete
-                        options={users.filter(u => !['nimishabalan@gmail.com', 'nigil@gmail.com', 'store@gmail.com'].includes((u.ename || "").toLowerCase()))}
+                        options={users.filter(u => u.role === 'user')}
                         getOptionLabel={(u) => `${u.fname} ${u.ename} (${u.studentId})`}
                         onChange={(_, val) => setAwardData({ ...awardData, studentId: val?._id || "" })}
                         renderInput={(params) => <TextField {...params} label="Select Student" fullWidth />}
@@ -815,7 +841,14 @@ const AdminDashboard = () => {
 
           {activeTab === "messages" && (
             <motion.div key="messages" variants={contentVariants} initial="hidden" animate="visible" exit="exit">
-              <Typography variant="h5" fontWeight="bold" gutterBottom>Messages</Typography>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h5" fontWeight="bold">Messages</Typography>
+                {messages.length > 0 && (
+                  <Button variant="outlined" color="error" onClick={handleClearMessages}>
+                    Clear All
+                  </Button>
+                )}
+              </Box>
               <Grid container spacing={3}>
                 {messages.map((msg) => (
                   <Grid item xs={12} sm={6} md={4} key={msg._id}>

@@ -23,6 +23,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
+import Notifications from "./Notifications";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -282,6 +283,11 @@ export default function Navbar() {
                     Profile
                   </Button>
                 </>
+              )}
+
+              {/* Notifications */}
+              {role && (
+                <Notifications />
               )}
 
               {/* Theme Toggle Button */}

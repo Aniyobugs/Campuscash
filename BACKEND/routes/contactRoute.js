@@ -52,4 +52,15 @@ router.put("/:id/status", async (req, res) => {
     }
 });
 
+// DELETE /api/contact/all - Clear all messages (Admin only)
+router.delete("/all", async (req, res) => {
+    try {
+        await Contact.deleteMany({});
+        res.status(200).json({ message: "All messages cleared successfully" });
+    } catch (error) {
+        console.error("Clear messages error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 module.exports = router;

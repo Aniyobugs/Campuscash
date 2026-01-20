@@ -58,7 +58,7 @@ const Signup = () => {
     if (!input.fname) nextErrors.fname = 'Full name is required';
     if (!input.ename || !/^\S+@\S+\.\S+$/.test(input.ename)) nextErrors.ename = 'Enter a valid college email';
     if (!input.password || input.password.length < 6) nextErrors.password = 'Password must be at least 6 characters';
-    if (!input.studentId) nextErrors.studentId = 'Student ID is required';
+    if (input.yearClassDept !== 'Faculty' && !input.studentId) nextErrors.studentId = 'Student ID is required';
     if (!input.yearClassDept) nextErrors.yearClassDept = 'Please select your year/class/department';
     if (!input.termsAccepted) nextErrors.termsAccepted = 'You must accept the Terms of Service';
 
@@ -237,17 +237,19 @@ const Signup = () => {
                 />
 
                 <Box sx={{ display: 'flex', gap: 2 }}>
-                  <TextField
-                    fullWidth
-                    label="Student ID"
-                    name="studentId"
-                    value={input.studentId || ''}
-                    onChange={inputHandler}
-                    error={!!errors.studentId}
-                    helperText={errors.studentId}
-                    variant="outlined"
-                    InputProps={{ sx: { borderRadius: 2 } }}
-                  />
+                  {input.yearClassDept !== 'Faculty' && (
+                    <TextField
+                      fullWidth
+                      label="Student ID"
+                      name="studentId"
+                      value={input.studentId || ''}
+                      onChange={inputHandler}
+                      error={!!errors.studentId}
+                      helperText={errors.studentId}
+                      variant="outlined"
+                      InputProps={{ sx: { borderRadius: 2 } }}
+                    />
+                  )}
                   <TextField
                     select
                     fullWidth

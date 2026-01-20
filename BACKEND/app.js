@@ -21,6 +21,8 @@ app.use('/api', submissionRoute);
 app.use('/api', userRoute);
 const contactRoute = require("./routes/contactRoute");
 app.use('/api/contact', contactRoute);
+const notificationRoute = require("./routes/notificationRoute");
+app.use('/api/notifications', notificationRoute);
 app.use("/uploads", express.static("uploads"));
 app.listen(port, () => {
     console.log(`Server is up and Running ${port}`)

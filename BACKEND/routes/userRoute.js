@@ -34,6 +34,10 @@ router.post("/login", async (req, res) => {
     const user = await userModel.findOne({ ename: req.body.ename });
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    if (user.status === 'inactive') {
+      return res.status(403).json({ message: "Account is inactive. Please contact admin." });
+    }
+
     if (user.password === req.body.password) {
       const token = jwt.sign({ id: user._id }, SECRET_KEY, {
         expiresIn: "1h",
@@ -195,6 +199,8 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+const Notification = require("../model/notification");
+
 // ==========================
 // Award points to a user
 // ==========================
@@ -206,6 +212,13 @@ router.post("/award/:id", async (req, res) => {
 
     user.points += parseInt(points);
     await user.save();
+
+    // Create Notification
+    await Notification.create({
+      userId: user._id,
+      message: `You have been awarded ${points} points!`,
+      type: "success"
+    });
 
     res
       .status(200)
@@ -228,6 +241,13 @@ router.post("/award-points", async (req, res) => {
 
     user.points += parseInt(points);
     await user.save();
+
+    // Create Notification
+    await Notification.create({
+      userId: user._id,
+      message: `You received ${points} points${reason ? ` for ${reason}` : ""}!`,
+      type: "success"
+    });
 
     res.status(200).json({
       message: `✅ Awarded ${points} points to ${user.fname} (${reason || "No reason"

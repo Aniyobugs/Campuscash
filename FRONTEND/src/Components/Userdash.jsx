@@ -31,6 +31,8 @@ import html2canvas from "html2canvas";
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import LocalCafeIcon from "@mui/icons-material/LocalCafe";
+import LocalActivityIcon from '@mui/icons-material/LocalActivity';
+import LocalLibraryIcon from '@mui/icons-material/LocalLibrary';
 import { motion, AnimatePresence } from "framer-motion";
 
 /* ---------- Beautiful Coupon Component ---------- */
@@ -1188,7 +1190,7 @@ Status: ${c.isUsed ? "USED" : "ACTIVE"}
 
             {/* Background Coffee Animation */}
             {selectedReward === 'Free Coffee' && (
-              <Box sx={{ position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', zIndex: 0, opacity: 0.1, pointerEvents: 'none' }}>
+              <Box sx={{ position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', zIndex: 0, opacity: 0.25, pointerEvents: 'none' }}>
                 <Box className="coffee-cup" sx={{ position: 'relative' }}>
                   <LocalCafeIcon sx={{ fontSize: 180, color: '#6f4e37' }} />
                   <Box sx={{ position: 'absolute', top: -40, left: 30, display: 'flex', gap: 2 }}>
@@ -1197,6 +1199,22 @@ Status: ${c.isUsed ? "USED" : "ACTIVE"}
                     <Box className="steam-3" sx={{ width: 8, height: 20, bgcolor: '#d6d3d1', borderRadius: 4 }} />
                   </Box>
                 </Box>
+              </Box>
+            )}
+
+            {/* Background Voucher Visual */}
+            {selectedReward === 'Canteen Voucher ₹50' && (
+              <Box sx={{ position: 'absolute', top: '25%', left: '50%', transform: 'translate(-50%, -10%) rotate(-12deg)', zIndex: 0, opacity: 0.1, pointerEvents: 'none' }}>
+                <LocalActivityIcon sx={{ fontSize: 200, color: '#eab308' }} />
+                <Typography variant="overline" sx={{ position: 'absolute', top: '45%', left: '50%', transform: 'translate(-50%, -50%)', fontWeight: 900, color: '#eab308', fontSize: '1.2rem', letterSpacing: 4 }}>COUPON</Typography>
+              </Box>
+            )}
+
+            {/* Background Library Pass Visual */}
+            {selectedReward === 'Library Pass' && (
+              <Box sx={{ position: 'absolute', top: '25%', left: '50%', transform: 'translate(-50%, -10%) rotate(5deg)', zIndex: 0, opacity: 0.1, pointerEvents: 'none' }}>
+                <LocalLibraryIcon sx={{ fontSize: 200, color: '#3b82f6' }} />
+                <Typography variant="overline" sx={{ position: 'absolute', top: '60%', left: '50%', transform: 'translate(-50%, -50%)', fontWeight: 900, color: '#3b82f6', fontSize: '1.2rem', letterSpacing: 4 }}>PASS</Typography>
               </Box>
             )}
 

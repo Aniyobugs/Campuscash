@@ -106,6 +106,14 @@ router.post('/tasks/:id/submit', upload.single('file'), async (req, res) => {
           taskObj.awardedTo = taskObj.awardedTo || [];
           taskObj.awardedTo.push({ user: user._id, awardedAt: new Date() });
           await taskObj.save();
+
+          // Create Notification for Quiz Pass
+          const Notification = require("../model/notification");
+          await Notification.create({
+            userId: user._id,
+            message: `You passed the quiz for task "${taskObj.title}"! You earned ${taskObj.points} points.`,
+            type: "success"
+          });
         }
         awardedUser = user;
       }
@@ -151,6 +159,8 @@ router.get('/submissions/user/:userId', async (req, res) => {
   }
 });
 
+const Notification = require("../model/notification");
+
 // PUT /api/submissions/:id/approve - accept and award points
 router.put('/submissions/:id/approve', async (req, res) => {
   try {
@@ -180,6 +190,13 @@ router.put('/submissions/:id/approve', async (req, res) => {
       await sub.task.save();
     }
 
+    // Create Notification
+    await Notification.create({
+      userId: user._id,
+      message: `Your submission for task "${sub.task.title}" has been accepted! You earned ${taskPoints} points.`,
+      type: "success"
+    });
+
     res.json({ message: `Awarded ${taskPoints} points to ${user.fname}`, submission: sub, user });
   } catch (err) {
     console.error(err);
@@ -190,14 +207,34 @@ router.put('/submissions/:id/approve', async (req, res) => {
 // PUT /api/submissions/:id/reject
 router.put('/submissions/:id/reject', async (req, res) => {
   try {
-    const sub = await Submission.findById(req.params.id);
+    // Populate task to get title for notification
+    const sub = await Submission.findById(req.params.id).populate('task').populate('user');
     if (!sub) return res.status(404).json({ message: 'Submission not found' });
 
     sub.status = 'rejected';
     sub.adminComment = req.body.adminComment || '';
     await sub.save();
 
+    if (sub.user) {
+      await Notification.create({
+        userId: sub.user._id,
+        message: `Your submission for task "${sub.task ? sub.task.title : 'Unknown'}" was rejected.${sub.adminComment ? ` Reason: ${sub.adminComment}` : ''}`,
+        type: "error"
+      });
+    }
+
     res.json({ message: 'Submission rejected', submission: sub });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// DELETE /api/submissions - clear all submissions (Admin only usually, but open here for request)
+router.delete('/submissions', async (req, res) => {
+  try {
+    await Submission.deleteMany({});
+    res.json({ message: 'All submissions erased successfully' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Internal server error' });
