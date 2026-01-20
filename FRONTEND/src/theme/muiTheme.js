@@ -6,62 +6,62 @@ export const lightTheme = createTheme({
     primary: {
       main: '#6444e6',
       light: '#8866ff',
-      dark: '#5230c0',
+      dark: '#4c32b3',
     },
     secondary: {
-      main: '#00bcd4',
-      light: '#4dd0e1',
-      dark: '#0097a7',
+      main: '#03dac6',
+      light: '#66fff9',
+      dark: '#00897b',
     },
     success: {
-      main: '#4caf50',
-      light: '#81c784',
-      dark: '#388e3c',
+      main: '#10b981',
+      light: '#34d399',
+      dark: '#059669',
     },
     warning: {
-      main: '#ff9800',
-      light: '#ffb74d',
-      dark: '#f57c00',
+      main: '#f59e0b',
+      light: '#fbbf24',
+      dark: '#d97706',
     },
     error: {
-      main: '#f44336',
-      light: '#ef5350',
-      dark: '#d32f2f',
+      main: '#ef4444',
+      light: '#f87171',
+      dark: '#dc2626',
     },
     info: {
-      main: '#2196f3',
-      light: '#64b5f6',
-      dark: '#1976d2',
+      main: '#3b82f6',
+      light: '#60a5fa',
+      dark: '#2563eb',
     },
     background: {
-      default: '#ffffff',
-      paper: '#f5f5f5',
+      default: '#f8fafc',
+      paper: '#ffffff',
     },
     text: {
-      primary: '#212121',
-      secondary: '#666666',
-      disabled: '#999999',
+      primary: '#1e293b',
+      secondary: '#64748b',
+      disabled: '#94a3b8',
     },
-    divider: '#e0e0e0',
+    divider: '#e2e8f0',
   },
   typography: {
     fontFamily: 'system-ui, -apple-system, sans-serif',
-    h1: { color: '#212121' },
-    h2: { color: '#212121' },
-    h3: { color: '#212121' },
-    h4: { color: '#212121' },
-    h5: { color: '#212121' },
-    h6: { color: '#212121' },
-    body1: { color: '#212121' },
-    body2: { color: '#666666' },
+    h1: { color: '#0f172a' },
+    h2: { color: '#0f172a' },
+    h3: { color: '#0f172a' },
+    h4: { color: '#0f172a' },
+    h5: { color: '#0f172a' },
+    h6: { color: '#0f172a' },
+    body1: { color: '#1e293b' },
+    body2: { color: '#475569' },
   },
   components: {
     MuiAppBar: {
       styleOverrides: {
         root: {
           backgroundColor: '#ffffff',
-          color: '#212121',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+          color: '#1e293b',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
         },
       },
     },
@@ -69,23 +69,38 @@ export const lightTheme = createTheme({
       styleOverrides: {
         root: {
           backgroundColor: '#ffffff',
-          color: '#212121',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+          color: '#1e293b',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          border: '1px solid #e2e8f0',
         },
       },
     },
     MuiPaper: {
       styleOverrides: {
         root: {
-          backgroundColor: '#f5f5f5',
-          color: '#212121',
+          backgroundColor: '#ffffff',
+          color: '#1e293b',
         },
       },
     },
     MuiButton: {
       styleOverrides: {
         contained: {
+          backgroundColor: '#6444e6',
           color: '#ffffff',
+          boxShadow: '0 4px 6px -1px rgba(100, 68, 230, 0.3)',
+          '&:hover': {
+            backgroundColor: '#7d5ae6',
+            boxShadow: '0 10px 15px -3px rgba(100, 68, 230, 0.4)',
+          },
+        },
+        outlined: {
+          borderColor: '#e2e8f0',
+          color: '#6444e6',
+          '&:hover': {
+            backgroundColor: '#f1f5f9',
+            borderColor: '#6444e6',
+          },
         },
       },
     },
@@ -93,8 +108,56 @@ export const lightTheme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            color: '#212121',
+            color: '#1e293b',
+            '& fieldset': {
+              borderColor: '#e2e8f0',
+            },
+            '&:hover fieldset': {
+              borderColor: '#94a3b8',
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: '#6444e6',
+            },
           },
+          '& .MuiOutlinedInput-input::placeholder': {
+            color: '#94a3b8',
+            opacity: 1,
+          },
+          '& .MuiInputLabel-root': {
+            color: '#64748b',
+          },
+          '& .MuiInputLabel-root.Mui-focused': {
+            color: '#6444e6',
+          },
+        },
+      },
+    },
+    MuiInputBase: {
+      styleOverrides: {
+        root: {
+          color: '#1e293b',
+        },
+      },
+    },
+    MuiDrawer: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: '#ffffff',
+          color: '#1e293b',
+          borderRight: '1px solid #e2e8f0',
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          borderBottom: '1px solid #e2e8f0',
+          color: '#1e293b',
+        },
+        head: {
+          fontWeight: 600,
+          backgroundColor: '#f8fafc',
+          color: '#0f172a',
         },
       },
     },
@@ -105,7 +168,7 @@ export const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#8866ff',
+      main: '#9977ff',
       light: '#bb86fc',
       dark: '#6444e6',
     },
@@ -135,15 +198,15 @@ export const darkTheme = createTheme({
       dark: '#1976d2',
     },
     background: {
-      default: '#121212',
-      paper: '#1e1e1e',
+      default: '#000000',
+      paper: '#121212',
     },
     text: {
       primary: '#ffffff',
-      secondary: '#b0b0b0',
-      disabled: '#666666',
+      secondary: '#c0c0c0',
+      disabled: '#707070',
     },
-    divider: '#333333',
+    divider: '#2a2a2a',
   },
   typography: {
     fontFamily: 'system-ui, -apple-system, sans-serif',
@@ -160,25 +223,25 @@ export const darkTheme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: '#1a1a1a',
+          backgroundColor: '#0d0d0d',
           color: '#ffffff',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.5)',
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          backgroundColor: '#1e1e1e',
+          backgroundColor: '#121212',
           color: '#ffffff',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.5)',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.6)',
         },
       },
     },
     MuiPaper: {
       styleOverrides: {
         root: {
-          backgroundColor: '#262626',
+          backgroundColor: '#1a1a1a',
           color: '#ffffff',
         },
       },
@@ -193,11 +256,11 @@ export const darkTheme = createTheme({
           },
         },
         outlined: {
-          borderColor: '#444444',
+          borderColor: '#333333',
           color: '#ffffff',
           '&:hover': {
-            backgroundColor: '#333333',
-            borderColor: '#666666',
+            backgroundColor: '#1f1f1f',
+            borderColor: '#555555',
           },
         },
       },
@@ -208,14 +271,14 @@ export const darkTheme = createTheme({
           '& .MuiOutlinedInput-root': {
             color: '#ffffff',
             '& fieldset': {
-              borderColor: '#444444',
+              borderColor: '#333333',
             },
             '&:hover fieldset': {
-              borderColor: '#666666',
+              borderColor: '#555555',
             },
           },
           '& .MuiOutlinedInput-input::placeholder': {
-            color: '#999999',
+            color: '#888888',
             opacity: 0.7,
           },
         },
@@ -231,7 +294,7 @@ export const darkTheme = createTheme({
     MuiDrawer: {
       styleOverrides: {
         paper: {
-          backgroundColor: '#1a1a1a',
+          backgroundColor: '#0d0d0d',
           color: '#ffffff',
         },
       },

@@ -464,35 +464,38 @@ const Userdash = () => {
   };
 
   /* ---------------- Fetch user & coupons ---------------- */
-  useEffect(() => {
+  /* ---------------- Fetch user & coupons ---------------- */
+  /* ---------------- Fetch user & coupons ---------------- */
+  const fetchUserData = (isPolling = false) => {
     const storedUser = sessionStorage.getItem("user");
-    // If there is no logged-in user, still allow tasks to be fetched (global tasks)
     if (!storedUser) {
-      console.debug("Userdash: no stored user found, proceeding to load tasks without year filter");
+      console.debug("Userdash: no stored user found");
       setUserLoaded(true);
       return;
     }
-
     try {
       const parsedUser = JSON.parse(storedUser);
       setUserId(parsedUser.id);
 
+      // Add timestamp to prevent caching
       axios
-        .get(`${baseurl}/api/${parsedUser.id}`)
+        .get(`${baseurl}/api/${parsedUser.id}?t=${Date.now()}`)
         .then((res) => {
           const user = res.data;
-          // store user's year for task filtering
           if (user.yearClassDept) setUserYear(user.yearClassDept);
-          setForm({
-            fullName: user.fname || user.fullName || "",
-            email: user.email || "",
-            currentPassword: "",
-            newPassword: "",
-          });
 
-          if (user.profilePic) setPreview(`${baseurl}${user.profilePic}`);
+          // Only set form data on initial load (not polling)
+          if (!isPolling && !form.fullName) {
+            setForm({
+              fullName: user.fname || user.fullName || "",
+              email: user.email || "",
+              currentPassword: "",
+              newPassword: "",
+            });
+            if (user.profilePic) setPreview(`${baseurl}${user.profilePic}`);
+          }
 
-          setData({
+          setData((prev) => ({
             user: {
               name: user.fname || user.fullName,
               avatar: user.profilePic
@@ -504,28 +507,38 @@ const Userdash = () => {
               rank: 4,
               nextReward: {
                 name: "Free Coffee",
-                remaining: 100 - (user.points || 0),
-                total: 1500,
+                remaining: Math.max(0, 100 - (user.points || 0)),
+                total: 100,
               },
               streak: {
                 days: 5,
                 badge: "Taskmaster",
               },
             },
-          });
+          }));
 
-          fetchCoupons(parsedUser.id);
+          // Only fetch coupons once or if needed?
+          if (!isPolling) fetchCoupons(parsedUser.id);
+
           setUserLoaded(true);
         })
         .catch((err) => {
           console.error("User fetch failed:", err);
-          // still allow tasks to fetch even if user fetch failed
           setUserLoaded(true);
         });
     } catch (parseErr) {
       console.error("Could not parse stored user:", parseErr);
       setUserLoaded(true);
     }
+  };
+
+  useEffect(() => {
+    // Initial load
+    fetchUserData(false);
+
+    // Poll for point updates every 10 seconds
+    const interval = setInterval(() => fetchUserData(true), 10000);
+    return () => clearInterval(interval);
   }, [baseurl]);
 
   /* ---------------- Fetch Active Tasks ---------------- */
@@ -800,17 +813,17 @@ Status: ${c.isUsed ? "USED" : "ACTIVE"}
                     <AssignmentIcon sx={{ fontSize: 160 }} />
                   </Box>
 
-                  <Typography variant="h6" fontWeight="bold" sx={{ opacity: 0.8, mb: 1 }}>
+                  <Typography variant="h6" fontWeight="bold" sx={{ opacity: 0.8, mb: 1, color: isDark ? 'white' : '#1e1b4b' }}>
                     Current Balance
                   </Typography>
-                  <Typography variant="h2" fontWeight="800" sx={{ mb: 2 }}>
-                    {data.progress.points} <span style={{ fontSize: '1.5rem', opacity: 0.6 }}>pts</span>
+                  <Typography variant="h2" fontWeight="800" sx={{ mb: 2, color: isDark ? 'white' : '#1e1b4b' }}>
+                    {data.progress.points} <span style={{ fontSize: '1.5rem', opacity: 0.7 }}>pts</span>
                   </Typography>
 
                   <Box sx={{ mb: 3 }}>
                     <Box display="flex" justifyContent="space-between" mb={1}>
-                      <Typography variant="caption" fontWeight="bold">Next: {data.progress.nextReward.name}</Typography>
-                      <Typography variant="caption">{data.progress.nextReward.remaining} pts left</Typography>
+                      <Typography variant="caption" fontWeight="bold" sx={{ color: isDark ? 'white' : '#1e1b4b' }}>Next: {data.progress.nextReward.name}</Typography>
+                      <Typography variant="caption" sx={{ color: isDark ? 'white' : '#1e1b4b' }}>{data.progress.nextReward.remaining} pts left</Typography>
                     </Box>
                     <LinearProgress
                       variant="determinate"

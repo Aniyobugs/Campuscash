@@ -148,6 +148,35 @@ const StorePage = () => {
     fetchMonthlyReport();
   }, []);
 
+  // Auto-refresh logic
+  // Auto-refresh logic (Countdown)
+  const [countdown, setCountdown] = useState(5);
+
+  const handleRefresh = () => {
+    setResult(null);
+    setCode("");
+    setError("");
+    setVerifying(false);
+    setCountdown(5); // Reset countdown
+  };
+
+  useEffect(() => {
+    let interval;
+    if (result && !confirmOpen) {
+      setCountdown(5); // Ensure reset on new result
+      interval = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            handleRefresh();
+            return 5;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [result, confirmOpen]);
+
   const verifyCoupon = async (couponCode) => {
     if (!couponCode) return setSnack({ open: true, message: "Enter a coupon code", severity: "warning" });
     setVerifying(true);
@@ -332,7 +361,7 @@ const StorePage = () => {
     <Box sx={{
       minHeight: "100vh",
       background: isDark ? "linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)" : "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)",
-      color: isDark ? "#fff" : "#1e293b",
+      color: isDark ? "#fff" : "#020617",
       pb: 8
     }}>
       {/* HEADER */}
@@ -348,9 +377,9 @@ const StorePage = () => {
               <StoreIcon sx={{ color: "white", fontSize: 32 }} />
             </Box>
             <Box>
-              <Typography variant="h4" fontWeight="800" sx={{ letterSpacing: "-0.5px" }}>Store Portal</Typography>
+              <Typography variant="h4" fontWeight="800" sx={{ letterSpacing: "-0.5px", color: isDark ? 'white' : '#0f172a' }}>Store Portal</Typography>
               <Stack direction="row" spacing={1} alignItems="center">
-                <Typography variant="body2" color="text.secondary">Active Store:</Typography>
+                <Typography variant="body2" sx={{ color: isDark ? 'text.secondary' : '#334155', fontWeight: 'bold' }}>Active Store:</Typography>
                 <Chip
                   label={storeName || "Not Set"}
                   color={storeName ? "success" : "default"}
@@ -364,7 +393,7 @@ const StorePage = () => {
           <Button
             startIcon={editingStore ? <Check /> : <Edit />}
             variant="outlined"
-            sx={{ borderRadius: 3, borderWidth: 2, borderColor: isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)" }}
+            sx={{ borderRadius: 3, borderWidth: 2, borderColor: isDark ? "rgba(255,255,255,0.2)" : "#4f46e5", color: isDark ? 'white' : '#4f46e5' }}
             onClick={() => {
               if (editingStore) handleSaveStore();
               else { setTempStoreName(storeName); setEditingStore(true); }
@@ -402,8 +431,8 @@ const StorePage = () => {
               <motion.div variants={itemVariants}>
                 <Paper sx={{ ...glassStyle, p: 0, overflow: 'hidden', height: '100%' }}>
                   <Box sx={{ p: 3, background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)" }}>
-                    <Typography variant="h6" fontWeight="bold">Verify Coupon</Typography>
-                    <Typography variant="body2" color="text.secondary">Scan QR or enter code manually</Typography>
+                    <Typography variant="h6" fontWeight="bold" sx={{ color: isDark ? 'white' : '#0f172a' }}>Verify Coupon</Typography>
+                    <Typography variant="body2" sx={{ color: isDark ? "text.secondary" : "#334155" }}>Scan QR or enter code manually</Typography>
                   </Box>
                   <Divider />
                   <Box sx={{ p: 3 }}>
@@ -452,7 +481,19 @@ const StorePage = () => {
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.9 }}
                         >
-                          <Paper elevation={0} sx={{ mt: 3, p: 3, bgcolor: isDark ? "rgba(0,0,0,0.3)" : "#f1f5f9", borderRadius: 3, border: `1px solid ${result.isUsed ? '#ef4444' : '#22c55e'}` }}>
+                          <Paper elevation={0} sx={{ mt: 3, p: 3, bgcolor: isDark ? "rgba(0,0,0,0.3)" : "#f1f5f9", borderRadius: 3, border: `1px solid ${result.isUsed ? '#ef4444' : '#22c55e'}`, position: 'relative' }}>
+                            <Box sx={{ position: 'absolute', top: 10, right: 10, display: 'flex', alignItems: 'center', gap: 1 }}>
+                              {result && !confirmOpen && (
+                                <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                                  Refreshing in {countdown}s...
+                                </Typography>
+                              )}
+                              <MuiTooltip title="Manual Refresh">
+                                <IconButton size="small" onClick={handleRefresh}>
+                                  <Refresh fontSize="small" />
+                                </IconButton>
+                              </MuiTooltip>
+                            </Box>
                             <Stack alignItems="center" spacing={1} mb={2}>
                               {result.isUsed ? <Close sx={{ fontSize: 40, color: "#ef4444" }} /> : <CheckCircleOutline sx={{ fontSize: 40, color: "#22c55e" }} />}
                               <Typography variant="h6" fontWeight="bold" color={result.isUsed ? "error" : "success"}>
@@ -461,16 +502,16 @@ const StorePage = () => {
                             </Stack>
                             <Stack spacing={1.5}>
                               <Box display="flex" justifyContent="space-between">
-                                <Typography color="text.secondary">Reward:</Typography>
-                                <Typography fontWeight="bold">{result.rewardName}</Typography>
+                                <Typography sx={{ color: isDark ? "text.secondary" : "#1e293b", fontWeight: '500' }}>Reward:</Typography>
+                                <Typography fontWeight="bold" sx={{ color: isDark ? 'white' : '#000000' }}>{result.rewardName}</Typography>
                               </Box>
                               <Box display="flex" justifyContent="space-between">
-                                <Typography color="text.secondary">Points:</Typography>
-                                <Chip label={result.pointsUsed} size="small" />
+                                <Typography sx={{ color: isDark ? "text.secondary" : "#1e293b", fontWeight: '500' }}>Points:</Typography>
+                                <Chip label={result.pointsUsed} size="small" sx={{ fontWeight: 'bold' }} />
                               </Box>
                               <Box display="flex" justifyContent="space-between">
-                                <Typography color="text.secondary">User:</Typography>
-                                <Typography textAlign="right">{result.userId?.fname} {result.userId?.ename}</Typography>
+                                <Typography sx={{ color: isDark ? "text.secondary" : "#1e293b", fontWeight: '500' }}>User:</Typography>
+                                <Typography textAlign="right" fontWeight="bold" sx={{ color: isDark ? 'white' : '#000000' }}>{result.userId?.fname} {result.userId?.ename}</Typography>
                               </Box>
                               <Divider sx={{ my: 1 }} />
                               {!result.isUsed ? (
@@ -508,13 +549,13 @@ const StorePage = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                       <Box sx={{ p: 1.5, bgcolor: "warning.main", borderRadius: 2, color: "white" }}><Assessment /></Box>
                       <Box>
-                        <Typography variant="subtitle2" color="text.secondary">Monthly Report</Typography>
+                        <Typography variant="subtitle2" sx={{ color: isDark ? 'text.secondary' : '#334155', fontWeight: 'bold' }}>Monthly Report</Typography>
                         <Stack direction="row" alignItems="center" spacing={1}>
                           <TextField
                             type="month" size="small" variant="standard"
                             value={reportMonth}
                             onChange={(e) => setReportMonth(e.target.value)}
-                            InputProps={{ disableUnderline: true, sx: { fontSize: '1.1rem', fontWeight: 'bold' } }}
+                            InputProps={{ disableUnderline: true, sx: { fontSize: '1.1rem', fontWeight: 'bold', color: isDark ? 'white' : '#000000' } }}
                           />
                           <IconButton size="small" onClick={() => fetchMonthlyReport()}><Refresh fontSize="small" /></IconButton>
                         </Stack>
@@ -524,11 +565,11 @@ const StorePage = () => {
                     <Stack direction="row" spacing={3} divider={<Divider orientation="vertical" flexItem />}>
                       <Box textAlign="center">
                         <Typography variant="h5" fontWeight="900" color="primary">{monthlyReport?.totals?.totalCount || 0}</Typography>
-                        <Typography variant="caption" textTransform="uppercase" fontWeight="bold" color="text.secondary">Items</Typography>
+                        <Typography variant="caption" textTransform="uppercase" fontWeight="900" sx={{ color: isDark ? 'text.secondary' : '#334155' }}>Items</Typography>
                       </Box>
                       <Box textAlign="center">
                         <Typography variant="h5" fontWeight="900" color="secondary">{monthlyReport?.totals?.totalPoints || 0}</Typography>
-                        <Typography variant="caption" textTransform="uppercase" fontWeight="bold" color="text.secondary">Points</Typography>
+                        <Typography variant="caption" textTransform="uppercase" fontWeight="900" sx={{ color: isDark ? 'text.secondary' : '#334155' }}>Points</Typography>
                       </Box>
                     </Stack>
 
@@ -546,7 +587,7 @@ const StorePage = () => {
                   <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(100,100,100,0.1)' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <History color="action" />
-                      <Typography fontWeight="bold">History</Typography>
+                      <Typography fontWeight="bold" sx={{ color: isDark ? 'white' : '#0f172a' }}>History</Typography>
                     </Box>
                     <TextField
                       placeholder="Search..."
@@ -563,7 +604,7 @@ const StorePage = () => {
                   <TableContainer sx={{ maxHeight: 500 }}>
                     <Table stickyHeader size="small">
                       <TableHead>
-                        <TableRow sx={{ '& th': { bgcolor: isDark ? "#1e293b" : "#f8fafc", fontWeight: 'bold' } }}>
+                        <TableRow sx={{ '& th': { bgcolor: isDark ? "#1e293b" : "#f1f5f9", fontWeight: 'bold', color: isDark ? 'white' : '#000000' } }}>
                           <TableCell>User</TableCell>
                           <TableCell>Reward</TableCell>
                           <TableCell>Code</TableCell>
@@ -575,8 +616,8 @@ const StorePage = () => {
                         {filteredAndStatus.map((log) => (
                           <TableRow key={log._id} hover>
                             <TableCell>
-                              <Typography variant="body2" fontWeight="600">{log.userId?.fname}</Typography>
-                              <Typography variant="caption" color="text.secondary">{dayjs(log.usedAt || log.redeemedAt).fromNow()}</Typography>
+                              <Typography variant="body2" fontWeight="700" sx={{ color: isDark ? 'white' : '#000000' }}>{log.userId?.fname}</Typography>
+                              <Typography variant="caption" sx={{ color: isDark ? 'text.secondary' : '#475569', fontWeight: '500' }}>{dayjs(log.usedAt || log.redeemedAt).fromNow()}</Typography>
                             </TableCell>
                             <TableCell>{log.rewardName}</TableCell>
                             <TableCell>

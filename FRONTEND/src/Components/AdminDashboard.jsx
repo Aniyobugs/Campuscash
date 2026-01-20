@@ -19,6 +19,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogActions,
   List,
   ListItem,
   ListItemAvatar,
@@ -55,7 +56,8 @@ import {
   Message as MessageIcon,
   Menu as MenuIcon,
   Logout as LogoutIcon,
-  Add as AddIcon
+  Add as AddIcon,
+  Close as CloseIcon
 } from "@mui/icons-material";
 import { useTheme } from "../contexts/ThemeContext";
 // import { useAuth } from "../contexts/AuthContext"; // Ensure this exists if needed
@@ -88,7 +90,7 @@ const DashboardStatCard = ({ title, value, icon, color, isDark }) => (
     <Box sx={{ position: "absolute", top: -10, right: -10, opacity: 0.1, transform: "rotate(20deg)" }}>
       {React.cloneElement(icon, { sx: { fontSize: 100, color: color } })}
     </Box>
-    <Typography variant="subtitle2" color="text.secondary" fontWeight="bold" gutterBottom>
+    <Typography variant="subtitle2" color={isDark ? "text.secondary" : "#000000"} fontWeight="bold" gutterBottom>
       {title}
     </Typography>
     <Typography variant="h3" fontWeight="800" sx={{ color: color }}>
@@ -136,6 +138,7 @@ const AdminDashboard = () => {
   const [editUserOpen, setEditUserOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [editUserForm, setEditUserForm] = useState({ fname: "", ename: "", yearClassDept: "", points: 0 });
+  const [selectedMessage, setSelectedMessage] = useState(null);
 
 
   const [success, setSuccess] = useState("");
@@ -145,6 +148,38 @@ const AdminDashboard = () => {
   const [createTaskForm, setCreateTaskForm] = useState({
     title: '', description: '', dueDate: '', points: 10, category: 'General', assignedYears: [], quiz: { questions: [], passingScore: 70 },
   });
+
+  // --- Quiz Builder State ---
+  const [showQuizBuilder, setShowQuizBuilder] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState({
+    text: "",
+    options: ["", "", "", ""],
+    correctIndex: 0
+  });
+
+  const handleAddQuestion = () => {
+    if (!currentQuestion.text || currentQuestion.options.some(o => !o)) {
+      return setError("Please fill all question fields");
+    }
+    setCreateTaskForm(prev => ({
+      ...prev,
+      quiz: {
+        ...prev.quiz,
+        questions: [...prev.quiz.questions, currentQuestion]
+      }
+    }));
+    setCurrentQuestion({ text: "", options: ["", "", "", ""], correctIndex: 0 });
+  };
+
+  const handleRemoveQuestion = (index) => {
+    setCreateTaskForm(prev => ({
+      ...prev,
+      quiz: {
+        ...prev.quiz,
+        questions: prev.quiz.questions.filter((_, i) => i !== index)
+      }
+    }));
+  };
 
   const yearOptions = Array.from(new Set(['All', 'Year 1', 'Year 2', 'Year 3', 'Year 4', ...(users || []).map((u) => u.yearClassDept).filter(Boolean)]));
 
@@ -175,11 +210,13 @@ const AdminDashboard = () => {
   }, []);
 
   useEffect(() => {
+    const hiddenEmails = ['nimishabalan@gmail.com', 'nigil@gmail.com', 'store@gmail.com'];
     setFilteredUsers(
-      users.filter(u =>
-        u.fname?.toLowerCase().includes(search.toLowerCase()) ||
-        u.studentId?.toLowerCase().includes(search.toLowerCase())
-      )
+      users.filter(u => {
+        const matchesSearch = (u.fname?.toLowerCase() || "").includes(search.toLowerCase()) || (u.studentId?.toLowerCase() || "").includes(search.toLowerCase());
+        const isHidden = hiddenEmails.includes((u.ename || "").toLowerCase());
+        return matchesSearch && !isHidden;
+      })
     );
   }, [search, users]);
 
@@ -202,16 +239,37 @@ const AdminDashboard = () => {
 
   const handleCreateTask = async () => {
     if (!createTaskForm.title || !createTaskForm.points) return setError("Missing required fields");
+
+    // Auto-add pending question if user forgot to click "Add Question"
+    let finalQuestions = [...createTaskForm.quiz.questions];
+    if (finalQuestions.length === 0 && currentQuestion.text && currentQuestion.options.every(o => o)) {
+      finalQuestions.push(currentQuestion);
+    }
+
+    // Validation: If Quiz mode is active or category is Quiz, require at least one question
+    if ((showQuizBuilder || createTaskForm.category === 'Quiz') && finalQuestions.length === 0) {
+      return setError("Please add at least one question for the Quiz.");
+    }
+
     try {
       const payload = {
         ...createTaskForm,
+        quiz: {
+          ...createTaskForm.quiz,
+          questions: finalQuestions
+        },
         dueDate: new Date(createTaskForm.dueDate).toISOString(),
       };
       const res = await axios.post(`${baseurl}/api/tasks/addtask`, payload);
       setSuccess("Task created!");
       setTasks([...tasks, res.data.task || res.data]);
       setCreateTaskOpen(false);
+
+      // Reset forms
       setCreateTaskForm({ title: '', description: '', dueDate: '', points: 10, category: 'General', assignedYears: [], quiz: { questions: [], passingScore: 70 } });
+      setCurrentQuestion({ text: "", options: ["", "", "", ""], correctIndex: 0 });
+      setShowQuizBuilder(false);
+
     } catch (err) { setError("Failed to create task"); }
   };
 
@@ -273,11 +331,24 @@ const AdminDashboard = () => {
   const handleSaveUser = async () => {
     if (!editingUser) return;
     try {
-      const res = await axios.put(`${baseurl}/api/users/${editingUser._id}`, editUserForm);
-      setSuccess("User updated");
-      setUsers(prev => prev.map(u => u._id === editingUser._id ? { ...u, ...editUserForm } : u));
+      const payload = {
+        fullName: editUserForm.fname,
+        email: editUserForm.ename,
+        yearClassDept: editUserForm.yearClassDept,
+        points: editUserForm.points
+      };
+      const res = await axios.put(`${baseurl}/api/users/${editingUser._id}`, payload);
+      setSuccess("User updated successfully");
+      // Update local state with the response from server
+      const updatedUser = res.data.user;
+      setUsers(prev => prev.map(u => u._id === editingUser._id ? updatedUser : u));
       setEditUserOpen(false);
-    } catch (err) { setError("Failed to update user"); }
+      // Refetch all data to ensure consistency
+      setTimeout(() => fetchAllData(), 500);
+    } catch (err) {
+      console.error("Update error:", err);
+      setError("Failed to update user");
+    }
   };
 
   const handleToggleStatus = async (user) => {
@@ -291,6 +362,7 @@ const AdminDashboard = () => {
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: <DashboardIcon /> },
     { id: "users", label: "Students", icon: <PeopleIcon /> },
+    { id: "faculty", label: "Faculty & Other", icon: <PeopleIcon /> },
     { id: "tasks", label: "Tasks", icon: <TaskIcon /> },
     { id: "submissions", label: "Submissions", icon: <SubmissionIcon /> },
     { id: "award", label: "Award Points", icon: <AwardIcon /> },
@@ -325,7 +397,7 @@ const AdminDashboard = () => {
                 py: 1.5,
                 borderRadius: 3,
                 cursor: "pointer",
-                color: isActive ? (isDark ? "#fff" : "#1e40af") : (isDark ? "#94a3b8" : "#64748b"),
+                color: isActive ? (isDark ? "#fff" : "#1e40af") : (isDark ? "#94a3b8" : "#334155"),
                 transition: "all 0.3s ease",
                 "&:hover": { color: isDark ? "#fff" : "#1e40af" }
               }}
@@ -344,7 +416,7 @@ const AdminDashboard = () => {
                 />
               )}
               {item.icon}
-              <Typography fontWeight={isActive ? "700" : "500"} sx={{ position: "relative", zIndex: 1 }}>
+              <Typography fontWeight={isActive ? "700" : "500"} color="inherit" sx={{ position: "relative", zIndex: 1 }}>
                 {item.label}
               </Typography>
             </Box>
@@ -412,26 +484,97 @@ const AdminDashboard = () => {
             <motion.div key="dashboard" variants={contentVariants} initial="hidden" animate="visible" exit="exit">
               {/* Stat Cards */}
               <Grid container spacing={4} sx={{ mb: 4 }}>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <DashboardStatCard title="Total Students" value={users.length} icon={<PeopleIcon />} color="#3b82f6" isDark={isDark} />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <DashboardStatCard title="Points Awarded" value={users.reduce((a, b) => a + (b.points || 0), 0)} icon={<AwardIcon />} color="#f59e0b" isDark={isDark} />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <DashboardStatCard title="Pending Submissions" value={submissions.filter(s => s.status === 'pending').length} icon={<SubmissionIcon />} color="#ec4899" isDark={isDark} />
                 </Grid>
               </Grid>
 
               {/* Visualizations */}
               <Grid container spacing={4}>
-                <Grid item xs={12} md={7}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <PointsPieChart users={users} isDark={isDark} />
                 </Grid>
-                <Grid item xs={12} md={5}>
-                  <TopPodium users={users} isDark={isDark} />
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TopPodium users={users.filter(u => !['nimishabalan@gmail.com', 'nigil@gmail.com', 'store@gmail.com'].includes((u.ename || "").toLowerCase()))} isDark={isDark} />
                 </Grid>
               </Grid>
+            </motion.div>
+          )}
+
+          {activeTab === "faculty" && (
+            <motion.div key="faculty" variants={contentVariants} initial="hidden" animate="visible" exit="exit">
+              <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="h5" fontWeight="bold">Faculty & Other Staff</Typography>
+              </Box>
+              <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 2, bgcolor: isDark ? '#1e293b' : undefined, color: isDark ? '#e6eef8' : undefined }}>
+                <Table>
+                  <TableHead sx={{ bgcolor: isDark ? "#0b1220" : "#f1f5f9" }}>
+                    <TableRow>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Name</TableCell>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>ID</TableCell>
+
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Status</TableCell>
+                      <TableCell align="right" sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {users
+                      .filter(u => ['nimishabalan@gmail.com', 'nigil@gmail.com', 'store@gmail.com'].includes((u.ename || "").toLowerCase()))
+                      .map((user) => (
+                        <TableRow key={user._id} hover>
+                          <TableCell>
+                            <Box display="flex" alignItems="center" gap={2}>
+                              <Avatar src={user.profilePic && `${baseurl}${user.profilePic}`} />
+                              <Box>
+                                <Typography fontWeight="500">{user.fname} {user.ename}</Typography>
+                                <Typography variant="caption" color={isDark ? "text.secondary" : "#475569"}>{user.ename}</Typography>
+                              </Box>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            {user.ename === 'nimishabalan@gmail.com' ? (
+                              <Chip label="ADMIN" size="small" color="secondary" sx={{ fontWeight: 'bold' }} />
+                            ) : user.ename === 'nigil@gmail.com' ? (
+                              <Chip label="Faculty" size="small" color="info" sx={{ fontWeight: 'bold' }} />
+                            ) : user.ename === 'store@gmail.com' ? (
+                              <Chip label="Store" size="small" color="warning" sx={{ fontWeight: 'bold' }} />
+                            ) : (
+                              user.studentId
+                            )}
+                          </TableCell>
+
+                          <TableCell>
+                            <Chip
+                              label={user.status || "active"}
+                              size="small"
+                              color={user.status === "active" ? "success" : "default"}
+                            />
+                          </TableCell>
+                          <TableCell align="right">
+                            <Box display="flex" justifyContent="flex-end">
+                              <Tooltip title="Edit">
+                                <IconButton size="small" onClick={() => handleEditUserClick(user)} sx={{ color: "primary.main" }}>
+                                  <Edit fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title={user.status === 'active' ? 'Deactivate' : 'Activate'}>
+                                <IconButton size="small" onClick={() => handleToggleStatus(user)} color={user.status === 'active' ? 'error' : 'success'}>
+                                  {user.status === 'active' ? <PersonOff fontSize="small" /> : <Person fontSize="small" />}
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </motion.div>
           )}
 
@@ -451,11 +594,12 @@ const AdminDashboard = () => {
                 <Table>
                   <TableHead sx={{ bgcolor: isDark ? "#0b1220" : "#f1f5f9" }}>
                     <TableRow>
-                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#475569", fontWeight: "bold" }}>Name</TableCell>
-                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#475569", fontWeight: "bold" }}>ID</TableCell>
-                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#475569", fontWeight: "bold" }}>Points</TableCell>
-                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#475569", fontWeight: "bold" }}>Status</TableCell>
-                      <TableCell align="right" sx={{ color: isDark ? "#e6eef8" : "#475569", fontWeight: "bold" }}>Actions</TableCell>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Name</TableCell>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Email</TableCell>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>ID</TableCell>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Points</TableCell>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Status</TableCell>
+                      <TableCell align="right" sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -464,12 +608,10 @@ const AdminDashboard = () => {
                         <TableCell>
                           <Box display="flex" alignItems="center" gap={2}>
                             <Avatar src={user.profilePic && `${baseurl}${user.profilePic}`} />
-                            <Box>
-                              <Typography fontWeight="500">{user.fname} {user.ename}</Typography>
-                              <Typography variant="caption" color="text.secondary">{user.email}</Typography>
-                            </Box>
+                            <Typography fontWeight="500">{user.fname}</Typography>
                           </Box>
                         </TableCell>
+                        <TableCell>{user.ename}</TableCell>
                         <TableCell>{user.studentId}</TableCell>
                         <TableCell>
                           <Chip label={user.points} size="small" color="primary" variant="outlined" />
@@ -518,7 +660,7 @@ const AdminDashboard = () => {
               </Box>
               <Grid container spacing={3}>
                 {tasks.map(task => (
-                  <Grid item xs={12} md={6} lg={4} key={task._id}>
+                  <Grid size={{ xs: 12, md: 6, lg: 4 }} key={task._id}>
                     <Card sx={{
                       borderRadius: 3,
                       bgcolor: isDark ? "#1e293b" : "white",
@@ -532,10 +674,10 @@ const AdminDashboard = () => {
                           <Chip label={`${task.points} pts`} size="small" color="warning" />
                         </Box>
                         <Typography variant="h6" fontWeight="bold" gutterBottom>{task.title}</Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        <Typography variant="body2" color={isDark ? "text.secondary" : "#334155"} sx={{ mb: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                           {task.description}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" color={isDark ? "text.secondary" : "#475569"}>
                           Due: {new Date(task.dueDate).toLocaleDateString()}
                         </Typography>
                       </CardContent>
@@ -622,7 +764,7 @@ const AdminDashboard = () => {
 
                     <Stack spacing={3}>
                       <Autocomplete
-                        options={users}
+                        options={users.filter(u => !['nimishabalan@gmail.com', 'nigil@gmail.com', 'store@gmail.com'].includes((u.ename || "").toLowerCase()))}
                         getOptionLabel={(u) => `${u.fname} ${u.ename} (${u.studentId})`}
                         onChange={(_, val) => setAwardData({ ...awardData, studentId: val?._id || "" })}
                         renderInput={(params) => <TextField {...params} label="Select Student" fullWidth />}
@@ -674,27 +816,114 @@ const AdminDashboard = () => {
           {activeTab === "messages" && (
             <motion.div key="messages" variants={contentVariants} initial="hidden" animate="visible" exit="exit">
               <Typography variant="h5" fontWeight="bold" gutterBottom>Messages</Typography>
-              <Grid container spacing={2}>
+              <Grid container spacing={3}>
                 {messages.map((msg) => (
-                  <Grid item xs={12} md={6} key={msg._id}>
-                    <Card sx={{ borderRadius: 3, p: 2, bgcolor: isDark ? '#1e293b' : undefined, color: isDark ? '#e6eef8' : undefined }}>
-                      <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography fontWeight="bold">{msg.firstName} {msg.lastName}</Typography>
-                        <Typography variant="caption" color="text.secondary">{new Date(msg.createdAt).toLocaleDateString()}</Typography>
+                  <Grid item xs={12} sm={6} md={4} key={msg._id}>
+                    <Card sx={{
+                      borderRadius: 3,
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      bgcolor: isDark ? '#1e293b' : undefined,
+                      color: isDark ? '#e6eef8' : undefined,
+                      boxShadow: isDark ? 4 : 2,
+                      transition: 'transform 0.2s',
+                      "&:hover": { transform: 'translateY(-4px)' }
+                    }}>
+                      <CardContent sx={{ flex: 1 }}>
+                        <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
+                          <Box>
+                            <Typography fontWeight="bold" variant="h6" sx={{ lineHeight: 1.2 }}>{msg.firstName} {msg.lastName}</Typography>
+                            <Typography variant="caption" color="text.secondary">{msg.email}</Typography>
+                          </Box>
+                          <Chip label={new Date(msg.createdAt).toLocaleDateString()} size="small" variant="outlined" sx={{ fontSize: '0.7rem', height: 20 }} />
+                        </Box>
+                        <Divider sx={{ my: 1.5 }} />
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            color: isDark ? "rgba(255,255,255,0.7)" : "text.secondary"
+                          }}
+                        >
+                          {msg.message}
+                        </Typography>
+                      </CardContent>
+                      <Box sx={{ p: 2, pt: 0 }}>
+                        <Button
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          onClick={() => setSelectedMessage(msg)}
+                          sx={{ borderRadius: 2 }}
+                        >
+                          Read Message
+                        </Button>
                       </Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>{msg.email}</Typography>
-                      <Paper variant="outlined" sx={{ p: 2, bgcolor: isDark ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.02)" }}>
-                        <Typography variant="body2">{msg.message}</Typography>
-                      </Paper>
                     </Card>
                   </Grid>
                 ))}
               </Grid>
+              {messages.length === 0 && (
+                <Box textAlign="center" py={8} color="text.secondary">
+                  <Typography variant="h6">No messages yet</Typography>
+                </Box>
+              )}
             </motion.div>
           )}
 
         </AnimatePresence>
       </Box>
+
+      {/* Message Dialog */}
+      <Dialog
+        open={!!selectedMessage}
+        onClose={() => setSelectedMessage(null)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { bgcolor: isDark ? '#0f172a' : undefined, color: isDark ? '#e6eef8' : undefined, borderRadius: 3 } }}
+      >
+        {selectedMessage && (
+          <>
+            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="h6" fontWeight="bold">Message Details</Typography>
+              <IconButton onClick={() => setSelectedMessage(null)} size="small" sx={{ color: 'text.secondary' }}>
+                <CloseIcon />
+              </IconButton>
+            </DialogTitle>
+            <DialogContent dividers>
+              <Box mb={2}>
+                <Typography variant="subtitle2" color="text.secondary">From</Typography>
+                <Typography variant="h6">{selectedMessage.firstName} {selectedMessage.lastName}</Typography>
+                <Typography variant="body2" color="primary">{selectedMessage.email}</Typography>
+              </Box>
+              <Box mb={2}>
+                <Typography variant="subtitle2" color="text.secondary">Date</Typography>
+                <Typography variant="body2">{new Date(selectedMessage.createdAt).toLocaleString()}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>Message</Typography>
+                <Paper variant="outlined" sx={{ p: 2, bgcolor: isDark ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.02)", borderRadius: 2 }}>
+                  <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>{selectedMessage.message}</Typography>
+                </Paper>
+              </Box>
+            </DialogContent>
+            <DialogActions sx={{ p: 2 }}>
+              <Button onClick={() => setSelectedMessage(null)} variant="outlined" color="inherit">Close</Button>
+              <Button
+                variant="contained"
+                color="primary"
+                href={`mailto:${selectedMessage.email}`}
+              >
+                Reply via Email
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
 
       {/* Create Task Dialog */}
       <Dialog open={createTaskOpen} onClose={() => setCreateTaskOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { bgcolor: isDark ? '#0f172a' : undefined, color: isDark ? '#e6eef8' : undefined } }}>
@@ -704,7 +933,89 @@ const AdminDashboard = () => {
             <TextField label="Title" fullWidth value={createTaskForm.title} onChange={e => setCreateTaskForm({ ...createTaskForm, title: e.target.value })} />
             <TextField label="Description" multiline rows={3} fullWidth value={createTaskForm.description} onChange={e => setCreateTaskForm({ ...createTaskForm, description: e.target.value })} />
             <TextField type="number" label="Points" fullWidth value={createTaskForm.points} onChange={e => setCreateTaskForm({ ...createTaskForm, points: e.target.value })} />
+            <TextField label="Category" fullWidth value={createTaskForm.category} onChange={e => setCreateTaskForm({ ...createTaskForm, category: e.target.value })} placeholder="e.g. Assessment, Lab, General" />
             <TextField type="datetime-local" fullWidth value={createTaskForm.dueDate} onChange={e => setCreateTaskForm({ ...createTaskForm, dueDate: e.target.value })} InputLabelProps={{ shrink: true }} />
+
+            <Divider sx={{ my: 2 }}>
+              <Chip
+                label="Quiz 🧠"
+                onClick={() => {
+                  const newState = !showQuizBuilder;
+                  setShowQuizBuilder(newState);
+                  if (newState) {
+                    setCreateTaskForm(prev => ({ ...prev, category: "Quiz" }));
+                  }
+                }}
+                color={showQuizBuilder ? "primary" : "default"}
+                clickable
+              />
+            </Divider>
+
+            {showQuizBuilder && (
+              <Box sx={{ bgcolor: isDark ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.03)", p: 2, borderRadius: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>Passing Score (%)</Typography>
+                <TextField
+                  type="number"
+                  size="small"
+                  fullWidth
+                  value={createTaskForm.quiz.passingScore}
+                  onChange={e => setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, passingScore: Number(e.target.value) } })}
+                  sx={{ mb: 2 }}
+                />
+
+                <Typography variant="subtitle2" gutterBottom>Add Question</Typography>
+                <TextField
+                  label="Question Text"
+                  size="small"
+                  fullWidth
+                  value={currentQuestion.text}
+                  onChange={e => setCurrentQuestion({ ...currentQuestion, text: e.target.value })}
+                  sx={{ mb: 1 }}
+                />
+
+                {currentQuestion.options.map((opt, idx) => (
+                  <Box key={idx} display="flex" gap={1} mb={1}>
+                    <TextField
+                      placeholder={`Option ${idx + 1}`}
+                      size="small"
+                      fullWidth
+                      value={opt}
+                      onChange={e => {
+                        const newOpts = [...currentQuestion.options];
+                        newOpts[idx] = e.target.value;
+                        setCurrentQuestion({ ...currentQuestion, options: newOpts });
+                      }}
+                    />
+                    <Button
+                      variant={currentQuestion.correctIndex === idx ? "contained" : "outlined"}
+                      color={currentQuestion.correctIndex === idx ? "success" : "inherit"}
+                      onClick={() => setCurrentQuestion({ ...currentQuestion, correctIndex: idx })}
+                      sx={{ minWidth: 40 }}
+                    >
+                      {currentQuestion.correctIndex === idx ? "✓" : ""}
+                    </Button>
+                  </Box>
+                ))}
+
+                <Button variant="outlined" fullWidth onClick={handleAddQuestion} sx={{ mb: 2 }}>Add Question</Button>
+
+                {createTaskForm.quiz.questions.length > 0 && (
+                  <List dense sx={{ bgcolor: "background.paper", borderRadius: 1 }}>
+                    {createTaskForm.quiz.questions.map((q, i) => (
+                      <ListItem key={i} secondaryAction={
+                        <IconButton edge="end" size="small" onClick={() => handleRemoveQuestion(i)}><Cancel fontSize="small" /></IconButton>
+                      }>
+                        <ListItemText
+                          primary={`Q${i + 1}: ${q.text}`}
+                          secondary={`${q.options.length} options (Correct: ${q.options[q.correctIndex]})`}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
+              </Box>
+            )}
+
             <Button variant="contained" onClick={handleCreateTask}>Create</Button>
           </Stack>
         </DialogContent>
@@ -741,8 +1052,8 @@ const AdminDashboard = () => {
         <DialogTitle>Edit Student</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label="First Name" fullWidth value={editUserForm.fname} onChange={e => setEditUserForm({ ...editUserForm, fname: e.target.value })} />
-            <TextField label="Last Name" fullWidth value={editUserForm.ename} onChange={e => setEditUserForm({ ...editUserForm, ename: e.target.value })} />
+            <TextField label="Full Name" fullWidth value={editUserForm.fname} onChange={e => setEditUserForm({ ...editUserForm, fname: e.target.value })} />
+            <TextField label="Email (Login ID)" fullWidth value={editUserForm.ename} onChange={e => setEditUserForm({ ...editUserForm, ename: e.target.value })} helperText="Warning: Changing this updates the user's login ID" />
             <TextField label="Year/Class/Dept" fullWidth value={editUserForm.yearClassDept} onChange={e => setEditUserForm({ ...editUserForm, yearClassDept: e.target.value })} />
             <TextField type="number" label="Total Points" fullWidth value={editUserForm.points} onChange={e => setEditUserForm({ ...editUserForm, points: Number(e.target.value) })} />
             <Button variant="contained" onClick={handleSaveUser}>Save User</Button>

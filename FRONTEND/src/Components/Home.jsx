@@ -222,7 +222,7 @@ export default function Home() {
         position: 'relative',
         overflow: 'hidden',
         background: isDark
-          ? 'linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #1e293b)'
+          ? 'linear-gradient(-45deg, #0a0f1f, #15103d, #1f1555, #0f1a2a)'
           : 'linear-gradient(-45deg, #f8fafc, #eef2ff, #fae8ff, #f0f9ff)',
       }}>
         {/* Animated floating shapes */}

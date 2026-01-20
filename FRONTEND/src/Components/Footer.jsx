@@ -16,7 +16,7 @@ const Footer = () => {
                         <Typography variant="h6" fontWeight="bold">
                             Campus Cash
                         </Typography>
-                        <Typography variant="body2" sx={{ mt: 1 }}>
+                        <Typography variant="body2" sx={{ mt: 1, color: '#f1f5f9', opacity: 0.9 }}>
                             Where every achievement pays off. Motivate. Reward. Succeed.
                         </Typography>
                     </Grid>
@@ -31,7 +31,7 @@ const Footer = () => {
                                 onClick={() => navigate('/')}
                                 color="inherit"
                                 underline="hover"
-                                sx={{ textAlign: 'left', transition: 'color 0.2s', '&:hover': { color: yellowAccent } }}
+                                sx={{ textAlign: 'left', color: '#fff', fontWeight: 500, transition: 'color 0.2s', '&:hover': { color: yellowAccent } }}
                             >
                                 Home
                             </Link>
@@ -41,7 +41,7 @@ const Footer = () => {
                                 onClick={() => navigate('/about')}
                                 color="inherit"
                                 underline="hover"
-                                sx={{ textAlign: 'left', transition: 'color 0.2s', '&:hover': { color: yellowAccent } }}
+                                sx={{ textAlign: 'left', color: '#fff', fontWeight: 500, transition: 'color 0.2s', '&:hover': { color: yellowAccent } }}
                             >
                                 About Us
                             </Link>
@@ -51,7 +51,7 @@ const Footer = () => {
                                 onClick={() => navigate('/contact')}
                                 color="inherit"
                                 underline="hover"
-                                sx={{ textAlign: 'left', transition: 'color 0.2s', '&:hover': { color: yellowAccent } }}
+                                sx={{ textAlign: 'left', color: '#fff', fontWeight: 500, transition: 'color 0.2s', '&:hover': { color: yellowAccent } }}
                             >
                                 Contact Us
                             </Link>
@@ -62,17 +62,17 @@ const Footer = () => {
                             Contact
                         </Typography>
                         <Stack sx={{ mt: 1 }} spacing={1}>
-                            <Typography variant="body2">info@campuscash.edu</Typography>
-                            <Typography variant="body2">@campuscash_app</Typography>
+                            <Typography variant="body2" sx={{ color: '#fff', fontWeight: 500 }}>info@campuscash.edu</Typography>
+                            <Typography variant="body2" sx={{ color: '#fff', fontWeight: 500 }}>@campuscash_app</Typography>
                         </Stack>
                     </Grid>
                 </Grid>
                 <Divider sx={{ my: 4, bgcolor: 'rgba(255, 255, 255, 0.2)' }} />
-                <Typography variant="caption" display="block" align="center">
+                <Typography variant="caption" display="block" align="center" sx={{ color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
                     © 2025 Campus Cash. All rights reserved.
                 </Typography>
             </Container>
-        </Box>
+        </Box >
     );
 };
 

@@ -25,7 +25,7 @@ export const PointsPieChart = ({ users = [], isDark }) => {
 
     return (
         <Paper sx={{ p: 3, borderRadius: 4, height: '100%', bgcolor: isDark ? "#1e293b" : "white", boxShadow: isDark ? 4 : 2 }}>
-            <Typography variant="h6" fontWeight="bold" gutterBottom>Points Distribution</Typography>
+            <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: isDark ? 'white' : '#0f172a' }}>Points Distribution</Typography>
             <Box sx={{ width: '100%', height: 300 }}>
                 <ResponsiveContainer>
                     <PieChart>
@@ -46,7 +46,7 @@ export const PointsPieChart = ({ users = [], isDark }) => {
                             contentStyle={{ backgroundColor: isDark ? '#334155' : '#fff', borderRadius: 8, border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                             itemStyle={{ color: isDark ? '#fff' : '#000' }}
                         />
-                        <Legend verticalAlign="bottom" height={36} />
+                        <Legend verticalAlign="bottom" height={36} wrapperStyle={{ color: isDark ? '#fff' : '#0f172a' }} />
                     </PieChart>
                 </ResponsiveContainer>
             </Box>
@@ -65,7 +65,7 @@ export const TopPodium = ({ users = [], isDark }) => {
 
     return (
         <Paper sx={{ p: 3, borderRadius: 4, height: '100%', bgcolor: isDark ? "#1e293b" : "white", boxShadow: isDark ? 4 : 2, display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, color: isDark ? 'white' : '#0f172a' }}>
                 <EmojiEventsIcon sx={{ color: '#f59e0b' }} /> Top Students
             </Typography>
 
@@ -98,10 +98,10 @@ export const TopPodium = ({ users = [], isDark }) => {
                                     />
                                     {isFirst && <Box sx={{ position: 'absolute', top: -15, left: '50%', transform: 'translateX(-50%)' }}>👑</Box>}
                                 </Box>
-                                <Typography variant="caption" fontWeight="bold" noWrap sx={{ maxWidth: '100%', display: 'block', textAlign: 'center' }}>
+                                <Typography variant="caption" fontWeight="bold" noWrap sx={{ maxWidth: '100%', display: 'block', textAlign: 'center', color: isDark ? 'white' : '#0f172a' }}>
                                     {user.fname}
                                 </Typography>
-                                <Typography variant="caption" color="text.secondary" display="block" textAlign="center">
+                                <Typography variant="caption" color={isDark ? "text.secondary" : "#334155"} display="block" textAlign="center">
                                     {user.points} pts
                                 </Typography>
                             </motion.div>

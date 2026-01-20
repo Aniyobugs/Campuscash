@@ -136,9 +136,13 @@ const StudentTasks = () => {
     const handleOpenSubmit = (task) => {
         setSelectedTask(task);
         if (task.category === 'Quiz') {
-            setQuizAnswers(Array(task.quiz?.questions?.length || 0).fill(null));
-            setCurrentQuestion(0);
-            setQuizOpen(true);
+            if (task.quiz?.questions?.length > 0) {
+                setQuizAnswers(Array(task.quiz?.questions?.length || 0).fill(null));
+                setCurrentQuestion(0);
+                setQuizOpen(true);
+            } else {
+                setMessage({ text: "This quiz has no questions configured.", type: "error" });
+            }
         } else {
             setSubmitOpen(true);
         }
@@ -241,7 +245,7 @@ const StudentTasks = () => {
                         <Typography variant="h3" fontWeight="900" sx={{ background: 'linear-gradient(45deg, #6366f1, #8b5cf6)', backgroundClip: 'text', WebkitTextFillColor: 'transparent', mb: 2 }}>
                             Assignments & Request
                         </Typography>
-                        <Typography variant="h6" color="text.secondary">
+                        <Typography variant="h6" sx={{ color: isDark ? 'text.secondary' : '#475569' }}>
                             Complete tasks, challenge yourself with quizzes, and earn rewards.
                         </Typography>
                     </Box>
@@ -260,7 +264,9 @@ const StudentTasks = () => {
                                 py: 1,
                                 textTransform: 'none',
                                 fontWeight: 'bold',
-                                boxShadow: filter === f ? '0 4px 14px 0 rgba(99, 102, 241, 0.39)' : 'none'
+                                boxShadow: filter === f ? '0 4px 14px 0 rgba(99, 102, 241, 0.39)' : 'none',
+                                color: filter === f ? '#fff' : (isDark ? '#e2e8f0' : '#1e293b'),
+                                borderColor: filter === f ? 'transparent' : (isDark ? 'rgba(255,255,255,0.2)' : '#94a3b8')
                             }}
                         >
                             {f}
@@ -307,13 +313,13 @@ const StudentTasks = () => {
                                                             </Typography>
                                                         </Box>
 
-                                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3, minHeight: 40, lineHeight: 1.6 }}>
+                                                        <Typography variant="body2" sx={{ mb: 3, minHeight: 40, lineHeight: 1.6, color: isDark ? 'text.secondary' : '#334155' }}>
                                                             {task.description || "No description provided."}
                                                         </Typography>
 
                                                         <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
                                                             <Chip icon={<EmojiEventsIcon />} label={`${task.points} pts`} size="small" color="warning" variant="outlined" />
-                                                            <Chip icon={<TimerIcon />} label={new Date(task.dueDate).toLocaleDateString()} size="small" variant="outlined" />
+                                                            <Chip icon={<TimerIcon />} label={new Date(task.dueDate).toLocaleDateString()} size="small" variant="outlined" sx={{ color: isDark ? 'inherit' : '#334155', borderColor: isDark ? 'inherit' : '#94a3b8' }} />
                                                         </Stack>
 
                                                         {mySubmissions[task._id] ? (
@@ -415,7 +421,7 @@ const StudentTasks = () => {
                                         Question {currentQuestion + 1} of {selectedTask.quiz.questions.length}
                                     </Typography>
                                     <Typography variant="h5" fontWeight="bold" sx={{ mb: 4 }}>
-                                        {selectedTask.quiz.questions[currentQuestion].questionText}
+                                        {selectedTask.quiz.questions[currentQuestion].text}
                                     </Typography>
 
                                     <RadioGroup

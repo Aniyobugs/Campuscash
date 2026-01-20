@@ -23,10 +23,10 @@ router.post("/addtask", async (req, res) => {
       assignedYears: Array.isArray(assignedYears) ? assignedYears : [],
     });
 
-    // attach quiz if provided and category indicates Quiz
-    if ((category && String(category).toLowerCase() === 'quiz') || quiz) {
-      // basic validation
-      if (!quiz || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {
+    // attach quiz if provided and has questions
+    if (quiz && Array.isArray(quiz.questions) && quiz.questions.length > 0) {
+      // basic validation (redundant check but good for safety)
+      if (!Array.isArray(quiz.questions) || quiz.questions.length === 0) {
         return res.status(400).json({ message: 'Quiz requires at least one question' });
       }
       newTask.quiz = quiz;
@@ -230,7 +230,7 @@ router.post("/:id/award", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const { title, description, dueDate, points, category, assignedYears, quiz } = req.body;
-    
+
     if (!title || !dueDate || !points) {
       return res.status(400).json({ message: "Please fill all required fields" });
     }
@@ -246,9 +246,9 @@ router.put("/:id", async (req, res) => {
     task.category = category || "General";
     task.assignedYears = Array.isArray(assignedYears) ? assignedYears : [];
 
-    // Update quiz if category is Quiz
-    if (category && String(category).toLowerCase() === 'quiz') {
-      if (!quiz || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {
+    // Update quiz if provided and has questions
+    if (quiz && Array.isArray(quiz.questions) && quiz.questions.length > 0) {
+      if (!Array.isArray(quiz.questions) || quiz.questions.length === 0) {
         return res.status(400).json({ message: 'Quiz requires at least one question' });
       }
       task.quiz = quiz;

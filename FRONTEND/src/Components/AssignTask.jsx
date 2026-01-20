@@ -58,7 +58,7 @@ const AssignTask = () => {
         dueDate: formData.dueDate.toISOString(),
         points: Number(formData.points),
         category: formData.category || "General",
-          assignedYears: formData.assignedYears || [],
+        assignedYears: formData.assignedYears || [],
       };
 
       await axios.post(`${baseurl}/api/tasks/addtask`, payload);
@@ -149,7 +149,7 @@ const AssignTask = () => {
                     label="Category"
                     value={formData.category}
                     onChange={handleChange("category")}
-                    placeholder="e.g. Assignment, Project, Quiz..."
+                    placeholder="e.g. Assignment, Project, Lab..."
                     variant="outlined"
                   />
                 </Grid>

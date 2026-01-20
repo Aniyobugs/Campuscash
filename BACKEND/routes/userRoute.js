@@ -86,13 +86,14 @@ router.get("/me", async (req, res) => {
 // ==========================
 router.put("/users/:id", upload.single("profilePic"), async (req, res) => {
   try {
-    const { fullName, email, yearClassDept } = req.body;
+    const { fullName, email, yearClassDept, points } = req.body;
     const user = await userModel.findById(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
     if (fullName) user.fname = fullName;
     if (email) user.ename = email;
     if (yearClassDept) user.yearClassDept = yearClassDept;
+    if (points !== undefined && points !== "") user.points = Number(points);
 
     // If a file was uploaded, stream it into GridFS and store an access path on the user
     if (req.file && req.file.buffer) {
