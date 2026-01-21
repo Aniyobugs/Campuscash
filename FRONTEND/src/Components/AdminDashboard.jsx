@@ -791,14 +791,14 @@ const AdminDashboard = () => {
                     <Stack spacing={3}>
                       <Autocomplete
                         options={users.filter(u => u.role === 'user')}
-                        getOptionLabel={(u) => `${u.fname} ${u.ename} (${u.studentId})`}
+                        getOptionLabel={(u) => u.fname}
                         onChange={(_, val) => setAwardData({ ...awardData, studentId: val?._id || "" })}
                         renderInput={(params) => <TextField {...params} label="Select Student" fullWidth />}
                         renderOption={(props, option) => (
                           <li {...props}>
                             <Box display="flex" alignItems="center" gap={2}>
                               <Avatar src={option.profilePic && `${baseurl}${option.profilePic}`} sx={{ width: 24, height: 24 }} />
-                              {option.fname} {option.ename}
+                              {option.fname}
                             </Box>
                           </li>
                         )}
@@ -967,7 +967,21 @@ const AdminDashboard = () => {
             <TextField label="Description" multiline rows={3} fullWidth value={createTaskForm.description} onChange={e => setCreateTaskForm({ ...createTaskForm, description: e.target.value })} />
             <TextField type="number" label="Points" fullWidth value={createTaskForm.points} onChange={e => setCreateTaskForm({ ...createTaskForm, points: e.target.value })} />
             <TextField label="Category" fullWidth value={createTaskForm.category} onChange={e => setCreateTaskForm({ ...createTaskForm, category: e.target.value })} placeholder="e.g. Assessment, Lab, General" />
-            <TextField type="datetime-local" fullWidth value={createTaskForm.dueDate} onChange={e => setCreateTaskForm({ ...createTaskForm, dueDate: e.target.value })} InputLabelProps={{ shrink: true }} />
+            <TextField
+              type="datetime-local"
+              fullWidth
+              value={createTaskForm.dueDate}
+              onChange={e => setCreateTaskForm({ ...createTaskForm, dueDate: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+              sx={{
+                "& .MuiInputBase-input": {
+                  colorScheme: isDark ? "dark" : "light",
+                },
+                "& ::-webkit-calendar-picker-indicator": {
+                  cursor: "pointer"
+                }
+              }}
+            />
 
             <Divider sx={{ my: 2 }}>
               <Chip

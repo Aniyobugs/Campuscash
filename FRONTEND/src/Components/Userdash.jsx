@@ -506,7 +506,7 @@ const Userdash = () => {
             },
             progress: {
               points: user.points || 0,
-              rank: 4,
+              rank: user.rank || 0, // <--- Use rank from API
               nextReward: {
                 name: "Free Coffee",
                 remaining: Math.max(0, 100 - (user.points || 0)),

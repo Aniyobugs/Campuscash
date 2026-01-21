@@ -14,6 +14,7 @@ import StoreIcon from '@mui/icons-material/Store';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { motion } from 'framer-motion';
+import HeroImage from '../assets/hero-students.png';
 
 const featureData = [
   {
@@ -350,7 +351,7 @@ export default function Home() {
             <Grid size={{ xs: 12, md: 6 }}>
               <motion.div variants={parallax} initial="hidden" whileInView="visible" viewport={{ once: true }}>
                 <Box sx={{ borderRadius: 4, overflow: 'hidden', boxShadow: 8, bgcolor: cardBg }}>
-                  <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1400&auto=format&fit=crop&ixlib=rb-4.0.3&s=3b7d9b2b8c2d3f2b6b9a" alt="students" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', maxHeight: 380 }} />
+                  <img src={HeroImage} alt="students" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', maxHeight: 380 }} />
                 </Box>
               </motion.div>
             </Grid>
@@ -495,12 +496,12 @@ export default function Home() {
                 style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
               >
                 <Card
+                  className="gradient-border-card"
                   elevation={6}
                   sx={{
                     maxWidth: 320,
                     width: '100%',
-                    borderRadius: 3,
-                    borderTop: '6px solid #ffe600',
+                    // borderRadius: 3, // Handled by CSS class for consistency with border
                     textAlign: 'center',
                     px: 0,
                     py: 0,
@@ -510,7 +511,7 @@ export default function Home() {
                     justifyContent: 'center',
                     transition: 'box-shadow 0.25s, transform 0.25s',
                     '&:hover': { boxShadow: 14, transform: 'scale(1.04)' },
-                    background: isDark ? 'linear-gradient(120deg, #1e1e2e 80%, #2d2d3d 100%)' : 'linear-gradient(120deg, #fff 80%, #f3f3ff 100%)',
+                    '--card-bg': isDark ? 'linear-gradient(120deg, #1e1e2e 80%, #2d2d3d 100%)' : 'linear-gradient(120deg, #fff 80%, #f3f3ff 100%)',
                     color: textPrimary,
                   }}
                 >
@@ -544,7 +545,9 @@ export default function Home() {
         >
           <Box
             sx={{
-              background: isDark ? 'linear-gradient(120deg, #2d2d3d 70%, #3d3d4d 100%)' : 'linear-gradient(120deg, #ffe600 70%, #fffde7 100%)',
+              background: isDark
+                ? 'linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)' // Teal for Dark Mode
+                : 'linear-gradient(120deg, #ffe600 70%, #fffde7 100%)', // Yellow for Light Mode
               borderRadius: 6,
               py: 6,
               px: 5,
@@ -562,21 +565,21 @@ export default function Home() {
                 top: 24,
                 right: 32,
                 fontSize: 60,
-                color: '#6444e6',
-                opacity: 0.15,
+                color: isDark ? '#fff' : '#6444e6',
+                opacity: isDark ? 0.25 : 0.15,
               }}
             >
-              <DiamondIcon sx={{ fontSize: 60, color: '#6444e6', opacity: 0.15 }} />
+              <DiamondIcon sx={{ fontSize: 60, color: 'inherit' }} />
             </motion.div>
-            <Typography variant="h4" sx={{ fontWeight: 'bold', color: isDark ? '#8866ff' : '#6444e6', mb: 4 }}>
+            <Typography variant="h4" sx={{ fontWeight: 'bold', color: isDark ? '#1e293b' : '#6444e6', mb: 4 }}>
               Why Campus Cash?
             </Typography>
             <Stack spacing={3} alignItems="center">
-              <Chip label="Motivates you with real rewards you care about" sx={{ fontWeight: 'bold', px: 3, py: 1.5, bgcolor: isDark ? '#1a1a2e' : '#fff', color: textPrimary, fontSize: '1.25rem', boxShadow: 2 }} />
-              <Chip label="Track points and progress easily—never miss a reward opportunity" sx={{ px: 3, py: 1.5, bgcolor: isDark ? '#1a1a2e' : '#fff', color: textPrimary, fontSize: '1.25rem', boxShadow: 1 }} />
-              <Chip label="Leaderboard and badges for extra fun and friendly competition" sx={{ px: 3, py: 1.5, bgcolor: isDark ? '#1a1a2e' : '#fff', color: textPrimary, fontSize: '1.25rem', boxShadow: 1 }} />
-              <Chip label="Easy for both students and faculty" sx={{ px: 3, py: 1.5, bgcolor: isDark ? '#1a1a2e' : '#fff', color: textPrimary, fontSize: '1.25rem', boxShadow: 1 }} />
-              <Chip label="Always adding new perks and partners" sx={{ px: 3, py: 1.5, bgcolor: isDark ? '#1a1a2e' : '#fff', color: textPrimary, fontSize: '1.25rem', boxShadow: 1 }} />
+              <Chip label="Motivates you with real rewards you care about" sx={{ fontWeight: 'bold', px: 3, py: 1.5, bgcolor: 'rgba(255,255,255,0.9)', color: '#0f172a', fontSize: '1.25rem', boxShadow: 2 }} />
+              <Chip label="Track points and progress easily—never miss a reward opportunity" sx={{ px: 3, py: 1.5, bgcolor: 'rgba(255,255,255,0.9)', color: '#0f172a', fontSize: '1.25rem', boxShadow: 1 }} />
+              <Chip label="Leaderboard and badges for extra fun and friendly competition" sx={{ px: 3, py: 1.5, bgcolor: 'rgba(255,255,255,0.9)', color: '#0f172a', fontSize: '1.25rem', boxShadow: 1 }} />
+              <Chip label="Easy for both students and faculty" sx={{ px: 3, py: 1.5, bgcolor: 'rgba(255,255,255,0.9)', color: '#0f172a', fontSize: '1.25rem', boxShadow: 1 }} />
+              <Chip label="Always adding new perks and partners" sx={{ px: 3, py: 1.5, bgcolor: 'rgba(255,255,255,0.9)', color: '#0f172a', fontSize: '1.25rem', boxShadow: 1 }} />
             </Stack>
           </Box>
         </motion.div>

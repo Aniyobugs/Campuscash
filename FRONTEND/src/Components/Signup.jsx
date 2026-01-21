@@ -182,10 +182,10 @@ const Signup = () => {
                       <SchoolIcon fontSize="large" />
                     </Avatar>
                   </Box>
-                  <Typography variant="h3" fontWeight="800" gutterBottom sx={{ letterSpacing: -1 }}>
+                  <Typography variant="h3" fontWeight="800" gutterBottom sx={{ letterSpacing: -1, color: 'white' }}>
                     Join the Community.
                   </Typography>
-                  <Typography variant="h6" fontWeight="400" sx={{ opacity: 0.9, lineHeight: 1.6, maxWidth: 400 }}>
+                  <Typography variant="h6" fontWeight="400" sx={{ opacity: 0.9, lineHeight: 1.6, maxWidth: 400, color: 'white' }}>
                     Unlock exclusive student rewards, track your achievements, and level up your campus life.
                   </Typography>
                 </motion.div>

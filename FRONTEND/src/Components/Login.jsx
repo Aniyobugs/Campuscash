@@ -239,6 +239,13 @@ const Login = () => {
               {errors.form && (
                 <Alert severity="error" sx={{ borderRadius: 2 }}>
                   {errors.form}
+                  {typeof errors.form === 'string' && errors.form.toLowerCase().includes('inactive') && (
+                    <Box sx={{ mt: 1 }}>
+                      <Link to="/contact" style={{ color: 'inherit', textDecoration: 'underline', fontWeight: 'bold' }}>
+                        Contact Admin
+                      </Link>
+                    </Box>
+                  )}
                 </Alert>
               )}
 

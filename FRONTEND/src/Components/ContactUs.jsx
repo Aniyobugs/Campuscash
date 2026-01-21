@@ -42,25 +42,25 @@ const ContactUs = () => {
                     <Grid item xs={12} md={5}>
                         <Stack spacing={4}>
                             <Paper elevation={4} sx={{ p: 4, borderRadius: 4, bgcolor: 'primary.main', color: 'white' }}>
-                                <Typography variant="h5" fontWeight="bold" gutterBottom>
+                                <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ color: 'white' }}>
                                     Contact Information
                                 </Typography>
-                                <Typography variant="body1" sx={{ opactiy: 0.9, mb: 4 }}>
+                                <Typography variant="body1" sx={{ opacity: 0.9, mb: 4, color: 'white' }}>
                                     Have questions about points, rewards, or technical issues? We're here to help!
                                 </Typography>
 
                                 <Stack spacing={3}>
                                     <Stack direction="row" spacing={2} alignItems="center">
-                                        <EmailIcon />
-                                        <Typography>support@campuscash.edu</Typography>
+                                        <EmailIcon sx={{ color: 'white' }} />
+                                        <Typography sx={{ color: 'white' }}>support@campuscash.edu</Typography>
                                     </Stack>
                                     <Stack direction="row" spacing={2} alignItems="center">
-                                        <PhoneIcon />
-                                        <Typography>+91 123 456 7890</Typography>
+                                        <PhoneIcon sx={{ color: 'white' }} />
+                                        <Typography sx={{ color: 'white' }}>+91 91885 266 52, 9037302187</Typography>
                                     </Stack>
                                     <Stack direction="row" spacing={2} alignItems="center">
-                                        <LocationOnIcon />
-                                        <Typography>
+                                        <LocationOnIcon sx={{ color: 'white' }} />
+                                        <Typography sx={{ color: 'white' }}>
                                             Nirmala College of Arts and Science,<br />
                                             Chalakudy, Kerala - 680307
                                         </Typography>

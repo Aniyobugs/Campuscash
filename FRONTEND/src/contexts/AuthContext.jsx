@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom";
 const AuthContext = createContext({
   user: null,
   role: null,
-  login: () => {},
-  logout: () => {},
+  login: () => { },
+  logout: () => { },
 });
 
 export function AuthProvider({ children }) {
@@ -54,7 +54,7 @@ export function useAuth() {
   const ctx = useContext(AuthContext);
   // If for some reason the hook is used outside of a provider, return safe defaults
   if (!ctx) {
-    return { user: null, role: null, login: () => {}, logout: () => {} };
+    return { user: null, role: null, login: () => { }, logout: () => { } };
   }
   return ctx;
 }

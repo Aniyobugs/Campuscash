@@ -13,7 +13,7 @@ const Footer = () => {
             <Container maxWidth="lg">
                 <Grid container spacing={4} justifyContent="center" alignItems="flex-start">
                     <Grid item xs={12} md={4}>
-                        <Typography variant="h6" fontWeight="bold">
+                        <Typography variant="h6" fontWeight="bold" sx={{ color: 'white' }}>
                             Campus Cash
                         </Typography>
                         <Typography variant="body2" sx={{ mt: 1, color: '#f1f5f9', opacity: 0.9 }}>
@@ -21,7 +21,7 @@ const Footer = () => {
                         </Typography>
                     </Grid>
                     <Grid item xs={12} md={4}>
-                        <Typography variant="h6" fontWeight="bold">
+                        <Typography variant="h6" fontWeight="bold" sx={{ color: 'white' }}>
                             Explore
                         </Typography>
                         <Stack sx={{ mt: 1 }} spacing={1}>
@@ -58,7 +58,7 @@ const Footer = () => {
                         </Stack>
                     </Grid>
                     <Grid item xs={12} md={4}>
-                        <Typography variant="h6" fontWeight="bold">
+                        <Typography variant="h6" fontWeight="bold" sx={{ color: 'white' }}>
                             Contact
                         </Typography>
                         <Stack sx={{ mt: 1 }} spacing={1}>

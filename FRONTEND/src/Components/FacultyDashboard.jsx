@@ -1,1179 +1,1400 @@
 import React, { useEffect, useState } from "react";
 import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  Grid,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  TextField,
-  Button,
-  Snackbar,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  ListItemSecondaryAction,
-  ListItemButton,
-  ListItemIcon,
-  Toolbar,
-  CircularProgress,
-  Autocomplete,
-  Avatar,
-  Fade,
-  Divider,
-  Chip,
-  Tooltip,
-  IconButton,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
+    Box,
+    Typography,
+    Card,
+    CardContent,
+    Grid,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper,
+    TextField,
+    Button,
+    Snackbar,
+    Alert,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    List,
+    ListItem,
+    ListItemAvatar,
+    ListItemText,
+    ListItemSecondaryAction,
+    ListItemButton,
+    ListItemIcon,
+    CircularProgress,
+    Autocomplete,
+    Avatar,
+    Fade,
+    Divider,
+    Chip,
+    Tooltip,
+    IconButton,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    Menu,
+    Stack,
+    LinearProgress,
 } from "@mui/material";
-import { Edit, Save, Cancel, PersonOff, Person, Dashboard as DashboardIcon, Star as StarIcon, People as PeopleIcon, Assignment as AssignmentIcon, RateReview as RateReviewIcon, Visibility as VisibilityIcon } from "@mui/icons-material";
+import {
+    Edit,
+    Save,
+    Cancel,
+    PersonOff,
+    Person,
+    Dashboard as DashboardIcon,
+    Star as StarIcon,
+    People as PeopleIcon,
+    Assignment as AssignmentIcon,
+    RateReview as RateReviewIcon,
+    Visibility as VisibilityIcon,
+    MoreVert,
+    TrendingUp,
+    Schedule,
+    NotificationsActive,
+    CheckCircle,
+    Warning,
+    Add,
+    EmojiEvents,
+    ListAlt as ListAltIcon,
+} from "@mui/icons-material";
 import { useTheme } from "../contexts/ThemeContext";
 import axios from "axios";
+import {
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip as RechartsTooltip,
+    ResponsiveContainer,
+    AreaChart,
+    Area,
+} from "recharts";
 
-// Faculty Dashboard — same functionality as Admin but without role editing/toggling and with different styling
+// Faculty Dashboard — Redesigned
 const FacultyDashboard = () => {
-  const { isDark } = useTheme();
-  const baseurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+    const { isDark } = useTheme();
+    // Force dark aesthetic for dashboard content if user prefers, or just consistent dark theme
+    const dashboardBg = "#0f172a";
+    const cardBg = "#1e293b";
+    const textPrimary = "#f1f5f9";
+    const textSecondary = "#94a3b8";
+    const accentColor = "#818cf8"; // Indigo
+    const successColor = "#4ade80"; // Green
+    const warningColor = "#fbbf24"; // Amber
 
-  const [users, setUsers] = useState([]);
-  const [filtered, setFiltered] = useState([]);
-  const [search, setSearch] = useState("");
+    const baseurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
-  const [awardData, setAwardData] = useState({
-    studentId: "",
-    points: "",
-    reason: "",
-  });
+    const [users, setUsers] = useState([]);
+    const [filtered, setFiltered] = useState([]);
+    const [search, setSearch] = useState("");
 
-  const [editingUserId, setEditingUserId] = useState(null);
-  const [editForm, setEditForm] = useState({
-    fname: "",
-    ename: "",
-    yearClassDept: "",
-  });
-
-  const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
-  const [tasks, setTasks] = useState([]);
-  const [tasksLoading, setTasksLoading] = useState(false);
-
-  // Task modal / candidates
-  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState(null);
-  const [candidates, setCandidates] = useState([]);
-  const [candidatesLoading, setCandidatesLoading] = useState(false);
-
-  // Create Task dialog state (copied from AdminDashboard)
-  const [createTaskOpen, setCreateTaskOpen] = useState(false);
-  const [createTaskForm, setCreateTaskForm] = useState({
-    title: '',
-    description: '',
-    dueDate: '',
-    points: 10,
-    category: 'General',
-    assignedYears: [],
-    quiz: { questions: [], passingScore: 70 },
-  });
-
-  // Edit Task state
-  const [editTaskOpen, setEditTaskOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
-  const [editTaskForm, setEditTaskForm] = useState({
-    title: '',
-    description: '',
-    dueDate: '',
-    points: 10,
-    category: 'General',
-    assignedYears: [],
-    quiz: { questions: [], passingScore: 70 },
-  });
-
-  // Delete Task confirmation
-  const [deleteTaskOpen, setDeleteTaskOpen] = useState(false);
-  const [taskToDelete, setTaskToDelete] = useState(null);
-
-  // derive year options from existing users (plus common defaults)
-  const yearOptions = Array.from(new Set([
-    'All',
-    'Year 1',
-    'Year 2',
-    'Year 3',
-    'Year 4',
-    ...(users || []).map((u) => u.yearClassDept).filter(Boolean),
-  ]));
-
-  // Submissions
-  const [submissions, setSubmissions] = useState([]);
-  const [subsLoading, setSubsLoading] = useState(false);
-  const [viewSubOpen, setViewSubOpen] = useState(false);
-  const [selectedSub, setSelectedSub] = useState(null);
-
-  const fetchSubmissions = async () => {
-    try {
-      setSubsLoading(true);
-      const res = await axios.get(`${baseurl}/api/submissions`);
-      setSubmissions(res.data || []);
-    } catch (err) {
-      console.error('Failed to fetch submissions', err);
-      setError(err.response?.data?.message || 'Failed to load submissions');
-    } finally {
-      setSubsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    axios
-      .get(`${baseurl}/api/users`)
-      .then((res) => {
-        const activeUsers = res.data.filter((u) => u.status !== "inactive" && !['admin', 'faculty', 'store'].includes(u.role));
-        setUsers(activeUsers);
-        setFiltered(activeUsers);
-      })
-      .catch((err) => {
-        console.error("Users fetch error:", err.response?.data || err.message || err);
-        setError(err.response?.data?.message || "Failed to load users");
-      });
-
-    // fetch tasks for faculty
-    setTasksLoading(true);
-    axios
-      .get(`${baseurl}/api/tasks`)
-      .then((res) => setTasks(res.data || []))
-      .catch((err) => {
-        console.error("Tasks fetch error:", err.response?.data || err.message || err);
-        setError(err.response?.data?.message || "Failed to load tasks");
-      })
-      .finally(() => setTasksLoading(false));
-
-    fetchSubmissions();
-  }, [baseurl]);
-
-  const handleOpenTask = async (task) => {
-    setSelectedTask(task);
-    setTaskDialogOpen(true);
-    setCandidatesLoading(true);
-    try {
-      const res = await axios.get(`${baseurl}/api/tasks/${task._id}/candidates`);
-      setCandidates(res.data || []);
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.message || 'Failed to load candidates');
-    } finally {
-      setCandidatesLoading(false);
-    }
-  };
-
-  const handleAwardForTask = async (candidate) => {
-    if (!selectedTask) return;
-    try {
-      const res = await axios.post(`${baseurl}/api/tasks/${selectedTask._id}/award`, { userId: candidate._id });
-      setSuccess(res.data.message || "Awarded successfully");
-      setError("");
-
-      // update candidate in local list
-      setCandidates((prev) => prev.map((c) => (c._id === candidate._id ? { ...c, awarded: true, points: res.data.user.points } : c)));
-
-      // update users list points
-      setUsers((prev) => prev.map((u) => (u._id === candidate._id ? { ...u, points: res.data.user.points } : u)));
-
-      // update tasks list awarded count
-      setTasks((prev) => prev.map((t) => (t._id === selectedTask._id ? { ...t, awardedTo: [...(t.awardedTo || []), { user: candidate._id }] } : t)));
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to award points");
-      setSuccess("");
-    }
-  };
-
-  const handleApproveSubmission = async (submission) => {
-    try {
-      const res = await axios.put(`${baseurl}/api/submissions/${submission._id}/approve`, { adminComment: '' });
-      setSuccess(res.data.message || 'Submission approved');
-      setError('');
-      // update submission in state
-      setSubmissions((prev) => prev.map((p) => (p._id === submission._id ? { ...p, status: 'accepted' } : p)));
-      // update user points locally
-      if (res.data.user) {
-        setUsers((prev) => prev.map((u) => (u._id === res.data.user._id ? { ...u, points: res.data.user.points } : u)));
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to approve');
-    }
-  };
-
-  const handleRejectSubmission = async (submission) => {
-    try {
-      const res = await axios.put(`${baseurl}/api/submissions/${submission._id}/reject`, { adminComment: '' });
-      setSuccess(res.data.message || 'Submission rejected');
-      setError('');
-      setSubmissions((prev) => prev.map((p) => (p._id === submission._id ? { ...p, status: 'rejected' } : p)));
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to reject');
-    }
-  };
-
-  useEffect(() => {
-    setFiltered(
-      users.filter(
-        (u) =>
-          u.fname?.toLowerCase().includes(search.toLowerCase()) ||
-          u.ename?.toLowerCase().includes(search.toLowerCase()) ||
-          (u.studentId && u.studentId.toLowerCase().includes(search.toLowerCase()))
-      )
-    );
-  }, [search, users]);
-
-  const handleAward = async () => {
-    if (!awardData.studentId || !awardData.points) {
-      setError("Please select a student and enter points.");
-      return;
-    }
-    try {
-      const res = await axios.post(`${baseurl}/api/award-points`, awardData);
-      setSuccess(res.data.message);
-      setError("");
-      const updatedUsers = users.map((u) =>
-        u._id === awardData.studentId
-          ? { ...u, points: u.points + parseInt(awardData.points) }
-          : u
-      );
-      setUsers(updatedUsers);
-      setFiltered(updatedUsers);
-      setAwardData({ studentId: "", points: "", reason: "" });
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to award points.");
-    }
-  };
-
-  const handleEdit = (user) => {
-    setEditingUserId(user._id);
-    setEditForm({
-      fname: user.fname,
-      ename: user.ename,
-      yearClassDept: user.yearClassDept,
+    const [awardData, setAwardData] = useState({
+        studentId: "",
+        points: "",
+        reason: "",
     });
-  };
 
-  const handleSave = async (id) => {
-    try {
-      const res = await axios.put(`${baseurl}/api/users/${id}`, editForm);
-      setSuccess(res.data.message);
-      const updatedUsers = users.map((u) =>
-        u._id === id ? { ...u, ...editForm } : u
-      );
-      setUsers(updatedUsers);
-      setFiltered(updatedUsers);
-      setEditingUserId(null);
-    } catch (err) {
-      setError(err.response?.data?.message || "Update failed");
-    }
-  };
-
-  const handleToggleStatus = async (id) => {
-    try {
-      const res = await axios.put(`${baseurl}/api/users/${id}/status`);
-      setSuccess(res.data.message);
-
-      if (res.data.user.status === "inactive") {
-        const updatedUsers = users.filter((u) => u._id !== id);
-        setUsers(updatedUsers);
-        setFiltered(updatedUsers);
-      } else {
-        const updatedUsers = [...users, res.data.user];
-        setUsers(updatedUsers);
-        setFiltered(updatedUsers);
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to update status");
-    }
-  };
-
-  const handleEditTask = (task) => {
-    setEditingTask(task);
-    setEditTaskForm({
-      title: task.title,
-      description: task.description,
-      dueDate: task.dueDate.slice(0, 16), // format for datetime-local
-      points: task.points,
-      category: task.category || 'General',
-      assignedYears: task.assignedYears || [],
-      quiz: task.quiz || { questions: [], passingScore: 70 },
+    // Edit User State
+    const [editingUserId, setEditingUserId] = useState(null);
+    const [editForm, setEditForm] = useState({
+        fname: "",
+        ename: "",
+        yearClassDept: "",
     });
-    setEditTaskOpen(true);
-  };
 
-  const handleSaveEditedTask = async () => {
-    if (!editingTask || !editTaskForm.title) {
-      setError('Please fill in all required fields');
-      return;
-    }
-    try {
-      const res = await axios.put(`${baseurl}/api/tasks/${editingTask._id}`, editTaskForm);
-      setSuccess('Task updated successfully');
-      setError('');
-      setEditTaskOpen(false);
-      setTasks((prev) => prev.map((t) => (t._id === editingTask._id ? res.data : t)));
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update task');
-      setSuccess('');
-    }
-  };
+    const [success, setSuccess] = useState("");
+    const [error, setError] = useState("");
+    const [tasks, setTasks] = useState([]);
+    const [tasksLoading, setTasksLoading] = useState(false);
 
-  const handleDeleteTask = async () => {
-    if (!taskToDelete) return;
-    try {
-      await axios.delete(`${baseurl}/api/tasks/${taskToDelete._id}`);
-      setSuccess('Task deleted successfully');
-      setError('');
-      setDeleteTaskOpen(false);
-      setTasks((prev) => prev.filter((t) => t._id !== taskToDelete._id));
-      setTaskToDelete(null);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete task');
-      setSuccess('');
-    }
-  };
+    // Task modal / candidates
+    const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+    const [selectedTask, setSelectedTask] = useState(null);
+    const [candidates, setCandidates] = useState([]);
+    const [candidatesLoading, setCandidatesLoading] = useState(false);
 
-  const totalUsers = users.length;
-  const totalPoints = users.reduce((sum, u) => sum + (u.points || 0), 0);
-  const topStudent =
-    users.length > 0 ? [...users].sort((a, b) => b.points - a.points)[0] : null;
+    // Create/Edit Task dialog state
+    const [createTaskOpen, setCreateTaskOpen] = useState(false);
+    const [createTaskForm, setCreateTaskForm] = useState({
+        title: "",
+        description: "",
+        dueDate: "",
+        points: 10,
+        category: "General",
+        assignedYears: [],
+        quiz: { questions: [], passingScore: 70 },
+    });
 
-  // Faculty style uses green accents
-  const statCardStyles = {
-    bgcolor: isDark ? "#1e293b" : "#ffffff",
-    color: isDark ? "#86efac" : "#1b5e20",
-    boxShadow: 4,
-    borderRadius: 3,
-    p: 3,
-    minHeight: 140,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-  };
+    const [editTaskOpen, setEditTaskOpen] = useState(false);
+    const [editingTask, setEditingTask] = useState(null);
+    const [editTaskForm, setEditTaskForm] = useState({
+        title: "",
+        description: "",
+        dueDate: "",
+        points: 10,
+        category: "General",
+        assignedYears: [],
+        quiz: { questions: [], passingScore: 70 },
+    });
 
-  return (
-    <Box sx={{ display: 'flex', bgcolor: isDark ? "#0f172a" : "#f9fafb", minHeight: "100vh" }}>
-      {/* Sidebar */}
-      <Box sx={{
-        width: 280,
-        flexShrink: 0,
-        display: { xs: 'none', lg: 'block' },
-        background: isDark
-          ? 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)'
-          : 'linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%)',
-        borderRight: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
-      }}>
-        <Box sx={{ position: 'sticky', top: 80, p: 3 }}>
-          <Typography variant="overline" sx={{ px: 2, mb: 3, display: 'block', color: 'text.secondary', fontWeight: '800', letterSpacing: '1.2px' }}>
-            FACULTY MENU
-          </Typography>
-          <List sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {[
-              { text: 'Dashboard', icon: <DashboardIcon />, id: 'dashboard' },
-              { text: 'Award Points', icon: <StarIcon />, id: 'award-points' },
-              { text: 'Students List', icon: <PeopleIcon />, id: 'students-list' },
-              { text: 'Tasks', icon: <AssignmentIcon />, id: 'tasks' },
-              { text: 'Submissions', icon: <RateReviewIcon />, id: 'submissions' }
-            ].map((item) => (
-              <ListItemButton
-                key={item.text}
-                onClick={() => {
-                  document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }}
-                sx={{
-                  borderRadius: 3,
-                  py: 1.5,
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    bgcolor: isDark ? 'rgba(56, 142, 60, 0.15)' : 'rgba(27, 94, 32, 0.08)',
-                    transform: 'translateX(5px)'
-                  }
-                }}
-              >
-                <ListItemIcon sx={{ color: isDark ? "#86efac" : "#2e7d32", minWidth: 40 }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText primary={item.text} sx={{ '& .MuiTypography-root': { fontWeight: 600, fontFamily: '"Inter", sans-serif' } }} />
-              </ListItemButton>
-            ))}
-          </List>
-        </Box>
-      </Box>
+    const [deleteTaskOpen, setDeleteTaskOpen] = useState(false);
+    const [taskToDelete, setTaskToDelete] = useState(null);
 
-      {/* Main Content */}
-      <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, md: 5 }, maxWidth: 1200, mx: "auto", width: '100%', color: isDark ? "#ffffff" : "#212121" }}>
-        <Typography id="dashboard" variant="h3" fontWeight="bold" mb={2} sx={{ color: isDark ? "#86efac" : "#1b5e20", textAlign: "center" }}>
-          Faculty Dashboard
-        </Typography>
-        <Divider sx={{ mb: 4 }} />
+    // View All Students Dialog State
+    const [viewAllStudentsOpen, setViewAllStudentsOpen] = useState(false);
 
-        {/* Stats */}
-        <Grid container spacing={4} mb={4}>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Card sx={statCardStyles} elevation={0} style={{ background: isDark ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)', border: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
-              <CardContent sx={{ textAlign: "center" }}>
-                <Typography variant="h6" gutterBottom sx={{ opacity: 0.8 }}>
-                  Total Students
-                </Typography>
-                <Fade in timeout={600}>
-                  <Typography variant="h2" sx={{ background: 'linear-gradient(45deg, #2e7d32, #66bb6a)', backgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 'bold' }}>
-                    {totalUsers}
-                  </Typography>
-                </Fade>
-              </CardContent>
-            </Card>
-          </Grid>
+    // Award Points Filter State
+    const [awardTimeFilter, setAwardTimeFilter] = useState('All');
 
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Card sx={statCardStyles} elevation={0} style={{ background: isDark ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)', border: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
-              <CardContent sx={{ textAlign: "center" }}>
-                <Typography variant="h6" gutterBottom sx={{ opacity: 0.8 }}>
-                  Points Given
-                </Typography>
-                <Fade in timeout={600}>
-                  <Typography variant="h2" sx={{ background: 'linear-gradient(45deg, #4caf50, #81c784)', backgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 'bold' }}>
-                    {totalPoints}
-                  </Typography>
-                </Fade>
-              </CardContent>
-            </Card>
-          </Grid>
+    // Actions Menu State
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [selectedStudentForAction, setSelectedStudentForAction] = useState(null);
+    const [historyOpen, setHistoryOpen] = useState(false);
 
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Card sx={statCardStyles} elevation={0} style={{ background: isDark ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)', border: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
-              <CardContent sx={{ textAlign: "center" }}>
-                <Typography variant="h6" gutterBottom sx={{ opacity: 0.8 }}>
-                  Top Student
-                </Typography>
-                {topStudent ? (
-                  <Fade in timeout={600}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 3, justifyContent: "center", mt: 1 }}>
-                      <Avatar
-                        src={
-                          topStudent.profilePic
-                            ? `${baseurl}${topStudent.profilePic}`
-                            : "/default-avatar.png"
-                        }
-                        alt={topStudent.fname}
-                        sx={{ width: 64, height: 64, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: '2px solid #4caf50' }}
-                      />
-                      <Box sx={{ textAlign: 'left' }}>
-                        <Typography variant="h5" fontWeight="bold">
-                          {topStudent.fname}
-                        </Typography>
-                        <Chip
-                          label={`${topStudent.points} pts`}
+    // Derived options
+    const yearOptions = Array.from(new Set([
+        "All", "Year 1", "Year 2", "Year 3", "Year 4",
+        ...(users || []).map((u) => u.yearClassDept).filter(Boolean),
+    ]));
 
-                          size="small"
-                          sx={{ fontWeight: "bold", mt: 0.5, bgcolor: 'rgba(76, 175, 80, 0.1)', color: '#4caf50', borderRadius: 1 }}
-                        />
-                      </Box>
-                    </Box>
-                  </Fade>
-                ) : (
-                  <Typography>No students yet</Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+    // Submissions
+    const [submissions, setSubmissions] = useState([]);
+    const [subsLoading, setSubsLoading] = useState(false);
+    const [viewSubOpen, setViewSubOpen] = useState(false);
+    const [selectedSub, setSelectedSub] = useState(null);
 
-        {/* Award Points Section (same as admin) */}
-        <Card id="award-points" sx={{ mb: 5, bgcolor: isDark ? "#1e293b" : "#ffffff", boxShadow: '0 4px 20px rgba(0,0,0,0.05)', borderRadius: 4, border: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
-          <CardContent sx={{ p: 4 }}>
-            <Typography
-              variant="h6"
-              gutterBottom
-              sx={{ mb: 3, fontWeight: "bold", letterSpacing: 1, color: isDark ? "#86efac" : "#1b5e20" }}
-            >
-              Award Points
-            </Typography>
+    // Data Loading
+    useEffect(() => {
+        fetchUsers();
+        fetchTasks();
+        fetchSubmissions();
+    }, [baseurl]);
 
-            <Grid container spacing={2} alignItems="center">
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Autocomplete
-                  options={users}
-                  getOptionLabel={(option) =>
-                    `${option.fname} (${option.studentId}) - ${option.points || 0} pts`
-                  }
-                  value={users.find((u) => u._id === awardData.studentId) || null}
-                  onChange={(event, newValue) =>
-                    setAwardData({ ...awardData, studentId: newValue?._id || "" })
-                  }
-                  renderOption={(props, option) => (
-                    <Box
-                      component="li"
-                      {...props}
-                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                    >
-                      <Avatar
-                        src={
-                          option.profilePic
-                            ? `${baseurl}${option.profilePic}`
-                            : "/default-avatar.png"
-                        }
-                        alt={option.fname}
-                        sx={{ width: 30, height: 30 }}
-                      />
-                      <span>{`${option.fname} (${option.studentId}) - ${option.points || 0} pts`}</span>
-                    </Box>
-                  )}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Select Student" fullWidth />
-                  )}
-                  PaperComponent={({ children }) => (
-                    <Paper
-                      style={{ width: 350, maxHeight: 300, overflowY: "auto" }}
-                    >
-                      {children}
-                    </Paper>
-                  )}
-                />
-              </Grid>
+    const fetchUsers = async () => {
+        try {
+            const res = await axios.get(`${baseurl}/api/users`);
+            const activeUsers = res.data.filter(
+                (u) => u.status !== "inactive" && !["admin", "faculty", "store"].includes(u.role)
+            );
+            setUsers(activeUsers);
+            setFiltered(activeUsers);
+        } catch (err) {
+            console.error("Users fetch error:", err);
+            setError("Failed to load users");
+        }
+    };
 
-              <Grid size={{ xs: 12, md: 2 }}>
-                <TextField
-                  label="Points"
-                  type="number"
-                  fullWidth
-                  value={awardData.points}
-                  onChange={(e) =>
-                    setAwardData({ ...awardData, points: e.target.value })
-                  }
-                  InputProps={{ inputProps: { min: 1 } }}
-                />
-              </Grid>
+    const fetchTasks = async () => {
+        setTasksLoading(true);
+        try {
+            const res = await axios.get(`${baseurl}/api/tasks`);
+            setTasks(res.data || []);
+        } catch (err) {
+            console.error("Tasks fetch error:", err);
+            setError("Failed to load tasks");
+        } finally {
+            setTasksLoading(false);
+        }
+    };
 
-              <Grid size={{ xs: 12, md: 3 }}>
-                <TextField
-                  label="Reason"
-                  fullWidth
-                  value={awardData.reason}
-                  onChange={(e) =>
-                    setAwardData({ ...awardData, reason: e.target.value })
-                  }
-                />
-              </Grid>
+    const fetchSubmissions = async () => {
+        setSubsLoading(true);
+        try {
+            const res = await axios.get(`${baseurl}/api/submissions`);
+            setSubmissions(res.data || []);
+        } catch (err) {
+            console.error("Submissions error:", err);
+            setError("Failed to load submissions");
+        } finally {
+            setSubsLoading(false);
+        }
+    };
 
-              <Grid size={{ xs: 12, md: 1 }}>
-                <Button
-                  variant="contained"
-                  color="success"
-                  fullWidth
-                  sx={{
-                    height: "100%",
-                    fontWeight: "bold",
-                    borderRadius: 2,
-                    boxShadow: 2,
-                    textTransform: "none",
-                  }}
-                  onClick={handleAward}
-                >
-                  Award
-                </Button>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
+    // --- Handlers (Keep logic, just reformatted) ---
+    const handleOpenTask = async (task) => {
+        setSelectedTask(task);
+        setTaskDialogOpen(true);
+        setCandidatesLoading(true);
+        try {
+            const res = await axios.get(`${baseurl}/api/tasks/${task._id}/candidates`);
+            setCandidates(res.data || []);
+        } catch (err) {
+            setError("Failed to load candidates");
+        } finally {
+            setCandidatesLoading(false);
+        }
+    };
 
-        {/* Students List (faculty can't edit roles) */}
-        <Card id="students-list" sx={{ bgcolor: isDark ? "#1e293b" : "white", boxShadow: '0 4px 20px rgba(0,0,0,0.05)', borderRadius: 4, border: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
-          <CardContent sx={{ p: 4 }}>
-            <Typography
-              variant="h6"
-              gutterBottom
-              color="secondary"
-              sx={{ fontWeight: "bold", letterSpacing: 1 }}
-            >
-              Students List
-            </Typography>
-            <TextField
-              label="Search"
-              fullWidth
-              sx={{ mb: 2 }}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              InputProps={{
-                sx: { bgcolor: isDark ? "#1e293b" : "#f5f5f5", borderRadius: 2, color: isDark ? "#ffffff" : "#212121" },
-              }}
-            />
-            <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 'none', border: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ background: isDark ? 'linear-gradient(90deg, #334155 0%, #1e293b 100%)' : 'linear-gradient(90deg, #f1f5f9 0%, #ffffff 100%)' }}>
-                    <TableCell sx={{ fontWeight: "bold" }}>Photo</TableCell>
-                    <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
-                    <TableCell sx={{ fontWeight: "bold" }}>Email</TableCell>
-                    <TableCell sx={{ fontWeight: "bold" }}>Student ID</TableCell>
-                    <TableCell sx={{ fontWeight: "bold" }}>Year/Class/Dept</TableCell>
-                    <TableCell sx={{ fontWeight: "bold" }}>Points</TableCell>
-                    <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: "bold" }}>
-                      Action
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filtered.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} align="center">
-                        <Typography color="text.secondary">No students found</Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filtered.map((u) => (
-                      <TableRow key={u._id} hover sx={{ transition: "background 0.2s" }}>
-                        <TableCell>
-                          <Avatar
-                            src={
-                              u.profilePic
-                                ? `${baseurl}${u.profilePic}`
-                                : "/default-avatar.png"
-                            }
-                            alt={u.fname}
-                            sx={{ width: 40, height: 40, boxShadow: 1 }}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {editingUserId === u._id ? (
-                            <TextField
-                              value={editForm.fname}
-                              size="small"
-                              onChange={(e) =>
-                                setEditForm({
-                                  ...editForm,
-                                  fname: e.target.value,
-                                })
-                              }
-                              sx={{ bgcolor: isDark ? "#1e293b" : "#f5f5f5", borderRadius: 1 }}
-                            />
-                          ) : (
-                            <Typography fontWeight="bold">{u.fname}</Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {editingUserId === u._id ? (
-                            <TextField
-                              value={editForm.ename}
-                              size="small"
-                              onChange={(e) =>
-                                setEditForm({
-                                  ...editForm,
-                                  ename: e.target.value,
-                                })
-                              }
-                              sx={{ bgcolor: isDark ? "#1e293b" : "#f5f5f5", borderRadius: 1 }}
-                            />
-                          ) : (
-                            <Typography>{u.ename}</Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={u.studentId}
-                            color="primary"
-                            size="small"
-                            sx={{ fontWeight: "bold" }}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {editingUserId === u._id ? (
-                            <TextField
-                              value={editForm.yearClassDept}
-                              size="small"
-                              onChange={(e) =>
-                                setEditForm({
-                                  ...editForm,
-                                  yearClassDept: e.target.value,
-                                })
-                              }
-                              sx={{ bgcolor: isDark ? "#1e293b" : "#f5f5f5", borderRadius: 1 }}
-                            />
-                          ) : (
-                            <Typography>{u.yearClassDept}</Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={`${u.points} pts`}
-                            color="success"
-                            size="small"
-                            sx={{ fontWeight: "bold" }}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={u.status || "active"}
-                            color={u.status === "active" ? "primary" : "default"}
-                            size="small"
-                            sx={{ fontWeight: "bold" }}
-                          />
-                        </TableCell>
-                        <TableCell align="center">
-                          {editingUserId === u._id ? (
-                            <>
-                              <Tooltip title="Save">
-                                <IconButton
-                                  onClick={() => handleSave(u._id)}
-                                  color="success"
-                                  sx={{ mr: 1 }}
-                                >
-                                  <Save />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Cancel">
-                                <IconButton
-                                  onClick={() => setEditingUserId(null)}
-                                  color="error"
-                                >
-                                  <Cancel />
-                                </IconButton>
-                              </Tooltip>
-                            </>
-                          ) : (
-                            <>
-                              <Tooltip title="Edit">
-                                <IconButton
-                                  onClick={() => handleEdit(u)}
-                                  color="primary"
-                                  sx={{ mr: 1 }}
-                                >
-                                  <Edit />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title={u.status === "active" ? "Deactivate" : "Activate"}>
-                                <IconButton
-                                  onClick={() => handleToggleStatus(u._id)}
-                                  color={u.status === "active" ? "error" : "success"}
-                                >
-                                  {u.status === "active" ? <PersonOff /> : <Person />}
-                                </IconButton>
-                              </Tooltip>
-                            </>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </CardContent>
-        </Card>
+    const handleAwardForTask = async (candidate) => {
+        if (!selectedTask) return;
+        try {
+            const res = await axios.post(`${baseurl}/api/tasks/${selectedTask._id}/award`, { userId: candidate._id });
+            setSuccess("Awarded successfully");
+            setCandidates((prev) => prev.map((c) => (c._id === candidate._id ? { ...c, awarded: true, points: res.data.user.points } : c)));
+            setUsers((prev) => prev.map((u) => (u._id === candidate._id ? { ...u, points: res.data.user.points } : u)));
+            setTasks((prev) => prev.map((t) => (t._id === selectedTask._id ? { ...t, awardedTo: [...(t.awardedTo || []), { user: candidate._id }] } : t)));
+        } catch (err) {
+            setError("Failed to award points");
+        }
+    };
 
-        {/* Tasks List / Manage */}
-        <Card id="tasks" sx={{ mt: 5, bgcolor: isDark ? "#1e293b" : "white", boxShadow: '0 4px 20px rgba(0,0,0,0.05)', borderRadius: 4, border: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
-          <CardContent sx={{ p: 4 }}>
-            <Box display="flex" alignItems="center" justifyContent="space-between">
-              <Typography variant="h6" gutterBottom color="secondary" sx={{ fontWeight: "bold", letterSpacing: 1 }}>
-                Tasks
-              </Typography>
-              <Button variant="contained" size="small" onClick={() => setCreateTaskOpen(true)}>Create Task</Button>
-            </Box>
+    const handleApproveSubmission = async (submission) => {
+        try {
+            const res = await axios.put(`${baseurl}/api/submissions/${submission._id}/approve`, { adminComment: "" });
+            setSuccess("Submission approved");
+            setSubmissions((prev) => prev.map((p) => (p._id === submission._id ? { ...p, status: "accepted" } : p)));
+            if (res.data.user) {
+                setUsers((prev) => prev.map((u) => (u._id === res.data.user._id ? { ...u, points: res.data.user.points } : u)));
+            }
+        } catch (err) {
+            setError("Failed to approve");
+        }
+    };
 
-            {tasksLoading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 'none', border: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
-                <Table>
-                  <TableHead>
-                    <TableRow sx={{ background: isDark ? 'linear-gradient(90deg, #334155 0%, #1e293b 100%)' : 'linear-gradient(90deg, #f1f5f9 0%, #ffffff 100%)' }}>
-                      <TableCell sx={{ fontWeight: "bold" }}>Title</TableCell>
-                      <TableCell sx={{ fontWeight: "bold" }}>Points</TableCell>
-                      <TableCell sx={{ fontWeight: "bold" }}>Due</TableCell>
-                      <TableCell sx={{ fontWeight: "bold" }}>Years</TableCell>
-                      <TableCell sx={{ fontWeight: "bold" }} align="center">Awarded</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: "bold" }}>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {tasks.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center">
-                          <Typography color="text.secondary">No tasks found</Typography>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      tasks.map((t) => (
-                        <TableRow key={t._id} hover>
-                          <TableCell>{t.title}</TableCell>
-                          <TableCell>{t.points}</TableCell>
-                          <TableCell>{new Date(t.dueDate).toLocaleDateString()}</TableCell>
-                          <TableCell>{(t.assignedYears || []).join(", ") || "All"}</TableCell>
-                          <TableCell align="center">{(t.awardedTo || []).length}</TableCell>
-                          <TableCell align="center">
-                            <Button variant="outlined" size="small" onClick={() => handleOpenTask(t)} sx={{ mr: 1 }}>
-                              Manage
-                            </Button>
-                            <Tooltip title="Edit Task">
-                              <IconButton size="small" onClick={() => handleEditTask(t)} color="primary">
-                                <Edit fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete Task">
-                              <IconButton size="small" onClick={() => { setTaskToDelete(t); setDeleteTaskOpen(true); }} color="error">
-                                <Cancel fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </CardContent>
-        </Card>
+    const handleRejectSubmission = async (submission) => {
+        try {
+            await axios.put(`${baseurl}/api/submissions/${submission._id}/reject`, { adminComment: "" });
+            setSuccess("Submission rejected");
+            setSubmissions((prev) => prev.map((p) => (p._id === submission._id ? { ...p, status: "rejected" } : p)));
+        } catch (err) {
+            setError("Failed to reject");
+        }
+    };
 
-        <Dialog open={taskDialogOpen} onClose={() => setTaskDialogOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Manage Task</DialogTitle>
-          <DialogContent>
-            {selectedTask && (
-              <Box>
-                <Typography variant="subtitle1" fontWeight={700}>{selectedTask.title}</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{selectedTask.description}</Typography>
+    const handleAward = async () => {
+        if (!awardData.studentId || !awardData.points) {
+            setError("Please select a student and enter points.");
+            return;
+        }
+        try {
+            const res = await axios.post(`${baseurl}/api/award-points`, awardData);
+            setSuccess(res.data.message);
+            const updatedUsers = users.map((u) => u._id === awardData.studentId ? { ...u, points: u.points + parseInt(awardData.points) } : u);
+            setUsers(updatedUsers);
+            setFiltered(updatedUsers);
+            setAwardData({ studentId: "", points: "", reason: "" });
+        } catch (err) {
+            setError("Failed to award points.");
+        }
+    };
 
-                {candidatesLoading ? (
-                  <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}><CircularProgress size={28} /></Box>
-                ) : (
-                  <List>
-                    {candidates.length === 0 ? (
-                      <Typography color="text.secondary">No students match this task. Try using values like "Year 3", "3rd Year", or set "All" to target all students.</Typography>
-                    ) : (
-                      candidates.map((c) => (
-                        <ListItem key={c._id} divider>
-                          <ListItemAvatar>
-                            <Avatar src={c.profilePic ? `${baseurl}${c.profilePic}` : "/default-avatar.png"} />
-                          </ListItemAvatar>
-                          <ListItemText primary={`${c.fname} (${c.studentId || "--"})`} secondary={`${c.yearClassDept || ""} • ${c.points || 0} pts`} />
-                          <ListItemSecondaryAction>
-                            <Button size="small" variant={c.awarded ? "outlined" : "contained"} disabled={c.awarded} onClick={() => handleAwardForTask(c)}>
-                              {c.awarded ? "Awarded" : `Award ${selectedTask.points} pts`}
-                            </Button>
-                          </ListItemSecondaryAction>
-                        </ListItem>
-                      ))
-                    )}
-                  </List>
-                )}
-              </Box>
-            )}
-          </DialogContent>
-        </Dialog>
+    const handleQuickAward = (amount) => {
+        if (!awardData.studentId) {
+            setError("Select a student first");
+            return;
+        }
+        setAwardData({ ...awardData, points: amount });
+    };
 
-        {/* Create Task Dialog (same as admin) */}
-        <Dialog open={createTaskOpen} onClose={() => setCreateTaskOpen(false)} maxWidth="md" fullWidth>
-          <DialogTitle>Create Task</DialogTitle>
-          <DialogContent>
-            <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column', mt: 1 }}>
-              <TextField label="Title" fullWidth value={createTaskForm.title} onChange={(e) => setCreateTaskForm({ ...createTaskForm, title: e.target.value })} />
-              <TextField label="Description" fullWidth multiline rows={3} value={createTaskForm.description} onChange={(e) => setCreateTaskForm({ ...createTaskForm, description: e.target.value })} />
-              <TextField label="Due Date" type="datetime-local" fullWidth value={createTaskForm.dueDate} onChange={(e) => setCreateTaskForm({ ...createTaskForm, dueDate: e.target.value })} InputLabelProps={{ shrink: true }} />
-              <TextField label="Points" type="number" fullWidth value={createTaskForm.points} onChange={(e) => setCreateTaskForm({ ...createTaskForm, points: Number(e.target.value) })} />
+    // Task Create/Edit Handlers remain similar but condensed
+    const handleSaveTask = async (isEdit = false) => {
+        const form = isEdit ? editTaskForm : createTaskForm;
+        const setOpen = isEdit ? setEditTaskOpen : setCreateTaskOpen;
 
-              <FormControl fullWidth>
-                <InputLabel>Category</InputLabel>
-                <Select value={createTaskForm.category} label="Category" onChange={(e) => setCreateTaskForm({ ...createTaskForm, category: e.target.value })}>
-                  <MenuItem value="General">General</MenuItem>
-                  <MenuItem value="Quiz">Quiz</MenuItem>
-                </Select>
-              </FormControl>
+        // Validation
+        if (!form.title) { setError("Title is required"); return; }
+        if (!form.dueDate) { setError("Due Date is required"); return; }
+        if (!form.points || form.points <= 0) { setError("Valid points are required"); return; }
 
-              <Autocomplete
-                multiple
-                freeSolo
-                options={yearOptions}
-                value={createTaskForm.assignedYears}
-                onChange={(e, val) => setCreateTaskForm({ ...createTaskForm, assignedYears: val })}
-                renderInput={(params) => (
-                  <TextField {...params} label="Assigned Years (select or add)" placeholder="Add or select..." fullWidth />
-                )}
-              />
+        try {
+            const payload = {
+                ...form,
+                dueDate: new Date(form.dueDate).toISOString(),
+                assignedYears: Array.isArray(form.assignedYears) ? form.assignedYears.map(s => String(s).trim()).filter(Boolean) : [],
+            };
 
-              {createTaskForm.category === 'Quiz' && (
-                <Box>
-                  <Typography variant="subtitle2" sx={{ mt: 1 }}>Quiz Builder</Typography>
-                  <TextField label="Passing Score (%)" type="number" value={createTaskForm.quiz.passingScore} onChange={(e) => setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, passingScore: Number(e.target.value) } })} sx={{ mt: 1 }} />
+            // Transform Quiz to match backend schema (questionText -> text, correctAnswer -> correctIndex)
+            if (form.category === 'Quiz' && form.quiz && form.quiz.questions.length > 0) {
+                payload.quiz = {
+                    ...form.quiz,
+                    questions: form.quiz.questions.map(q => ({
+                        text: q.questionText,
+                        options: q.options,
+                        correctIndex: Number(q.correctAnswer) // ensure number
+                    }))
+                };
+            }
 
-                  {createTaskForm.quiz.questions.map((q, qi) => (
-                    <Card key={qi} sx={{ mt: 2, p: 2 }}>
-                      <TextField fullWidth label={`Question ${qi + 1}`} value={q.text} onChange={(e) => {
-                        const qs = [...createTaskForm.quiz.questions]; qs[qi].text = e.target.value; setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
-                      }} />
+            let res;
+            if (isEdit) {
+                res = await axios.put(`${baseurl}/api/tasks/${editingTask._id}`, payload);
+                const tRes = await axios.get(`${baseurl}/api/tasks`); // simple refresh
+                setTasks(tRes.data || []);
+            } else {
+                res = await axios.post(`${baseurl}/api/tasks/addtask`, payload);
+                const tRes = await axios.get(`${baseurl}/api/tasks`);
+                setTasks(tRes.data || []);
+            }
+            setSuccess(res.data.message || (isEdit ? "Task updated" : "Task created"));
+            setOpen(false);
+            // Reset forms...
+        } catch (err) {
+            setError(err.response?.data?.message || "Operation failed");
+        }
+    };
 
-                      <Box sx={{ mt: 1 }}>
-                        {q.options.map((opt, oi) => (
-                          <Box key={oi} sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 1 }}>
-                            <TextField fullWidth value={opt} onChange={(e) => {
-                              const qs = [...createTaskForm.quiz.questions]; qs[qi].options[oi] = e.target.value; setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
-                            }} />
-                            <Button size="small" variant={q.correctIndex === oi ? 'contained' : 'outlined'} onClick={() => {
-                              const qs = [...createTaskForm.quiz.questions]; qs[qi].correctIndex = oi; setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
-                            }}>Mark Correct</Button>
-                            <Button size="small" color="error" onClick={() => {
-                              const qs = [...createTaskForm.quiz.questions]; qs[qi].options = qs[qi].options.filter((_, idx) => idx !== oi); if (qs[qi].correctIndex >= qs[qi].options.length) qs[qi].correctIndex = 0; setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
-                            }}>Remove</Button>
-                          </Box>
+    // --- Quiz Handlers ---
+    const handleAddQuestion = (isEdit = false) => {
+        const setForm = isEdit ? setEditTaskForm : setCreateTaskForm;
+        setForm(prev => ({
+            ...prev,
+            quiz: {
+                ...prev.quiz,
+                questions: [
+                    ...prev.quiz.questions,
+                    { questionText: '', options: ['', '', '', ''], correctAnswer: 0 }
+                ]
+            }
+        }));
+    };
+
+    const handleRemoveQuestion = (index, isEdit = false) => {
+        const setForm = isEdit ? setEditTaskForm : setCreateTaskForm;
+        setForm(prev => {
+            const newQuestions = [...prev.quiz.questions];
+            newQuestions.splice(index, 1);
+            return {
+                ...prev,
+                quiz: { ...prev.quiz, questions: newQuestions }
+            };
+        });
+    };
+
+    const handleQuestionChange = (index, field, value, isEdit = false) => {
+        const setForm = isEdit ? setEditTaskForm : setCreateTaskForm;
+        setForm(prev => {
+            const newQuestions = [...prev.quiz.questions];
+            newQuestions[index] = { ...newQuestions[index], [field]: value };
+            return {
+                ...prev,
+                quiz: { ...prev.quiz, questions: newQuestions }
+            };
+        });
+    };
+
+    const handleOptionChange = (qIndex, oIndex, value, isEdit = false) => {
+        const setForm = isEdit ? setEditTaskForm : setCreateTaskForm;
+        setForm(prev => {
+            const newQuestions = [...prev.quiz.questions];
+            const newOptions = [...newQuestions[qIndex].options];
+            newOptions[oIndex] = value;
+            newQuestions[qIndex] = { ...newQuestions[qIndex], options: newOptions };
+            return {
+                ...prev,
+                quiz: { ...prev.quiz, questions: newQuestions }
+            };
+        });
+    };
+
+    const handleEditClick = (task) => {
+        setEditingTask(task);
+
+        // Transform backend quiz schema back to frontend form state
+        const quizItems = task.quiz ? {
+            ...task.quiz,
+            questions: (task.quiz.questions || []).map(q => ({
+                questionText: q.text,
+                options: q.options,
+                correctAnswer: q.correctIndex
+            }))
+        } : { questions: [], passingScore: 70 };
+
+        setEditTaskForm({
+            title: task.title,
+            description: task.description,
+            dueDate: task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 16) : "",
+            points: task.points,
+            category: task.category || "General", // Use category from backend
+            assignedYears: task.assignedYears || [],
+            quiz: quizItems
+        });
+        setEditTaskOpen(true);
+    };
+
+    // --- Derived Data for Dashboard Widgets ---
+    const totalUsers = users.length;
+    const totalPoints = users.reduce((sum, u) => sum + (u.points || 0), 0);
+    const pendingSubmissions = submissions.filter(s => s.status === 'pending');
+    const topStudents = [...users].sort((a, b) => (b.points || 0) - (a.points || 0)).slice(0, 5);
+    const topStudent = topStudents.length > 0 ? topStudents[0] : null;
+
+    // Process Submissions for Activity Timeline (Last 5)
+    // Note: 'createdAt' is available in submission objects
+    const recentActivity = submissions
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5)
+        .map(s => ({
+            id: s._id,
+            text: `${s.user?.fname || 'Student'} ${s.status === 'accepted' ? 'earned points for' : s.status === 'rejected' ? 'was rejected for' : 'submitted'} ${s.task?.title || 'a task'}`,
+            time: new Date(s.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' }),
+            type: 'submission'
+        }));
+
+    // Process Submissions for Points Analytics (Last 7 Days)
+    const chartData = React.useMemo(() => {
+        const getLast7Days = () => {
+            const days = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                days.push(d);
+            }
+            return days;
+        };
+
+        const days = getLast7Days();
+        const data = days.map(day => {
+            const dayStr = day.toLocaleDateString();
+            // Sum points for approved submissions on this day
+            // We use 'createdAt' as a proxy for 'awardedAt' since direct log isn't fully available here
+            const pointsForDay = submissions
+                .filter(s => s.status === 'accepted' && new Date(s.createdAt).toLocaleDateString() === dayStr)
+                .reduce((sum, s) => sum + (s.task?.points || 0), 0);
+
+            return {
+                name: day.toLocaleDateString([], { weekday: 'short' }),
+                points: pointsForDay
+            };
+        });
+        return data;
+    }, [submissions]);
+
+    // Points this week
+    const pointsThisWeek = chartData.reduce((sum, d) => sum + d.points, 0);
+
+    // --- Styles & Aesthetics ---
+    const glassCard = {
+        background: 'linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.6) 100%)',
+        borderRadius: 4,
+        border: `1px solid rgba(255,255,255,0.08)`,
+        backdropFilter: 'blur(20px)',
+        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+        '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: '0 12px 40px 0 rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(129, 140, 248, 0.2)',
+        }
+    };
+
+    const gradientText = {
+        background: `linear-gradient(45deg, ${accentColor}, #c084fc)`,
+        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+        fontWeight: "bold"
+    };
+
+    return (
+        <Box sx={{ display: 'flex', bgcolor: dashboardBg, minHeight: '100vh', color: textPrimary }}>
+            {/* Sidebar - Collapsible on mobile, fixed width on desktop */}
+            <Box sx={{
+                width: { xs: 0, md: 250 },
+                flexShrink: 0,
+                bgcolor: '#0f172a',
+                borderRight: '1px solid rgba(255,255,255,0.05)',
+                display: { xs: 'none', md: 'block' }
+            }}>
+                <Box sx={{ p: 3 }}>
+                    <Typography variant="h6" fontWeight="bold" sx={{ color: accentColor, mb: 4, letterSpacing: 1 }}>
+                        CAMPUS ADMIN
+                    </Typography>
+                    <List>
+                        {[
+                            { text: 'Dashboard', icon: <DashboardIcon />, id: 'top' },
+                            { text: 'Award Points', icon: <StarIcon />, id: 'award-card' },
+                            { text: 'Students List', icon: <PeopleIcon />, id: 'students-card' },
+                            { text: 'Tasks', icon: <AssignmentIcon />, id: 'tasks-card' },
+                            { text: 'Submissions', icon: <RateReviewIcon />, id: 'submissions-card' },
+                        ].map((item) => (
+                            <ListItemButton key={item.text} sx={{ borderRadius: 2, mb: 1, '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' } }} onClick={() => document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' })}>
+                                <ListItemIcon sx={{ color: textSecondary, minWidth: 40 }}>{item.icon}</ListItemIcon>
+                                <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: 14, fontWeight: 500, color: textSecondary }} />
+                            </ListItemButton>
                         ))}
-
-                        <Box sx={{ mt: 1 }}>
-                          <Button size="small" onClick={() => {
-                            const qs = [...createTaskForm.quiz.questions]; qs[qi].options.push(''); setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
-                          }}>Add Option</Button>
-                        </Box>
-                      </Box>
-
-                      <Box sx={{ mt: 1 }}>
-                        <Button size="small" color="error" onClick={() => {
-                          const qs = createTaskForm.quiz.questions.filter((_, idx) => idx !== qi);
-                          setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
-                        }}>Remove Question</Button>
-                      </Box>
-                    </Card>
-                  ))}
-
-                  <Box sx={{ mt: 2 }}>
-                    <Button onClick={() => {
-                      const qs = createTaskForm.quiz.questions.concat([{ text: '', options: ['', ''], correctIndex: 0 }]);
-                      setCreateTaskForm({ ...createTaskForm, quiz: { ...createTaskForm.quiz, questions: qs } });
-                    }}>Add Question</Button>
-                  </Box>
+                    </List>
                 </Box>
-              )}
+            </Box>
 
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
-                <Button onClick={() => setCreateTaskOpen(false)}>Cancel</Button>
-                <Button variant="contained" onClick={async () => {
-                  try {
-                    const payload = {
-                      title: createTaskForm.title,
-                      description: createTaskForm.description,
-                      dueDate: new Date(createTaskForm.dueDate).toISOString(),
-                      points: createTaskForm.points,
-                      category: createTaskForm.category,
-                      assignedYears: Array.isArray(createTaskForm.assignedYears) ? createTaskForm.assignedYears.map(s => String(s).trim()).filter(Boolean) : [],
-                    };
-                    if (createTaskForm.category === 'Quiz') {
-                      payload.quiz = createTaskForm.quiz;
+            {/* Main Content Area */}
+            <Box component="main" sx={{ flexGrow: 1, p: 3, overflowY: 'auto', height: '100vh' }} id="top">
+                <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
+
+                    {/* Header */}
+                    <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box>
+                            <Typography variant="h4" fontWeight="bold">Faculty Dashboard</Typography>
+                            <Typography variant="body2" color={textSecondary}>Welcome back, Instructor</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                            <IconButton sx={{ color: textPrimary }}><NotificationsActive /></IconButton>
+                            <Avatar src="/broken-image.jpg" sx={{ bgcolor: accentColor }} />
+                        </Box>
+                    </Box>
+
+                    {/* Top Stats Cards */}
+                    <Grid container spacing={3} sx={{ mb: 4 }}>
+                        <Grid item xs={12} md={4}>
+                            <Card sx={{ ...glassCard, minHeight: 160 }}>
+                                <CardContent sx={{ position: 'relative', flexGrow: 1 }}>
+                                    <Box sx={{ p: 1, borderRadius: '50%', bgcolor: 'rgba(96, 165, 250, 0.1)', width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                                        <PeopleIcon sx={{ color: '#60a5fa' }} />
+                                    </Box>
+                                    <Typography variant="body2" color={textSecondary} sx={{ letterSpacing: 0.5, textTransform: 'uppercase', fontSize: 11, fontWeight: 600 }}>Total Students</Typography>
+                                    <Typography variant="h3" fontWeight="bold" sx={{ color: '#f1f5f9', mt: 0.5 }}>{totalUsers}</Typography>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                        <Grid item xs={12} md={4}>
+                            <Card sx={{ ...glassCard, minHeight: 160 }}>
+                                <CardContent sx={{ position: 'relative', flexGrow: 1 }}>
+                                    <Box sx={{ p: 1, borderRadius: '50%', bgcolor: 'rgba(74, 222, 128, 0.1)', width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                                        <EmojiEvents sx={{ color: successColor }} />
+                                    </Box>
+                                    <Typography variant="body2" color={textSecondary} sx={{ letterSpacing: 0.5, textTransform: 'uppercase', fontSize: 11, fontWeight: 600 }}>Points Awarded</Typography>
+                                    <Typography variant="h3" fontWeight="bold" sx={{ color: '#f1f5f9', mt: 0.5 }}>{totalPoints}</Typography>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                        <Grid item xs={12} md={4}>
+                            <Card sx={{ ...glassCard, minHeight: 160, position: 'relative', overflow: 'hidden' }}>
+                                <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 4, background: `linear-gradient(90deg, ${accentColor}, #c084fc)` }} />
+                                <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 3, flexGrow: 1 }}>
+                                    <Avatar src={topStudent?.profilePic ? `${baseurl}${topStudent.profilePic}` : undefined} sx={{ width: 72, height: 72, border: `3px solid ${accentColor}`, boxShadow: `0 0 20px ${accentColor}40` }}>{topStudent?.fname[0]}</Avatar>
+                                    <Box>
+                                        <Typography variant="overline" color={accentColor} fontWeight="bold">TOP PERFORMER</Typography>
+                                        <Typography variant="h5" fontWeight="bold" sx={{ mb: 0.5 }}>{topStudent?.fname || "None"}</Typography>
+                                        <Chip label={`${topStudent?.points || 0} pts`} size="small" sx={{ bgcolor: accentColor, color: '#fff', fontWeight: 'bold', height: 24 }} />
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    </Grid>
+
+                    {/* Middle Section: Dashboard Widgets */}
+                    <Grid container spacing={3} sx={{ mb: 3 }}>
+
+                        {/* Left Column: Analytics & Quick Actions */}
+                        <Grid item xs={12} lg={8}>
+                            <Stack spacing={4}>
+
+                                {/* System Overview */}
+                                <Card sx={glassCard}>
+                                    <CardContent sx={{ p: 4 }}>
+                                        <Grid container spacing={4} alignItems="center">
+                                            <Grid item xs={6} md={3}>
+                                                <Typography variant="overline" color={textSecondary} fontWeight={600}>Active Users</Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1 }}>
+                                                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: successColor, boxShadow: `0 0 10px ${successColor}` }} />
+                                                    <Typography variant="h5" fontWeight="bold">{users.length}</Typography>
+                                                </Box>
+                                            </Grid>
+                                            <Grid item xs={6} md={3}>
+                                                <Typography variant="overline" color={textSecondary} fontWeight={600}>Tasks Active</Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1 }}>
+                                                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#f472b6', boxShadow: '0 0 10px #f472b6' }} />
+                                                    <Typography variant="h5" fontWeight="bold">{tasks.length}</Typography>
+                                                </Box>
+                                            </Grid>
+                                            <Grid item xs={6} md={3}>
+                                                <Typography variant="overline" color={textSecondary} fontWeight={600}>Submissions</Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1 }}>
+                                                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: accentColor, boxShadow: `0 0 10px ${accentColor}` }} />
+                                                    <Typography variant="h5" fontWeight="bold">{submissions.length}</Typography>
+                                                </Box>
+                                            </Grid>
+                                        </Grid>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Points Analytics Chart */}
+                                <Card sx={glassCard}>
+                                    <CardContent sx={{ p: 4 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+                                            <Box>
+                                                <Typography variant="h6" sx={gradientText}>Points Analytics</Typography>
+                                                <Typography variant="body2" color={textSecondary} sx={{ mt: 0.5 }}>Performance over the last 7 days</Typography>
+                                            </Box>
+                                            <Box sx={{ textAlign: 'right' }}>
+                                                <Typography variant="h4" color={successColor} fontWeight="bold">+{pointsThisWeek}</Typography>
+                                                <Typography variant="caption" color={textSecondary} sx={{ display: 'block', mt: 0.5 }}>THIS WEEK</Typography>
+                                            </Box>
+                                        </Box>
+                                        <Box sx={{ height: 250, width: '100%', ml: -2 }}>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <AreaChart data={chartData}>
+                                                    <defs>
+                                                        <linearGradient id="colorPoints" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="5%" stopColor={accentColor} stopOpacity={0.4} />
+                                                            <stop offset="95%" stopColor={accentColor} stopOpacity={0} />
+                                                        </linearGradient>
+                                                    </defs>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: textSecondary, fontSize: 12, fontWeight: 500 }} dy={10} />
+                                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: textSecondary, fontSize: 12 }} />
+                                                    <RechartsTooltip
+                                                        contentStyle={{ backgroundColor: 'rgba(30, 41, 59, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}
+                                                        itemStyle={{ color: '#fff' }}
+                                                    />
+                                                    <Area type="monotone" dataKey="points" stroke={accentColor} strokeWidth={3} fillOpacity={1} fill="url(#colorPoints)" />
+                                                </AreaChart>
+                                            </ResponsiveContainer>
+                                        </Box>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Quick Award Points */}
+                                <Card sx={glassCard} id="award-card">
+                                    <CardContent sx={{ p: 3 }}>
+                                        {/* Header */}
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                                            <Typography variant="h6" fontWeight="bold">Award Points</Typography>
+                                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                                <Box sx={{ bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2, p: 0.5, display: 'flex' }}>
+                                                    {['All', 'Weekly', 'Monthly'].map((item) => (
+                                                        <Box
+                                                            key={item}
+                                                            onClick={() => setAwardTimeFilter(item)}
+                                                            sx={{
+                                                                px: 1.5, py: 0.5, borderRadius: 1.5, cursor: 'pointer', fontSize: 12, fontWeight: 500,
+                                                                color: awardTimeFilter === item ? '#fff' : textSecondary,
+                                                                bgcolor: awardTimeFilter === item ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                                                transition: 'all 0.2s ease',
+                                                                '&:hover': { color: '#fff', bgcolor: awardTimeFilter !== item ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)' }
+                                                            }}
+                                                        >
+                                                            {item}
+                                                        </Box>
+                                                    ))}
+                                                </Box>
+                                                <IconButton size="small" sx={{ bgcolor: accentColor, borderRadius: 1.5, color: '#fff', '&:hover': { bgcolor: accentColor } }}>
+                                                    <ListAltIcon fontSize="small" />
+                                                </IconButton>
+                                            </Box>
+                                        </Box>
+
+                                        {/* Inputs Row */}
+                                        <Grid container spacing={2} sx={{ mb: 3 }}>
+                                            <Grid item xs={12} md={9}>
+                                                <Autocomplete
+                                                    fullWidth
+                                                    options={users}
+                                                    getOptionLabel={(option) => option.fname}
+                                                    value={users.find((u) => u._id === awardData.studentId) || null}
+                                                    onChange={(_, val) => setAwardData({ ...awardData, studentId: val?._id || "" })}
+                                                    ListboxProps={{ sx: { maxHeight: 300 } }}
+                                                    slotProps={{
+                                                        paper: {
+                                                            sx: {
+                                                                width: '100%',
+                                                                bgcolor: '#1e293b',
+                                                                color: '#fff',
+                                                                borderRadius: 2,
+                                                                border: '1px solid rgba(255,255,255,0.1)'
+                                                            }
+                                                        }
+                                                    }}
+                                                    renderInput={(params) => (
+                                                        <TextField
+                                                            {...params}
+                                                            placeholder="Select Student"
+                                                            fullWidth
+                                                            variant="outlined"
+                                                            sx={{
+                                                                '& .MuiOutlinedInput-root': {
+                                                                    bgcolor: 'rgba(30, 41, 59, 0.5)',
+                                                                    borderRadius: 2,
+                                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                                    '& fieldset': { border: 'none' }
+                                                                }
+                                                            }}
+                                                        />
+                                                    )}
+                                                    renderOption={(props, option) => (
+                                                        <li {...props} style={{ backgroundColor: '#1e293b' }}>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 0.5 }}>
+                                                                <Avatar src={option.profilePic ? `${baseurl}${option.profilePic}` : undefined} sx={{ width: 24, height: 24 }} />
+                                                                <Typography variant="body2">{option.fname} {option.ename}</Typography>
+                                                            </Box>
+                                                        </li>
+                                                    )}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} md={3}>
+                                                <TextField
+                                                    placeholder="Points"
+                                                    type="number"
+                                                    variant="outlined"
+                                                    fullWidth
+                                                    value={awardData.points}
+                                                    onChange={(e) => setAwardData({ ...awardData, points: e.target.value })}
+                                                    sx={{
+                                                        '& .MuiOutlinedInput-root': {
+                                                            bgcolor: 'rgba(30, 41, 59, 0.5)',
+                                                            borderRadius: 2,
+                                                            border: '1px solid rgba(255,255,255,0.1)',
+                                                            '& fieldset': { border: 'none' }
+                                                        }
+                                                    }}
+                                                />
+                                            </Grid>
+                                        </Grid>
+
+                                        {/* Actions Row */}
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+                                            <Stack direction="row" spacing={1}>
+                                                {[10, 20, 50, 100].map(amt => (
+                                                    <Box
+                                                        key={amt}
+                                                        onClick={() => handleQuickAward(amt)}
+                                                        sx={{
+                                                            px: 1.5, py: 0.8, borderRadius: 2,
+                                                            bgcolor: 'rgba(30, 41, 59, 0.8)',
+                                                            border: '1px solid rgba(255,255,255,0.05)',
+                                                            color: textSecondary, fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                                                            transition: 'all 0.2s',
+                                                            '&:hover': { bgcolor: accentColor, color: '#fff', transform: 'translateY(-2px)' }
+                                                        }}
+                                                    >
+                                                        +{amt}
+                                                    </Box>
+                                                ))}
+                                            </Stack>
+                                            <Button
+                                                variant="contained"
+                                                sx={{
+                                                    bgcolor: accentColor,
+                                                    px: 4, py: 1,
+                                                    borderRadius: 2,
+                                                    fontSize: 14,
+                                                    fontWeight: 'bold',
+                                                    textTransform: 'none',
+                                                    '&:hover': { bgcolor: '#6366f1' }
+                                                }}
+                                                onClick={handleAward}
+                                            >
+                                                Award Points
+                                            </Button>
+                                        </Box>
+
+                                        {/* Success Message Banner */}
+                                        {success && (
+                                            <Box sx={{ mt: 2, p: 1.5, bgcolor: 'rgba(74, 222, 128, 0.1)', border: `1px solid ${successColor}40`, borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                                <CheckCircle sx={{ color: successColor, fontSize: 20 }} />
+                                                <Typography variant="body2" color="#fff" fontWeight={500}>{success}</Typography>
+                                            </Box>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </Stack>
+                        </Grid>
+
+                        {/* Right Column: Pending Actions & Timeline */}
+                        <Grid item xs={12} lg={4}>
+                            <Stack spacing={4}>
+
+                                {/* Pending Actions */}
+                                <Card sx={glassCard}>
+                                    <CardContent sx={{ p: 4 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                                            <Typography variant="h6" sx={gradientText}>Pending Actions</Typography>
+                                            {pendingSubmissions.length > 0 && <Chip label={pendingSubmissions.length} size="small" color="warning" sx={{ fontWeight: 'bold' }} />}
+                                        </Box>
+
+                                        {pendingSubmissions.length > 0 ? (
+                                            <List disablePadding>
+                                                {pendingSubmissions.slice(0, 3).map((sub, i) => (
+                                                    <ListItem key={i} disablePadding sx={{ mb: 2 }}>
+                                                        <Box sx={{
+                                                            display: 'flex', gap: 2, alignItems: 'center', width: '100%',
+                                                            p: 2, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.03)',
+                                                            border: '1px solid rgba(255,255,255,0.05)'
+                                                        }}>
+                                                            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: warningColor, flexShrink: 0, boxShadow: `0 0 10px ${warningColor}` }} />
+                                                            <Box sx={{ flex: 1 }}>
+                                                                <Typography variant="body2" fontWeight={600}>Review "{sub.task?.title}"</Typography>
+                                                                <Typography variant="caption" color={textSecondary} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                                    <Avatar src={sub.user?.profilePic ? `${baseurl}${sub.user.profilePic}` : undefined} sx={{ width: 16, height: 16 }} />
+                                                                    {sub.user?.fname} • 10m ago
+                                                                </Typography>
+                                                            </Box>
+                                                            <IconButton size="small" onClick={() => { setSelectedSub(sub); setViewSubOpen(true); }} sx={{ bgcolor: 'rgba(255,255,255,0.05)' }}>
+                                                                <VisibilityIcon fontSize="small" sx={{ color: textSecondary }} />
+                                                            </IconButton>
+                                                        </Box>
+                                                    </ListItem>
+                                                ))}
+                                            </List>
+                                        ) : (
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4, opacity: 0.5 }}>
+                                                <CheckCircle sx={{ fontSize: 48, mb: 1, color: successColor }} />
+                                                <Typography variant="body2">All caught up! No pending actions.</Typography>
+                                            </Box>
+                                        )}
+                                        {pendingSubmissions.length > 3 && <Button size="small" fullWidth sx={{ mt: 1, color: accentColor }}>View All Pending</Button>}
+                                    </CardContent>
+                                </Card>
+
+                                {/* Activity Timeline */}
+                                <Card sx={glassCard}>
+                                    <CardContent sx={{ p: 4 }}>
+                                        <Typography variant="h6" sx={{ ...gradientText, mb: 3 }}>Activity Timeline</Typography>
+                                        <Box sx={{ position: 'relative', borderLeft: `2px solid rgba(255,255,255,0.1)`, pl: 4, ml: 1 }}>
+                                            {recentActivity.map((act, i) => (
+                                                <Box key={i} sx={{ mb: 3, position: 'relative' }}>
+                                                    <Box sx={{
+                                                        position: 'absolute', left: -38, top: 4,
+                                                        width: 14, height: 14, borderRadius: '50%',
+                                                        bgcolor: i === 0 ? accentColor : cardBg,
+                                                        border: `2px solid ${i === 0 ? accentColor : 'rgba(255,255,255,0.3)'}`,
+                                                        boxShadow: i === 0 ? `0 0 15px ${accentColor}` : 'none'
+                                                    }} />
+                                                    <Typography variant="body2" sx={{ lineHeight: 1.5, mb: 0.5 }}>{act.text}</Typography>
+                                                    <Typography variant="caption" color={textSecondary} sx={{ bgcolor: 'rgba(255,255,255,0.05)', px: 1, py: 0.2, borderRadius: 1 }}>{act.time}</Typography>
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Mini Leaderboard */}
+                                <Card sx={glassCard}>
+                                    <CardContent sx={{ p: 4 }}>
+                                        <Typography variant="h6" sx={{ ...gradientText, mb: 3 }}>Top Performers</Typography>
+                                        <List disablePadding>
+                                            {topStudents.map((s, i) => (
+                                                <ListItem key={s._id} disablePadding sx={{ mb: 2, display: 'flex', justifyContent: 'space-between' }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                        <Box sx={{
+                                                            width: 24, height: 24, borderRadius: '50%',
+                                                            bgcolor: i === 0 ? '#fbbf24' : i === 1 ? '#94a3b8' : i === 2 ? '#b45309' : 'rgba(255,255,255,0.1)',
+                                                            color: i < 3 ? '#000' : textSecondary,
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            fontWeight: 'bold', fontSize: 12
+                                                        }}>
+                                                            {i + 1}
+                                                        </Box>
+                                                        <Avatar src={s.profilePic ? `${baseurl}${s.profilePic}` : undefined} sx={{ width: 32, height: 32, border: `1px solid rgba(255,255,255,0.2)` }} />
+                                                        <Typography variant="body2" fontWeight={500}>{s.fname}</Typography>
+                                                    </Box>
+                                                    <Chip label={`${s.points} pts`} size="small" sx={{ bgcolor: i === 0 ? 'rgba(251, 191, 36, 0.2)' : 'rgba(255,255,255,0.05)', color: i === 0 ? '#fbbf24' : textSecondary, fontWeight: 600, border: 'none' }} />
+                                                </ListItem>
+                                            ))}
+                                        </List>
+                                    </CardContent>
+                                </Card>
+
+                            </Stack>
+                        </Grid>
+                    </Grid>
+
+                    {/* Expanded Sections (Students & Tasks) */}
+                    <Grid container spacing={3}>
+                        <Grid item xs={12}>
+                            <Card sx={glassCard} id="students-card">
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                                        <Typography variant="h6" fontWeight="bold">Students Directory</Typography>
+                                        <TextField
+                                            placeholder="Search..."
+                                            size="small"
+                                            value={search}
+                                            onChange={(e) => setSearch(e.target.value)}
+                                            sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(0,0,0,0.2)' } }}
+                                        />
+                                    </Box>
+                                    <TableContainer>
+                                        <Table>
+                                            <TableHead>
+                                                <TableRow>
+                                                    <TableCell sx={{ color: textSecondary }}>Student</TableCell>
+                                                    <TableCell sx={{ color: textSecondary }}>Year/Dept</TableCell>
+                                                    <TableCell sx={{ color: textSecondary }}>Points</TableCell>
+                                                    <TableCell sx={{ color: textSecondary }}>Status</TableCell>
+                                                    <TableCell align="right" sx={{ color: textSecondary }}>Actions</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {filtered.slice(0, 5).map(u => (
+                                                    <TableRow key={u._id} sx={{ '& td': { borderColor: 'rgba(255,255,255,0.05)' } }}>
+                                                        <TableCell>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                                <Avatar src={u.profilePic ? `${baseurl}${u.profilePic}` : undefined} sx={{ width: 32, height: 32 }} />
+                                                                <Box>
+                                                                    <Typography variant="body2" fontWeight="bold">{u.fname} {u.ename}</Typography>
+                                                                    <Typography variant="caption" color={textSecondary}>{u.studentId}</Typography>
+                                                                </Box>
+                                                            </Box>
+                                                        </TableCell>
+                                                        <TableCell sx={{ color: textPrimary }}>{u.yearClassDept || "--"}</TableCell>
+                                                        <TableCell>
+                                                            <Chip label={`${u.points} pts`} size="small" sx={{ bgcolor: 'rgba(74, 222, 128, 0.1)', color: successColor }} />
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: u.status === 'active' ? successColor : 'grey' }} />
+                                                                <Typography variant="body2" color={textSecondary}>{u.status}</Typography>
+                                                            </Box>
+                                                        </TableCell>
+                                                        <TableCell align="right">
+                                                            <IconButton
+                                                                size="small"
+                                                                sx={{ color: textSecondary }}
+                                                                onClick={(e) => {
+                                                                    setAnchorEl(e.currentTarget);
+                                                                    setSelectedStudentForAction(u);
+                                                                }}
+                                                            >
+                                                                <MoreVert fontSize="small" />
+                                                            </IconButton>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                    <Button fullWidth sx={{ mt: 2, color: textSecondary }} onClick={() => setViewAllStudentsOpen(true)}>View All Students</Button>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+
+                        <Grid item xs={12} id="tasks-card">
+                            <Card sx={glassCard}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                                        <Typography variant="h6" fontWeight="bold">Active Tasks</Typography>
+                                        <Button variant="contained" startIcon={<Add />} sx={{ bgcolor: accentColor }} onClick={() => setCreateTaskOpen(true)}>Create Task</Button>
+                                    </Box>
+                                    <List>
+                                        {tasks.slice(0, 5).map(t => (
+                                            <ListItem key={t._id} sx={{ bgcolor: 'rgba(255,255,255,0.02)', mb: 1, borderRadius: 2 }}>
+                                                <Box sx={{ width: '100%' }}>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                                        <Typography variant="subtitle2" fontWeight="bold">{t.title}</Typography>
+                                                        <Chip label={`${t.points} pts`} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: textPrimary, height: 20 }} />
+                                                    </Box>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                        <Typography variant="caption" color={textSecondary}>Due: {new Date(t.dueDate).toLocaleDateString()}</Typography>
+                                                        <Box sx={{ display: 'flex', gap: 1 }}>
+                                                            <Chip label={`${(t.awardedTo || []).length} Awarded`} size="small" sx={{ fontSize: 10, height: 20, bgcolor: 'rgba(74, 222, 128, 0.1)', color: successColor }} />
+                                                            <IconButton size="small" sx={{ p: 0.5, color: textSecondary }} onClick={() => handleOpenTask(t)}><AssignmentIcon fontSize="small" /></IconButton>
+                                                            <IconButton size="small" sx={{ p: 0.5, color: textSecondary }} onClick={() => handleEditClick(t)}><Edit fontSize="small" /></IconButton>
+                                                            <IconButton size="small" sx={{ p: 0.5, color: 'error.main' }} onClick={() => { setTaskToDelete(t); setDeleteTaskOpen(true); }}><Cancel fontSize="small" /></IconButton>
+                                                        </Box>
+                                                    </Box>
+                                                </Box>
+                                            </ListItem>
+                                        ))}
+                                    </List>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    </Grid>
+
+                </Box>
+            </Box>
+
+            {/* Dialogs and Modals (reused functionality) */}
+            <Dialog open={taskDialogOpen} onClose={() => setTaskDialogOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { bgcolor: cardBg, color: textPrimary } }}>
+                <DialogTitle>Manage Task</DialogTitle>
+                <DialogContent>
+                    {/* Candidate List reused from original... Simplified for brevity in this redesign view */}
+                    <Typography color={textSecondary}>Select a student to award points for this task.</Typography>
+                    <List>
+                        {candidates.map(c => (
+                            <ListItem key={c._id} secondaryAction={<Button size="small" disabled={c.awarded} onClick={() => handleAwardForTask(c)}>{c.awarded ? "Done" : "Award"}</Button>}>
+                                <ListItemText primary={c.fname} secondary={`${c.points} pts`} secondaryTypographyProps={{ color: textSecondary }} />
+                            </ListItem>
+                        ))}
+                    </List>
+                </DialogContent>
+            </Dialog>
+
+            {/* Create Task Dialog */}
+            <Dialog open={createTaskOpen} onClose={() => setCreateTaskOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: { bgcolor: cardBg, color: textPrimary } }}>
+                <DialogTitle>Create Task</DialogTitle>
+                <DialogContent>
+                    <Stack spacing={2} sx={{ mt: 1 }}>
+                        <TextField label="Title" fullWidth value={createTaskForm.title} onChange={(e) => setCreateTaskForm({ ...createTaskForm, title: e.target.value })} sx={{ '& .MuiInputBase-root': { color: textPrimary }, '& .MuiInputLabel-root': { color: textSecondary } }} />
+                        <TextField label="Description" fullWidth multiline rows={3} value={createTaskForm.description} onChange={(e) => setCreateTaskForm({ ...createTaskForm, description: e.target.value })} sx={{ '& .MuiInputBase-root': { color: textPrimary }, '& .MuiInputLabel-root': { color: textSecondary } }} />
+
+                        <FormControl fullWidth>
+                            <InputLabel sx={{ color: textSecondary }}>Category</InputLabel>
+                            <Select
+                                value={createTaskForm.category}
+                                label="Category"
+                                onChange={(e) => setCreateTaskForm({ ...createTaskForm, category: e.target.value })}
+                                sx={{ color: textPrimary, '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' } }}
+                            >
+                                <MenuItem value="General">General Task</MenuItem>
+                                <MenuItem value="Quiz">Quiz</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        <Autocomplete
+                            multiple
+                            options={yearOptions}
+                            value={createTaskForm.assignedYears || []}
+                            onChange={(_, newValue) => setCreateTaskForm({ ...createTaskForm, assignedYears: newValue })}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Assigned To (Years)"
+                                    placeholder="Select years..."
+                                    sx={{ '& .MuiInputBase-root': { color: textPrimary }, '& .MuiInputLabel-root': { color: textSecondary } }}
+                                />
+                            )}
+                            renderTags={(value, getTagProps) =>
+                                value.map((option, index) => (
+                                    <Chip label={option} size="small" {...getTagProps({ index })} sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: textPrimary }} />
+                                ))
+                            }
+                        />
+
+                        <TextField
+                            label="Due Date"
+                            type="datetime-local"
+                            fullWidth
+                            value={createTaskForm.dueDate}
+                            onChange={(e) => setCreateTaskForm({ ...createTaskForm, dueDate: e.target.value })}
+                            InputLabelProps={{ shrink: true }}
+                            sx={{
+                                "& .MuiInputBase-input": { colorScheme: "dark", color: textPrimary },
+                                "& .MuiInputLabel-root": { color: textSecondary }
+                            }}
+                        />
+                        <TextField label="Points" type="number" fullWidth value={createTaskForm.points} onChange={(e) => setCreateTaskForm({ ...createTaskForm, points: Number(e.target.value) })} sx={{ '& .MuiInputBase-root': { color: textPrimary }, '& .MuiInputLabel-root': { color: textSecondary } }} />
+
+                        {createTaskForm.category === 'Quiz' && (
+                            <Box sx={{ mt: 2, p: 2, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                                <Typography variant="h6" sx={{ mb: 2 }}>Quiz Questions</Typography>
+                                {createTaskForm.quiz.questions.map((q, qIndex) => (
+                                    <Box key={qIndex} sx={{ mb: 4, p: 2, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                                            <Typography variant="subtitle2">Question {qIndex + 1}</Typography>
+                                            <Button size="small" color="error" onClick={() => handleRemoveQuestion(qIndex, false)}>Remove</Button>
+                                        </Box>
+                                        <TextField
+                                            label="Question Text"
+                                            fullWidth
+                                            value={q.questionText}
+                                            onChange={(e) => handleQuestionChange(qIndex, 'questionText', e.target.value, false)}
+                                            sx={{ mb: 2, '& .MuiInputBase-root': { color: textPrimary }, '& .MuiInputLabel-root': { color: textSecondary } }}
+                                        />
+                                        <Grid container spacing={2}>
+                                            {q.options.map((opt, oIndex) => (
+                                                <Grid item xs={6} key={oIndex}>
+                                                    <TextField
+                                                        label={`Option ${oIndex + 1}`}
+                                                        fullWidth
+                                                        size="small"
+                                                        value={opt}
+                                                        onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value, false)}
+                                                        sx={{ '& .MuiInputBase-root': { color: textPrimary }, '& .MuiInputLabel-root': { color: textSecondary } }}
+                                                    />
+                                                </Grid>
+                                            ))}
+                                        </Grid>
+                                        <FormControl fullWidth sx={{ mt: 2 }}>
+                                            <InputLabel sx={{ color: textSecondary }}>Correct Answer</InputLabel>
+                                            <Select
+                                                value={q.correctAnswer}
+                                                label="Correct Answer"
+                                                onChange={(e) => handleQuestionChange(qIndex, 'correctAnswer', e.target.value, false)}
+                                                sx={{ color: textPrimary, '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' } }}
+                                            >
+                                                {q.options.map((_, i) => (
+                                                    <MenuItem key={i} value={i}>Option {i + 1}</MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                    </Box>
+                                ))}
+                                <Button startIcon={<Add />} onClick={() => handleAddQuestion(false)} sx={{ mt: 1 }}>Add Question</Button>
+                            </Box>
+                        )}
+
+                        <Button variant="contained" onClick={() => handleSaveTask(false)} sx={{ bgcolor: accentColor }}>Create</Button>
+                    </Stack>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Task Dialog */}
+            <Dialog open={editTaskOpen} onClose={() => setEditTaskOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: { bgcolor: cardBg, color: textPrimary } }}>
+                <DialogTitle>Edit Task</DialogTitle>
+                <DialogContent>
+                    <Stack spacing={2} sx={{ mt: 1 }}>
+                        <TextField label="Title" fullWidth value={editTaskForm.title} onChange={(e) => setEditTaskForm({ ...editTaskForm, title: e.target.value })} sx={{ '& .MuiInputBase-root': { color: textPrimary }, '& .MuiInputLabel-root': { color: textSecondary } }} />
+                        <TextField label="Description" fullWidth multiline rows={3} value={editTaskForm.description} onChange={(e) => setEditTaskForm({ ...editTaskForm, description: e.target.value })} sx={{ '& .MuiInputBase-root': { color: textPrimary }, '& .MuiInputLabel-root': { color: textSecondary } }} />
+
+                        <FormControl fullWidth>
+                            <InputLabel sx={{ color: textSecondary }}>Category</InputLabel>
+                            <Select
+                                value={editTaskForm.category}
+                                label="Category"
+                                onChange={(e) => setEditTaskForm({ ...editTaskForm, category: e.target.value })}
+                                sx={{ color: textPrimary, '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' } }}
+                            >
+                                <MenuItem value="General">General Task</MenuItem>
+                                <MenuItem value="Quiz">Quiz</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        <Autocomplete
+                            multiple
+                            options={yearOptions}
+                            value={editTaskForm.assignedYears || []}
+                            onChange={(_, newValue) => setEditTaskForm({ ...editTaskForm, assignedYears: newValue })}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Assigned To (Years)"
+                                    placeholder="Select years..."
+                                    sx={{ '& .MuiInputBase-root': { color: textPrimary }, '& .MuiInputLabel-root': { color: textSecondary } }}
+                                />
+                            )}
+                            renderTags={(value, getTagProps) =>
+                                value.map((option, index) => (
+                                    <Chip label={option} size="small" {...getTagProps({ index })} sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: textPrimary }} />
+                                ))
+                            }
+                        />
+
+                        <TextField
+                            label="Due Date"
+                            type="datetime-local"
+                            fullWidth
+                            value={editTaskForm.dueDate}
+                            onChange={(e) => setEditTaskForm({ ...editTaskForm, dueDate: e.target.value })}
+                            InputLabelProps={{ shrink: true }}
+                            sx={{
+                                "& .MuiInputBase-input": { colorScheme: "dark", color: textPrimary },
+                                "& .MuiInputLabel-root": { color: textSecondary }
+                            }}
+                        />
+                        <TextField label="Points" type="number" fullWidth value={editTaskForm.points} onChange={(e) => setEditTaskForm({ ...editTaskForm, points: Number(e.target.value) })} sx={{ '& .MuiInputBase-root': { color: textPrimary }, '& .MuiInputLabel-root': { color: textSecondary } }} />
+
+                        {editTaskForm.category === 'Quiz' && (
+                            <Box sx={{ mt: 2, p: 2, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                                <Typography variant="h6" sx={{ mb: 2 }}>Quiz Questions</Typography>
+                                {editTaskForm.quiz.questions.map((q, qIndex) => (
+                                    <Box key={qIndex} sx={{ mb: 4, p: 2, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 2 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                                            <Typography variant="subtitle2">Question {qIndex + 1}</Typography>
+                                            <Button size="small" color="error" onClick={() => handleRemoveQuestion(qIndex, true)}>Remove</Button>
+                                        </Box>
+                                        <TextField
+                                            label="Question Text"
+                                            fullWidth
+                                            value={q.questionText}
+                                            onChange={(e) => handleQuestionChange(qIndex, 'questionText', e.target.value, true)}
+                                            sx={{ mb: 2, '& .MuiInputBase-root': { color: textPrimary }, '& .MuiInputLabel-root': { color: textSecondary } }}
+                                        />
+                                        <Grid container spacing={2}>
+                                            {q.options.map((opt, oIndex) => (
+                                                <Grid item xs={6} key={oIndex}>
+                                                    <TextField
+                                                        label={`Option ${oIndex + 1}`}
+                                                        fullWidth
+                                                        size="small"
+                                                        value={opt}
+                                                        onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value, true)}
+                                                        sx={{ '& .MuiInputBase-root': { color: textPrimary }, '& .MuiInputLabel-root': { color: textSecondary } }}
+                                                    />
+                                                </Grid>
+                                            ))}
+                                        </Grid>
+                                        <FormControl fullWidth sx={{ mt: 2 }}>
+                                            <InputLabel sx={{ color: textSecondary }}>Correct Answer</InputLabel>
+                                            <Select
+                                                value={q.correctAnswer}
+                                                label="Correct Answer"
+                                                onChange={(e) => handleQuestionChange(qIndex, 'correctAnswer', e.target.value, true)}
+                                                sx={{ color: textPrimary, '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' } }}
+                                            >
+                                                {q.options.map((_, i) => (
+                                                    <MenuItem key={i} value={i}>Option {i + 1}</MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                    </Box>
+                                ))}
+                                <Button startIcon={<Add />} onClick={() => handleAddQuestion(true)} sx={{ mt: 1 }}>Add Question</Button>
+                            </Box>
+                        )}
+
+                        <Button variant="contained" onClick={() => handleSaveTask(true)} sx={{ bgcolor: accentColor }}>Update</Button>
+                    </Stack>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Task Dialog */}
+            <Dialog open={deleteTaskOpen} onClose={() => setDeleteTaskOpen(false)} PaperProps={{ sx: { bgcolor: cardBg, color: textPrimary } }}>
+                <DialogTitle>Delete Task</DialogTitle>
+                <DialogContent>
+                    <Typography>Are you sure you want to delete "{taskToDelete?.title}"?</Typography>
+                    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                        <Button onClick={() => setDeleteTaskOpen(false)} color="inherit">Cancel</Button>
+                        <Button onClick={async () => {
+                            try {
+                                await axios.delete(`${baseurl}/api/tasks/${taskToDelete._id}`);
+                                setSuccess("Task deleted");
+                                setTasks(prev => prev.filter(t => t._id !== taskToDelete._id));
+                                setDeleteTaskOpen(false);
+                            } catch (err) {
+                                setError("Failed to delete task");
+                            }
+                        }} color="error" variant="contained">Delete</Button>
+                    </Box>
+                </DialogContent>
+            </Dialog>
+
+            {/* View All Students Dialog */}
+            <Dialog open={viewAllStudentsOpen} onClose={() => setViewAllStudentsOpen(false)} maxWidth="lg" fullWidth PaperProps={{ sx: { bgcolor: cardBg, color: textPrimary, borderRadius: 3, backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)' } }}>
+                <DialogTitle sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="h6" fontWeight="bold" sx={gradientText}>All Students Directory</Typography>
+                    <IconButton onClick={() => setViewAllStudentsOpen(false)} sx={{ color: textSecondary }}><Cancel /></IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ p: 0 }}>
+                    <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <TextField
+                            placeholder="Search students..."
+                            fullWidth
+                            size="small"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(0,0,0,0.2)' } }}
+                            InputProps={{
+                                startAdornment: <PeopleIcon sx={{ color: textSecondary, mr: 1, opacity: 0.5 }} />
+                            }}
+                        />
+                    </Box>
+                    <TableContainer sx={{ maxHeight: '70vh' }}>
+                        <Table stickyHeader>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell sx={{ bgcolor: cardBg, color: textSecondary, fontWeight: 600 }}>Student</TableCell>
+                                    <TableCell sx={{ bgcolor: cardBg, color: textSecondary, fontWeight: 600 }}>Year/Dept</TableCell>
+                                    <TableCell sx={{ bgcolor: cardBg, color: textSecondary, fontWeight: 600 }}>Points</TableCell>
+                                    <TableCell sx={{ bgcolor: cardBg, color: textSecondary, fontWeight: 600 }}>Status</TableCell>
+                                    <TableCell align="right" sx={{ bgcolor: cardBg, color: textSecondary, fontWeight: 600 }}>Actions</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {filtered.map(u => (
+                                    <TableRow key={u._id} hover sx={{ '& td': { borderColor: 'rgba(255,255,255,0.05)' } }}>
+                                        <TableCell>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                <Avatar src={u.profilePic ? `${baseurl}${u.profilePic}` : undefined} sx={{ width: 40, height: 40 }} />
+                                                <Box>
+                                                    <Typography variant="body2" fontWeight="bold">{u.fname} {u.ename}</Typography>
+                                                    <Typography variant="caption" color={textSecondary}>{u.studentId}</Typography>
+                                                </Box>
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell sx={{ color: textPrimary }}>{u.yearClassDept || "--"}</TableCell>
+                                        <TableCell>
+                                            <Chip label={`${u.points} pts`} size="small" sx={{ bgcolor: 'rgba(74, 222, 128, 0.1)', color: successColor, fontWeight: 600 }} />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: u.status === 'active' ? successColor : 'grey', boxShadow: u.status === 'active' ? `0 0 8px ${successColor}` : 'none' }} />
+                                                <Typography variant="body2" color={textSecondary} sx={{ textTransform: 'capitalize' }}>{u.status}</Typography>
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell align="right">
+                                            {/* Actions can be added here if needed */}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {filtered.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                                            <Typography color={textSecondary}>No students found matching your search.</Typography>
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </DialogContent>
+            </Dialog>
+
+            {/* Actions Menu */}
+            <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={() => setAnchorEl(null)}
+                PaperProps={{
+                    sx: {
+                        bgcolor: cardBg,
+                        color: textPrimary,
+                        backdropFilter: 'blur(20px)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        width: 180
                     }
-                    const res = await axios.post(`${baseurl}/api/tasks/addtask`, payload);
-                    setSuccess(res.data.message || 'Task created');
-                    // refresh tasks
-                    const tRes = await axios.get(`${baseurl}/api/tasks`);
-                    setTasks(tRes.data || []);
-                    setCreateTaskOpen(false);
-                    setCreateTaskForm({ title: '', description: '', dueDate: '', points: 10, category: 'General', assignedYears: [], quiz: { questions: [], passingScore: 70 } });
-                  } catch (err) {
-                    setError(err.response?.data?.message || 'Failed to create task');
-                  }
-                }}>Create</Button>
-              </Box>
-            </Box>
-          </DialogContent>
-        </Dialog>
+                }}
+            >
+                <MenuItem onClick={() => { setAnchorEl(null); setHistoryOpen(true); }} sx={{ gap: 1.5, fontSize: 14 }}>
+                    <VisibilityIcon fontSize="small" sx={{ color: textSecondary }} /> View History
+                </MenuItem>
+            </Menu>
 
-        {/* Edit Task Dialog */}
-        <Dialog open={editTaskOpen} onClose={() => setEditTaskOpen(false)} maxWidth="md" fullWidth>
-          <DialogTitle>Edit Task</DialogTitle>
-          <DialogContent>
-            <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column', mt: 1 }}>
-              <TextField label="Title" fullWidth value={editTaskForm.title} onChange={(e) => setEditTaskForm({ ...editTaskForm, title: e.target.value })} />
-              <TextField label="Description" fullWidth multiline rows={3} value={editTaskForm.description} onChange={(e) => setEditTaskForm({ ...editTaskForm, description: e.target.value })} />
-              <TextField label="Due Date" type="datetime-local" fullWidth value={editTaskForm.dueDate} onChange={(e) => setEditTaskForm({ ...editTaskForm, dueDate: e.target.value })} InputLabelProps={{ shrink: true }} />
-              <TextField label="Points" type="number" fullWidth value={editTaskForm.points} onChange={(e) => setEditTaskForm({ ...editTaskForm, points: Number(e.target.value) })} />
-
-              <FormControl fullWidth>
-                <InputLabel>Category</InputLabel>
-                <Select value={editTaskForm.category} label="Category" onChange={(e) => setEditTaskForm({ ...editTaskForm, category: e.target.value })}>
-                  <MenuItem value="General">General</MenuItem>
-                  <MenuItem value="Quiz">Quiz</MenuItem>
-                </Select>
-              </FormControl>
-
-              <Autocomplete
-                multiple
-                freeSolo
-                options={yearOptions}
-                value={editTaskForm.assignedYears}
-                onChange={(e, val) => setEditTaskForm({ ...editTaskForm, assignedYears: val })}
-                renderInput={(params) => (
-                  <TextField {...params} label="Assigned Years (select or add)" placeholder="Add or select..." fullWidth />
-                )}
-              />
-
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
-                <Button onClick={() => setEditTaskOpen(false)}>Cancel</Button>
-                <Button variant="contained" color="primary" onClick={handleSaveEditedTask}>Save Changes</Button>
-              </Box>
-            </Box>
-          </DialogContent>
-        </Dialog>
-
-        {/* Delete Task Confirmation Dialog */}
-        <Dialog open={deleteTaskOpen} onClose={() => setDeleteTaskOpen(false)}>
-          <DialogTitle>Delete Task</DialogTitle>
-          <DialogContent>
-            <Typography>
-              Are you sure you want to delete the task "<strong>{taskToDelete?.title}</strong>"? This action cannot be undone.
-            </Typography>
-          </DialogContent>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, p: 2 }}>
-            <Button onClick={() => setDeleteTaskOpen(false)}>Cancel</Button>
-            <Button variant="contained" color="error" onClick={handleDeleteTask}>Delete</Button>
-          </Box>
-        </Dialog>
-
-        {/* View Submission Modal */}
-        <Dialog open={viewSubOpen} onClose={() => setViewSubOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Submission Details</DialogTitle>
-          <DialogContent dividers>
-            {selectedSub && (
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Task</Typography>
-                <Typography variant="h6" gutterBottom>{selectedSub.task?.title}</Typography>
-
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 2 }}>Student</Typography>
-                <Typography variant="body1" gutterBottom>{selectedSub.user?.fname} ({selectedSub.user?.studentId})</Typography>
-
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 2 }}>Submitted Content</Typography>
-                <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)' }}>
-                  {selectedSub.type === 'text' && <Typography style={{ whiteSpace: 'pre-wrap' }}>{selectedSub.text}</Typography>}
-                  {selectedSub.type === 'link' && <a href={selectedSub.link} target="_blank" rel="noreferrer" style={{ color: '#3b82f6' }}>{selectedSub.link}</a>}
-                  {selectedSub.type === 'file' && (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      {/* Preview if image */}
-                      {['jpg', 'jpeg', 'png', 'gif', 'webp'].some(ext => selectedSub.filePath?.toLowerCase().endsWith(ext)) && (
-                        <img
-                          src={`${baseurl}${selectedSub.filePath}`}
-                          alt="Submission Preview"
-                          style={{ maxWidth: '100%', maxHeight: 400, objectFit: 'contain', borderRadius: 8, border: '1px solid #ccc' }}
-                        />
-                      )}
-                      {/* Preview if PDF */}
-                      {selectedSub.filePath?.toLowerCase().endsWith('.pdf') && (
-                        <iframe
-                          src={`${baseurl}${selectedSub.filePath}`}
-                          title="PDF Preview"
-                          style={{ width: '100%', height: 400, border: 'none' }}
-                        />
-                      )}
-                      <Button variant="outlined" component="a" href={`${baseurl}${selectedSub.filePath}`} target="_blank" startIcon={<AssignmentIcon />}>
-                        Download File
-                      </Button>
+            {/* Student History Dialog */}
+            <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { bgcolor: cardBg, color: textPrimary, borderRadius: 3, backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)' } }}>
+                <DialogTitle sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Avatar src={selectedStudentForAction?.profilePic ? `${baseurl}${selectedStudentForAction.profilePic}` : undefined} />
+                        <Box>
+                            <Typography variant="h6" fontWeight="bold">{selectedStudentForAction?.fname} History</Typography>
+                            <Typography variant="caption" color={textSecondary}>Recent Activity Log</Typography>
+                        </Box>
                     </Box>
-                  )}
-                  {selectedSub.type === 'quiz' && (
-                    <Box>
-                      <Typography variant="h4" color={selectedSub.passed ? 'success.main' : 'error.main'}>{selectedSub.score}%</Typography>
-                      <Typography variant="caption">{selectedSub.passed ? 'PASSED' : 'FAILED'}</Typography>
+                    <IconButton onClick={() => setHistoryOpen(false)} sx={{ color: textSecondary }}><Cancel /></IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ p: 3 }}>
+                    <Box sx={{ position: 'relative', borderLeft: `2px solid rgba(255,255,255,0.1)`, pl: 4, ml: 1, py: 1 }}>
+                        {/* Dummy History for Demo - In real app, fetch this from backend */}
+                        {[
+                            { text: "Earned 50 pts for 'Quiz 1'", time: "2 hours ago", type: 'positive' },
+                            { text: "Submitted 'Assignment 3'", time: "1 day ago", type: 'neutral' },
+                            { text: "Earned 100 pts for 'Project'", time: "3 days ago", type: 'positive' }
+                        ].map((act, i) => (
+                            <Box key={i} sx={{ mb: 4, position: 'relative' }}>
+                                <Box sx={{
+                                    position: 'absolute', left: -38, top: 2,
+                                    width: 12, height: 12, borderRadius: '50%',
+                                    bgcolor: act.type === 'positive' ? successColor : accentColor,
+                                    border: `2px solid ${cardBg}`
+                                }} />
+                                <Typography variant="body2" fontWeight={500}>{act.text}</Typography>
+                                <Typography variant="caption" color={textSecondary}>{act.time}</Typography>
+                            </Box>
+                        ))}
                     </Box>
-                  )}
-                </Paper>
-              </Box>
-            )}
-          </DialogContent>
-          <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button onClick={() => setViewSubOpen(false)}>Close</Button>
-          </Box>
-        </Dialog>
+                </DialogContent>
+            </Dialog>
 
-        <Card id="submissions" sx={{ mt: 5, bgcolor: isDark ? "#1e293b" : "white", boxShadow: '0 4px 20px rgba(0,0,0,0.05)', borderRadius: 4, border: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
-          <CardContent sx={{ p: 4 }}>
-            <Typography variant="h6" gutterBottom color="secondary" sx={{ fontWeight: "bold", letterSpacing: 1 }}>
-              Submissions
-            </Typography>
+            {/* Alerts */}
+            <Snackbar open={!!success} autoHideDuration={3000} onClose={() => setSuccess("")} anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
+                <Alert severity="success" onClose={() => setSuccess("")} variant="filled">{success}</Alert>
+            </Snackbar>
+            <Snackbar open={!!error} autoHideDuration={3000} onClose={() => setError("")} anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
+                <Alert severity="error" onClose={() => setError("")} variant="filled">{error}</Alert>
+            </Snackbar>
 
-            {subsLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>
-            ) : submissions.length === 0 ? (
-              <Typography color="text.secondary">No submissions yet.</Typography>
-            ) : (
-              <List>
-                {submissions.map((s) => (
-                  <ListItem key={s._id} divider>
-                    <ListItemAvatar>
-                      <Avatar src={s.user?.profilePic ? `${baseurl}${s.user.profilePic}` : '/default-avatar.png'} />
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={s.task?.title || '—'}
-                      secondary={<>
-                        <Typography component="span" variant="body2" color="text.primary">{s.user?.fname || 'Student'}</Typography>
-                        <Typography component="span" variant="caption" sx={{ ml: 1 }}>{new Date(s.createdAt).toLocaleString()}</Typography>
-                        <Typography variant="body2" component="div" sx={{ mt: 1 }}>
-                          {s.type === 'text' ? (
-                            s.text
-                          ) : s.type === 'link' ? (
-                            <a href={s.link} target="_blank" rel="noreferrer">{s.link}</a>
-                          ) : s.type === 'file' && s.filePath ? (
-                            <a href={`${baseurl}${s.filePath}`} target="_blank" rel="noreferrer">Download</a>
-                          ) : s.type === 'quiz' ? (
-                            <>
-                              <strong>Score:</strong> {s.score}% • {s.passed ? 'Passed' : 'Failed'}
-                            </>
-                          ) : null}
-                        </Typography>
-                      </>}
-                    />
-
-                    <ListItemSecondaryAction>
-                      <Chip label={s.status} color={s.status === 'pending' ? 'warning' : s.status === 'accepted' ? 'success' : 'default'} sx={{ mr: 1 }} />
-                      <Tooltip title="View Submission">
-                        <IconButton onClick={() => { setSelectedSub(s); setViewSubOpen(true); }} color="primary" sx={{ mr: 1 }}>
-                          <VisibilityIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Button size="small" variant="contained" color="success" sx={{ mr: 1 }} onClick={() => handleApproveSubmission(s)} disabled={s.status === 'accepted'}>Accept & Award</Button>
-                      <Button size="small" variant="outlined" color="error" onClick={() => handleRejectSubmission(s)} disabled={s.status === 'rejected'}>Reject</Button>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                ))}
-              </List>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Alerts */}
-        <Snackbar
-          open={!!success}
-          autoHideDuration={3000}
-          onClose={() => setSuccess("")}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        >
-          <Alert severity="success" onClose={() => setSuccess("")} variant="filled">
-            {success}
-          </Alert>
-        </Snackbar>
-        <Snackbar
-          open={!!error}
-          autoHideDuration={3000}
-          onClose={() => setError("")}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        >
-          <Alert severity="error" onClose={() => setError("")} variant="filled">
-            {error}
-          </Alert>
-        </Snackbar>
-      </Box>
-    </Box>
-  );
+        </Box>
+    );
 };
 
 export default FacultyDashboard;

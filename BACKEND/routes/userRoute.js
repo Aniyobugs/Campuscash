@@ -42,6 +42,10 @@ router.post("/login", async (req, res) => {
       const token = jwt.sign({ id: user._id }, SECRET_KEY, {
         expiresIn: "1h",
       });
+
+      // Calculate rank (only among active users)
+      const rank = await userModel.countDocuments({ points: { $gt: user.points }, status: 'active' }) + 1;
+
       return res.status(200).json({
         message: `Welcome ${user.role}`,
         token,
@@ -51,6 +55,7 @@ router.post("/login", async (req, res) => {
           ename: user.ename,
           role: user.role,
           points: user.points,
+          rank, // <--- Added rank
           profilePic: user.profilePic || null,
           yearClassDept: user.yearClassDept || "",
         },
@@ -79,7 +84,10 @@ router.get("/me", async (req, res) => {
       .select("fname ename role points profilePic yearClassDept");
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    res.status(200).json(user);
+    // Calculate rank (only among active users)
+    const rank = await userModel.countDocuments({ points: { $gt: user.points }, status: 'active' }) + 1;
+
+    res.status(200).json({ ...user.toObject(), rank });
   } catch (error) {
     res.status(401).json({ message: "Invalid token" });
   }
@@ -177,7 +185,9 @@ router.get("/:id", async (req, res) => {
       .findById(req.params.id)
       .select("fname ename role points profilePic yearClassDept");
     if (!user) return res.status(404).json({ message: "User not found" });
-    res.status(200).json(user);
+
+    const rank = await userModel.countDocuments({ points: { $gt: user.points }, status: 'active' }) + 1;
+    res.status(200).json({ ...user.toObject(), rank });
   } catch (error) {
     res
       .status(500)
