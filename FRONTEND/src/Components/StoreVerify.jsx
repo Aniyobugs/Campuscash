@@ -157,18 +157,18 @@ const StorePage = () => {
     setCode("");
     setError("");
     setVerifying(false);
-    setCountdown(5); // Reset countdown
+    setCountdown(10); // Reset countdown
   };
 
   useEffect(() => {
     let interval;
     if (result && !confirmOpen) {
-      setCountdown(5); // Ensure reset on new result
+      setCountdown(10); // Ensure reset on new result
       interval = setInterval(() => {
         setCountdown((prev) => {
           if (prev <= 1) {
             handleRefresh();
-            return 5;
+            return 10;
           }
           return prev - 1;
         });
