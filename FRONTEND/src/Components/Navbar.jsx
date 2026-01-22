@@ -279,6 +279,14 @@ export default function Navbar() {
                   <Button color="inherit" component={Link} to="/user" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
                     Dashboard
                   </Button>
+                  <Button color="inherit" component={Link} to="/tasks" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
+                    Tasks
+                  </Button>
+                  {/* Coupons is part of dashboard now per design, but keeping a mental note if direct link needed. 
+                      Design just shows "Coupons" in top nav, so adding it. */}
+                  <Button color="inherit" component={Link} to="/user" state={{ scrollTo: 'coupons' }} sx={{ color: isDark ? '#ffffff' : '#212121' }}>
+                    Coupons
+                  </Button>
                   <Button color="inherit" component={Link} to="/profile" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
                     Profile
                   </Button>
