@@ -107,32 +107,144 @@ const StatCard = ({ icon: Icon, title, value, subtext, color, isDark }) => (
 const BeautifulCoupon = React.forwardRef(({ coupon, userName, isDark }, ref) => {
   if (!coupon) return null;
   const expired = coupon.expiresAt && new Date(coupon.expiresAt) < new Date();
-  const bgGradient = isDark
-    ? "linear-gradient(135deg, #111827 0%, #1f2937 40%, #0f766e 100%)"
-    : "linear-gradient(135deg, #e0f2fe 0%, #cffafe 40%, #99f6e4 100%)";
-  const textColor = isDark ? "white" : "#0c4a3e";
+
+  // Format details
+  const expiresDate = coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString() : "Never";
+  const issuedTo = userName || "User";
+  const points = coupon.pointsSpent || 100;
+
+  // Determine gradient background based on theme or force dark for "premium" feel as per image
+  // The user requested "like this way" (referring to image), which is dark.
+  const cardBg = "linear-gradient(180deg, #1e293b 0%, #0f172a 100%)";
 
   return (
-    <Box ref={ref} sx={{ position: "relative", width: "100%", maxWidth: 420, borderRadius: 4, overflow: "hidden", background: bgGradient, color: textColor, boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}>
-      <Box sx={{ p: 3, display: "flex", gap: 2 }}>
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="overline" sx={{ opacity: 0.7, letterSpacing: 2 }}>COUPON CODE</Typography>
-          <Typography variant="h4" sx={{ fontWeight: 800, fontFamily: "monospace", my: 1 }}>{coupon.code}</Typography>
-          <Typography variant="h6" fontWeight={700}>{coupon.rewardName}</Typography>
-          <Typography variant="body2" sx={{ opacity: 0.8, mt: 1 }}>Expires: {coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString() : "Never"}</Typography>
+    <Box
+      ref={ref}
+      sx={{
+        position: "relative",
+        width: "100%",
+        maxWidth: 550, // Increased size
+        background: "linear-gradient(135deg, #1e293b 0%, #0f172a 60%, #020617 100%)", // Richer dark gradient
+        color: "white",
+        borderRadius: 5,
+        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.05)", // Added subtle border
+        fontFamily: "'Inter', sans-serif",
+        overflow: "hidden",
+        // Ticket Cutouts
+        maskImage: "radial-gradient(circle at 0 71%, transparent 18px, black 19px), radial-gradient(circle at 100% 71%, transparent 18px, black 19px)",
+        WebkitMaskImage: "radial-gradient(circle at 0 71%, transparent 18px, black 19px), radial-gradient(circle at 100% 71%, transparent 18px, black 19px)"
+      }}
+    >
+      {/* Decorative Glow */}
+      <Box sx={{
+        position: 'absolute', top: -100, right: -100, width: 300, height: 300,
+        background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
+        borderRadius: '50%', pointerEvents: 'none'
+      }} />
+
+      {/* Top Header Label */}
+      <Box sx={{
+        bgcolor: "#f97316",
+        color: "#0f172a",
+        py: 1,
+        px: 4,
+        borderBottomRightRadius: 24,
+        width: "fit-content",
+        mb: 3,
+        boxShadow: "4px 4px 20px rgba(249, 115, 22, 0.2)"
+      }}>
+        <Typography variant="overline" fontWeight={900} letterSpacing={2} fontSize="0.85rem">CAMPUS CASH REWARD</Typography>
+      </Box>
+
+      {/* USED Stamp Overlay */}
+      {coupon.isUsed && (
+        <Box sx={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%) rotate(-30deg)",
+          border: "8px double rgba(220, 38, 38, 0.8)",
+          borderRadius: 2,
+          px: 6,
+          py: 2,
+          color: "rgba(220, 38, 38, 1)",
+          fontWeight: 900,
+          fontSize: "4rem",
+          zIndex: 20,
+          pointerEvents: "none",
+          letterSpacing: 6,
+          textShadow: "0 0 20px rgba(0,0,0,0.5)",
+          bgcolor: "rgba(0,0,0,0.1)"
+        }}>
+          USED
         </Box>
-        <Box sx={{ bgcolor: "white", p: 1, borderRadius: 2, height: "fit-content" }}>
-          <QRCode value={JSON.stringify({ code: coupon.code, userId: coupon.userId })} size={80} />
+      )}
+
+      {/* Content Body */}
+      <Box sx={{ display: "flex", px: 5, mb: 3 }}>
+        {/* Left Details */}
+        <Box sx={{ flex: 1, mr: 4 }}>
+          <Typography variant="caption" sx={{ color: "#94a3b8", letterSpacing: 2, display: "block", fontSize: "0.75rem", mb: 1, fontWeight: 600 }}>COUPON CODE</Typography>
+          <Typography variant="h4" sx={{
+            fontFamily: "'JetBrains Mono', monospace", // Monospace for code
+            fontWeight: 700,
+            color: "white",
+            mb: 4,
+            wordBreak: "break-word",
+            letterSpacing: 1.5,
+            textShadow: "0 2px 10px rgba(0,0,0,0.3)"
+          }}>
+            {coupon.code}
+          </Typography>
+
+          <Box mb={3}>
+            <Typography variant="body2" sx={{ color: "#cbd5e1", mb: 0.5, fontSize: "0.9rem" }}>Reward Unlocked:</Typography>
+            <Typography variant="h5" fontWeight={800} sx={{ color: "#fbbf24", textShadow: "0 2px 10px rgba(251, 191, 36, 0.2)" }}>
+              {coupon.rewardName}
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+            <Typography variant="body2" sx={{ color: "#94a3b8", fontSize: "0.9rem" }}>
+              Issued to: <Box component="span" sx={{ color: "white", fontWeight: 600 }}>{issuedTo}</Box>
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#94a3b8", fontSize: "0.9rem" }}>
+              Points Used: <Box component="span" sx={{ color: "#f472b6", fontWeight: 700 }}>{points}</Box>
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#94a3b8", fontSize: "0.9rem" }}>
+              Valid Until: <Box component="span" sx={{ color: "white", fontWeight: 600 }}>{expiresDate}</Box>
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Right QR Code Section */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <Box sx={{
+            p: 2,
+            bgcolor: "white",
+            borderRadius: 3,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            mb: 1.5,
+            boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)"
+          }}>
+            <QRCode value={JSON.stringify({ code: coupon.code, userId: coupon.userId })} size={110} />
+          </Box>
+          <Typography variant="caption" sx={{ color: "#94a3b8", fontSize: "0.75rem", fontWeight: 500, letterSpacing: 0.5 }}>Scan at Counter</Typography>
         </Box>
       </Box>
-      {/* Dashed line */}
-      <Box sx={{ position: "relative", height: 20, my: 1 }}>
-        <Box sx={{ position: "absolute", left: -10, top: 0, width: 20, height: 20, borderRadius: "50%", bgcolor: isDark ? "#0f172a" : "#f1f5f9" }} />
-        <Box sx={{ position: "absolute", right: -10, top: 0, width: 20, height: 20, borderRadius: "50%", bgcolor: isDark ? "#0f172a" : "#f1f5f9" }} />
-        <Box sx={{ borderTop: "2px dashed rgba(150,150,150,0.3)", position: "relative", top: 10, mx: 3 }} />
+
+      {/* Dashed Divider */}
+      <Box sx={{ px: 4, my: 3 }}>
+        <Box sx={{ borderBottom: "2px dashed #475569", opacity: 0.5 }} />
       </Box>
-      <Box sx={{ px: 3, pb: 3, opacity: 0.8 }}>
-        <Typography variant="caption">Status: {coupon.isUsed ? "USED" : expired ? "EXPIRED" : "ACTIVE"}</Typography>
+
+      {/* Footer / Terms */}
+      <Box sx={{ px: 5, pb: 4 }}>
+        <Typography variant="caption" sx={{ color: "#64748b", fontSize: "0.75rem", lineHeight: 1.6, display: "block", fontStyle: "italic" }}>
+          * Terms: This coupon is valid for a single use only. Convert this digital asset to physical reward at the designated campus store counter before the expiration date.
+        </Typography>
       </Box>
     </Box>
   );
@@ -154,6 +266,7 @@ const Userdash = () => {
   const [selectedCoupon, setSelectedCoupon] = useState(null);
   const [redeemOpen, setRedeemOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // Forms
   const [form, setForm] = useState({ fullName: "", email: "", currentPassword: "", newPassword: "" });
@@ -176,22 +289,36 @@ const Userdash = () => {
       const storedUser = JSON.parse(sessionStorage.getItem("user"));
       if (!storedUser) return;
 
-      const [userRes, tasksRes, couponsRes, allUsersRes] = await Promise.all([
-        axios.get(`${baseurl}/api/${storedUser.id}`),
-        axios.get(`${baseurl}/api/tasks/active`),
+      // 1. Fetch User First to get department/year
+      const userRes = await axios.get(`${baseurl}/api/${storedUser.id}`);
+      const user = userRes.data;
+
+      // 2. Fetch other data in parallel, using user info for filtering
+      const [tasksRes, couponsRes, allUsersRes] = await Promise.all([
+        axios.get(`${baseurl}/api/tasks/active`, {
+          params: { year: user.yearClassDept || "" }
+        }),
         axios.get(`${baseurl}/api/users/${storedUser.id}/coupons`),
-        axios.get(`${baseurl}/api/users`) // Fetch all users for leaderboard
+        axios.get(`${baseurl}/api/users`)
       ]);
 
-      const user = userRes.data;
       const usersList = allUsersRes.data || [];
+      const fetchedTasks = tasksRes.data || [];
 
       // Calculate Rank
       const sortedUsers = [...usersList].sort((a, b) => (b.points || 0) - (a.points || 0));
       const myRank = sortedUsers.findIndex(u => u._id === user._id) + 1;
 
+      // Calculate Pending Tasks
+      // Task is pending if I am not in the awardedTo list
+      const pendingCount = fetchedTasks.filter(t => {
+        const isCompleted = t.awardedTo && t.awardedTo.some(entry => entry.user === user._id);
+        return !isCompleted;
+      }).length;
+
       setData({
         user: {
+          id: user._id,
           name: user.fname || user.fullName,
           email: user.email,
           department: user.yearClassDept || "Student",
@@ -202,10 +329,14 @@ const Userdash = () => {
           points: user.points || 0,
           rank: myRank,
           streak: 6, // Mock for now
+        },
+        stats: {
+          activeAssignments: fetchedTasks.length,
+          pendingTasks: pendingCount
         }
       });
 
-      setTasks(tasksRes.data || []);
+      setTasks(fetchedTasks);
       setCoupons(couponsRes.data || []);
       setAllUsers(usersList);
 
@@ -379,7 +510,30 @@ const Userdash = () => {
       setError(err.response?.data?.message || "Failed to update profile");
     }
   };
-  const handleDownloadCoupon = async (format) => { /* ... same ... */ };
+  const handleDownloadCoupon = async (format) => {
+    if (!couponRef.current) return;
+    try {
+      const element = couponRef.current;
+      const canvas = await html2canvas(element, {
+        backgroundColor: null,
+        scale: 2, // Higher resolution
+        useCORS: true // Handle external images if any
+      });
+      const dataUrl = canvas.toDataURL("image/png");
+
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = `campus-cash-coupon-${selectedCoupon?.code || "reward"}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setSuccess("Coupon downloaded successfully!");
+    } catch (err) {
+      console.error("Download failed:", err);
+      setError("Failed to download coupon image");
+    }
+  };
 
   if (loading || !data) return <Box p={4}><LinearProgress /></Box>;
 
@@ -423,7 +577,7 @@ const Userdash = () => {
           <StatCard
             icon={AssignmentIcon}
             title="Assignments Active"
-            value={tasks.length}
+            value={data.stats?.activeAssignments || 0}
             color="#6366f1"
             isDark={isDark}
           />
@@ -432,7 +586,7 @@ const Userdash = () => {
           <StatCard
             icon={PendingIcon}
             title="Pending Tasks"
-            value={tasks.filter(t => new Date(t.dueDate) < new Date()).length + 2} // Mock pending count logic
+            value={data.stats?.pendingTasks || 0}
             color="#8b5cf6"
             isDark={isDark}
           />
@@ -555,7 +709,7 @@ const Userdash = () => {
                   </React.Fragment>
                 ))}
                 <Box p={2} textAlign="center">
-                  <Button size="small">View Full History</Button>
+                  <Button size="small" onClick={() => setHistoryOpen(true)}>View Full History</Button>
                 </Box>
               </List>
             </Card>
@@ -646,29 +800,48 @@ const Userdash = () => {
             </CardContent>
           </Card>
 
-          {/* Achievements */}
+          {/* Upcoming Tasks - Replaces Achievements */}
           <Card sx={{ mb: 4, borderRadius: 4, bgcolor: isDark ? "#1e293b" : "white", backgroundImage: "none" }}>
             <CardContent>
               <Box display="flex" alignItems="center" gap={1} mb={2}>
-                <BellIcon color="info" />
-                <Typography variant="h6" fontWeight={700}>Achievements</Typography>
+                <AssignmentIcon color="info" />
+                <Typography variant="h6" fontWeight={700}>Upcoming Tasks</Typography>
               </Box>
-              <Box display="flex" justifyContent="space-around">
-                {["Quiz Master", "Coffee Lover", "2 Day Streak"].map((badge, i) => (
-                  <Box key={i} textAlign="center">
-                    <Box sx={{
-                      width: 50, height: 50, borderRadius: "50%",
-                      bgcolor: "rgba(139, 92, 246, 0.1)", color: "#8b5cf6",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      mx: "auto", mb: 1, border: "1px solid rgba(139, 92, 246, 0.3)"
-                    }}>
-                      <TrophyIcon fontSize="small" />
-                    </Box>
-                    <Typography variant="caption" display="block" sx={{ lineHeight: 1.2 }}>{badge}</Typography>
-                  </Box>
-                ))}
-              </Box>
-              <Button fullWidth variant="text" sx={{ mt: 2 }}>View All</Button>
+
+              {tasks.filter(t => !t.awardedTo?.some(entry => entry.user === data.user.id)).slice(0, 3).length > 0 ? (
+                <List disablePadding>
+                  {tasks
+                    .filter(t => !t.awardedTo?.some(entry => entry.user === data.user.id)) // Filter incomplete
+                    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)) // Sort by due date
+                    .slice(0, 3) // Take top 3
+                    .map((task, i) => (
+                      <ListItem key={i} sx={{
+                        bgcolor: isDark ? "rgba(255,255,255,0.03)" : "#f8fafc",
+                        borderRadius: 2,
+                        mb: 1,
+                        py: 1
+                      }}>
+                        <ListItemText
+                          primary={<Typography variant="subtitle2" fontWeight={600}>{task.title}</Typography>}
+                          secondary={
+                            <Box display="flex" gap={1} alignItems="center" mt={0.5}>
+                              <Chip label={`${task.points} pts`} size="small" color="primary" sx={{ height: 20, fontSize: "0.7rem" }} />
+                              <Typography variant="caption" color="text.secondary">
+                                Due: {new Date(task.dueDate).toLocaleDateString()}
+                              </Typography>
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                    ))}
+                </List>
+              ) : (
+                <Box textAlign="center" py={2} color="text.secondary">
+                  <Typography variant="body2">No pending tasks! 🎉</Typography>
+                </Box>
+              )}
+
+              <Button fullWidth variant="text" sx={{ mt: 2 }} onClick={() => navigate('/tasks')}>View All Tasks</Button>
             </CardContent>
           </Card>
 
@@ -758,7 +931,7 @@ const Userdash = () => {
             >
               <img
                 key={selectedReward} // Re-trigger animation on change if desired, or just swap src
-                src={selectedReward.includes("Voucher") ? "/canteen-voucher.png" : selectedReward.includes("Library") ? "/library-pass.png" : "/real-coffee.png"}
+                src={selectedReward.includes("Voucher") ? "/canteen-voucher.png" : selectedReward.includes("Library") ? "/library-pass.png" : selectedReward.includes("Self Redeem") ? "/self-redeem-coupon.jpg" : "/real-coffee.png"}
                 alt="Reward Illustration"
                 style={{ width: "100%", maxWidth: 320, filter: "drop-shadow(0 20px 30px rgba(0,0,0,0.3))", borderRadius: "20px" }}
               />
@@ -787,11 +960,16 @@ const Userdash = () => {
                   value={selectedReward}
                   label="Select Reward"
                   onChange={(e) => {
-                    setSelectedReward(e.target.value);
-                    const map = { "Free Coffee": 100, "Canteen Voucher ₹50": 150, "Library Pass": 200 };
-                    setRedeemPoints(map[e.target.value] || 100);
+                    const val = e.target.value;
+                    setSelectedReward(val);
+                    if (val === "Self Redeem Points Coupon") {
+                      setRedeemPoints(0); // Allow user to type
+                    } else {
+                      const map = { "Free Coffee": 100, "Canteen Voucher ₹50": 150, "Library Pass": 200 };
+                      setRedeemPoints(map[val] || 100);
+                    }
                   }}
-                  sx={{ borderRadius: 3, height: 60 }}
+                  sx={{ borderRadius: 3, height: 60, mb: 2 }}
                 >
                   <MenuItem value="Free Coffee">
                     <Box display="flex" alignItems="center" gap={2}>
@@ -820,7 +998,29 @@ const Userdash = () => {
                       </Box>
                     </Box>
                   </MenuItem>
+                  <MenuItem value="Self Redeem Points Coupon">
+                    <Box display="flex" alignItems="center" gap={2}>
+                      <Avatar sx={{ bgcolor: "teal", width: 34, height: 34 }}><CouponIcon fontSize="small" /></Avatar>
+                      <Box>
+                        <Typography fontWeight={700} variant="body2">Self Redeem Points Coupon</Typography>
+                        <Typography variant="caption" color="text.secondary">Custom Amount</Typography>
+                      </Box>
+                    </Box>
+                  </MenuItem>
                 </Select>
+
+                {selectedReward === "Self Redeem Points Coupon" && (
+                  <TextField
+                    autoFocus
+                    label="Points to Redeem"
+                    type="number"
+                    fullWidth
+                    value={redeemPoints}
+                    onChange={(e) => setRedeemPoints(Number(e.target.value))}
+                    helperText={`Max available: ${data.progress.points}`}
+                    sx={{ mt: 1 }}
+                  />
+                )}
               </FormControl>
 
               <Box sx={{ mt: 4, bgcolor: isDark ? "rgba(255,255,255,0.05)" : "grey.50", p: 3, borderRadius: 3, display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px dashed", borderColor: "text.disabled" }}>
@@ -948,6 +1148,44 @@ const Userdash = () => {
           >
             Save Changes
           </Button>
+        </DialogActions>
+      </Dialog>
+
+
+      {/* History Dialog */}
+      <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Full History
+          <IconButton onClick={() => setHistoryOpen(false)}><CloseIcon /></IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          <List disablePadding>
+            {recentActivity.map((item, idx) => (
+              <React.Fragment key={idx}>
+                <ListItem sx={{ py: 2 }}>
+                  <ListItemIcon>
+                    <Box sx={{ p: 1, borderRadius: "50%", bgcolor: `${item.color}20`, color: item.color }}>
+                      <item.icon />
+                    </Box>
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={<Typography fontWeight={600} color={isDark ? "white" : "text.primary"}>{item.title}</Typography>}
+                    secondary={
+                      <Box>
+                        <Typography variant="caption" display="block" color="text.secondary">{item.time.toLocaleString()}</Typography>
+                        {item.points && <Typography variant="caption" color={item.points.toString().includes('+') ? "success.main" : "error"}>{item.points} pts</Typography>}
+                      </Box>
+                    }
+                  />
+                </ListItem>
+                {idx < recentActivity.length - 1 && <Divider component="li" variant="inset" />}
+              </React.Fragment>
+            ))}
+            {recentActivity.length === 0 && <Box p={3} textAlign="center">No activity found.</Box>}
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setHistoryOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 

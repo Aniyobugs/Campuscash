@@ -9,6 +9,10 @@ import {
   Snackbar,
   Alert,
   Avatar,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
 } from "@mui/material";
 import axios from "axios";
 
@@ -16,7 +20,7 @@ const ProfileUpdate = ({ userId: propUserId }) => {
   const { isDark } = useTheme();
   const [form, setForm] = useState({
     fullName: "",
-    email: "",
+    yearClassDept: "",
     currentPassword: "",
     newPassword: "",
   });
@@ -42,11 +46,11 @@ const ProfileUpdate = ({ userId: propUserId }) => {
     axios
       .get(`${baseurl}/api/${userId}`)
       .then((res) => {
-        const { fname, ename, profilePic } = res.data;
+        const { fname, yearClassDept, profilePic } = res.data;
         setForm((prev) => ({
           ...prev,
           fullName: fname || "",
-          email: ename || "",
+          yearClassDept: yearClassDept || "",
         }));
         if (profilePic) setPreview(`${baseurl}${profilePic}`);
       })
@@ -75,7 +79,7 @@ const ProfileUpdate = ({ userId: propUserId }) => {
     try {
       const formData = new FormData();
       formData.append("fullName", form.fullName);
-      formData.append("email", form.email);
+      formData.append("yearClassDept", form.yearClassDept);
       if (form.currentPassword) formData.append("currentPassword", form.currentPassword);
       if (form.newPassword) formData.append("newPassword", form.newPassword);
       if (profilePic) formData.append("profilePic", profilePic);
@@ -146,16 +150,21 @@ const ProfileUpdate = ({ userId: propUserId }) => {
           sx={{ mt: 3 }}
         />
 
-        {/* Email */}
-        <TextField
-          fullWidth
-          label="Email Address"
-          name="email"
-          type="email"
-          value={form.email}
-          onChange={handleChange}
-          sx={{ mt: 3 }}
-        />
+        {/* Year / Class Dropdown */}
+        <FormControl fullWidth sx={{ mt: 3 }}>
+          <InputLabel>Year / Class</InputLabel>
+          <Select
+            label="Year / Class"
+            name="yearClassDept"
+            value={form.yearClassDept}
+            onChange={handleChange}
+          >
+            <MenuItem value="Year 1">Year 1</MenuItem>
+            <MenuItem value="Year 2">Year 2</MenuItem>
+            <MenuItem value="Year 3">Year 3</MenuItem>
+            <MenuItem value="Year 4">Year 4</MenuItem>
+          </Select>
+        </FormControl>
 
         {/* Current Password */}
         <TextField

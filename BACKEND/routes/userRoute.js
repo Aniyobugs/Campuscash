@@ -31,7 +31,9 @@ router.post("/", async (req, res) => {
 // ==========================
 router.post("/login", async (req, res) => {
   try {
-    const user = await userModel.findOne({ ename: req.body.ename });
+    const user = await userModel.findOne({
+      $or: [{ ename: req.body.ename }, { studentId: req.body.ename }]
+    });
     if (!user) return res.status(404).json({ message: "User not found" });
 
     if (user.status === 'inactive') {
@@ -106,6 +108,8 @@ router.put("/users/:id", upload.single("profilePic"), async (req, res) => {
     if (email) user.ename = email;
     if (yearClassDept) user.yearClassDept = yearClassDept;
     if (points !== undefined && points !== "") user.points = Number(points);
+    // Allow updating studentId if provided
+    if (req.body.studentId) user.studentId = req.body.studentId;
 
     // If a file was uploaded, stream it into GridFS and store an access path on the user
     if (req.file && req.file.buffer) {
@@ -152,6 +156,9 @@ router.put("/users/:id", upload.single("profilePic"), async (req, res) => {
     res.status(200).json({ message: "Profile updated successfully", user });
   } catch (error) {
     console.error("Profile update error:", error);
+    if (error.code === 11000) {
+      return res.status(400).json({ message: "Student ID or Email already exists" });
+    }
     res
       .status(500)
       .json({ message: "Server error", error: error.message });

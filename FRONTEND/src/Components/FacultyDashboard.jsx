@@ -631,7 +631,7 @@ const FacultyDashboard = () => {
                                     <Avatar src={topStudent?.profilePic ? `${baseurl}${topStudent.profilePic}` : undefined} sx={{ width: 72, height: 72, border: `3px solid ${accentColor}`, boxShadow: `0 0 20px ${accentColor}40` }}>{topStudent?.fname[0]}</Avatar>
                                     <Box>
                                         <Typography variant="overline" color={accentColor} fontWeight="bold">TOP PERFORMER</Typography>
-                                        <Typography variant="h5" fontWeight="bold" sx={{ mb: 0.5 }}>{topStudent?.fname || "None"}</Typography>
+                                        <Typography variant="h5" fontWeight="bold" sx={{ mb: 0.5, color: '#f1f5f9' }}>{topStudent?.fname || "None"}</Typography>
                                         <Chip label={`${topStudent?.points || 0} pts`} size="small" sx={{ bgcolor: accentColor, color: '#fff', fontWeight: 'bold', height: 24 }} />
                                     </Box>
                                 </CardContent>

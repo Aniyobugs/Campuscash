@@ -23,8 +23,10 @@ import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import axios from "axios";
+import { useTheme } from "../contexts/ThemeContext";
 
 const AssignTask = () => {
+  const { isDark } = useTheme();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -93,7 +95,10 @@ const AssignTask = () => {
           minHeight: "100vh",
           py: 6,
           px: 2,
-          background: "linear-gradient(180deg,#f7fbff 0%, #ffffff 100%)",
+          background: isDark
+            ? "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)"
+            : "linear-gradient(180deg,#f7fbff 0%, #ffffff 100%)",
+          color: isDark ? "#fff" : "inherit"
         }}
       >
         <Paper
@@ -104,6 +109,8 @@ const AssignTask = () => {
             borderRadius: 3,
             overflow: "hidden",
             display: "flex",
+            bgcolor: isDark ? "#1e293b" : "#fff",
+            color: isDark ? "#fff" : "inherit"
           }}
         >
           <Box sx={{ flex: 1, p: { xs: 3, sm: 5 } }}>
@@ -116,7 +123,7 @@ const AssignTask = () => {
                 <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: 0.3 }}>
                   Assign New Task
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color={isDark ? "text.secondary" : "text.secondary"} sx={{ opacity: 0.8 }}>
                   Create and assign tasks with points and due dates.
                 </Typography>
               </Box>
@@ -136,9 +143,17 @@ const AssignTask = () => {
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <AssignmentIcon color="action" />
+                          <AssignmentIcon color="action" sx={{ color: isDark ? "#94a3b8" : "inherit" }} />
                         </InputAdornment>
                       ),
+                    }}
+                    sx={{
+                      "& .MuiInputBase-input": { color: isDark ? "#fff" : "inherit" },
+                      "& .MuiInputLabel-root": { color: isDark ? "#94a3b8" : "inherit" },
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": { borderColor: isDark ? "rgba(255,255,255,0.2)" : "inherit" },
+                        "&:hover fieldset": { borderColor: isDark ? "#fff" : "inherit" },
+                      }
                     }}
                   />
                 </Grid>
@@ -167,7 +182,19 @@ const AssignTask = () => {
                       ))
                     }
                     renderInput={(params) => (
-                      <TextField {...params} label="Assign to Years (optional)" placeholder="Add or select years" />
+                      <TextField
+                        {...params}
+                        label="Assign to Years (optional)"
+                        placeholder="Add or select years"
+                        sx={{
+                          "& .MuiInputBase-input": { color: isDark ? "#fff" : "inherit" },
+                          "& .MuiInputLabel-root": { color: isDark ? "#94a3b8" : "inherit" },
+                          "& .MuiOutlinedInput-root": {
+                            "& fieldset": { borderColor: isDark ? "rgba(255,255,255,0.2)" : "inherit" },
+                            "&:hover fieldset": { borderColor: isDark ? "#fff" : "inherit" },
+                          }
+                        }}
+                      />
                     )}
                   />
                 </Grid>
@@ -182,6 +209,14 @@ const AssignTask = () => {
                     onChange={handleChange("description")}
                     placeholder="Optional task details..."
                     variant="outlined"
+                    sx={{
+                      "& .MuiInputBase-input": { color: isDark ? "#fff" : "inherit" },
+                      "& .MuiInputLabel-root": { color: isDark ? "#94a3b8" : "inherit" },
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": { borderColor: isDark ? "rgba(255,255,255,0.2)" : "inherit" },
+                        "&:hover fieldset": { borderColor: isDark ? "#fff" : "inherit" },
+                      }
+                    }}
                   />
                 </Grid>
 
@@ -198,10 +233,18 @@ const AssignTask = () => {
                         InputProps: {
                           startAdornment: (
                             <InputAdornment position="start">
-                              <CalendarMonthIcon color="action" />
+                              <CalendarMonthIcon color="action" sx={{ color: isDark ? "#94a3b8" : "inherit" }} />
                             </InputAdornment>
                           ),
                         },
+                        sx: {
+                          "& .MuiInputBase-input": { color: isDark ? "#fff" : "inherit" },
+                          "& .MuiInputLabel-root": { color: isDark ? "#94a3b8" : "inherit" },
+                          "& .MuiOutlinedInput-root": {
+                            "& fieldset": { borderColor: isDark ? "rgba(255,255,255,0.2)" : "inherit" },
+                            "&:hover fieldset": { borderColor: isDark ? "#fff" : "inherit" },
+                          }
+                        }
                       },
                     }}
                   />
@@ -220,9 +263,17 @@ const AssignTask = () => {
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <EmojiEventsIcon color="action" />
+                          <EmojiEventsIcon color="action" sx={{ color: isDark ? "#94a3b8" : "inherit" }} />
                         </InputAdornment>
                       ),
+                    }}
+                    sx={{
+                      "& .MuiInputBase-input": { color: isDark ? "#fff" : "inherit" },
+                      "& .MuiInputLabel-root": { color: isDark ? "#94a3b8" : "inherit" },
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": { borderColor: isDark ? "rgba(255,255,255,0.2)" : "inherit" },
+                        "&:hover fieldset": { borderColor: isDark ? "#fff" : "inherit" },
+                      }
                     }}
                   />
                 </Grid>
@@ -261,15 +312,20 @@ const AssignTask = () => {
             </Box>
           </Box>
 
-          <Box sx={{ width: { xs: 0, md: 340 }, display: { xs: "none", md: "block" }, bgcolor: "primary.light", color: "primary.contrastText" }}>
+          <Box sx={{
+            width: { xs: 0, md: 340 },
+            display: { xs: "none", md: "block" },
+            bgcolor: isDark ? "rgba(99, 102, 241, 0.2)" : "primary.light",
+            color: isDark ? "#fff" : "primary.contrastText"
+          }}>
             <Box sx={{ p: 4 }}>
               <Typography variant="subtitle1" fontWeight={700} mb={1}>
                 Quick Tips
               </Typography>
               <Stack spacing={1} mb={2}>
-                <Chip label="Give clear instructions" variant="filled" color="primary" />
-                <Chip label="Set fair points" variant="outlined" />
-                <Chip label="Use categories for filtering" variant="outlined" />
+                <Chip label="Give clear instructions" variant="filled" color="primary" sx={{ bgcolor: isDark ? "primary.main" : undefined }} />
+                <Chip label="Set fair points" variant="outlined" sx={{ color: "inherit", borderColor: "inherit" }} />
+                <Chip label="Use categories for filtering" variant="outlined" sx={{ color: "inherit", borderColor: "inherit" }} />
               </Stack>
 
               <Typography variant="body2" sx={{ opacity: 0.95 }}>

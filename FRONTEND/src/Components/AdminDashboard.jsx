@@ -137,12 +137,20 @@ const AdminDashboard = () => {
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [editUserOpen, setEditUserOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [editUserForm, setEditUserForm] = useState({ fname: "", ename: "", yearClassDept: "", points: 0 });
+  const [editUserForm, setEditUserForm] = useState({ fname: "", ename: "", yearClassDept: "", points: 0, studentId: "" });
   const [selectedMessage, setSelectedMessage] = useState(null);
 
 
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+
+  // Helper to get minimum date-time (current local time)
+  const getMinDateTime = () => {
+    const now = new Date();
+    const offset = now.getTimezoneOffset();
+    const localNow = new Date(now.getTime() - (offset * 60 * 1000));
+    return localNow.toISOString().slice(0, 16);
+  };
 
   // --- Create Task Form State ---
   const [createTaskForm, setCreateTaskForm] = useState({
@@ -341,7 +349,13 @@ const AdminDashboard = () => {
 
   const handleEditUserClick = (user) => {
     setEditingUser(user);
-    setEditUserForm({ fname: user.fname, ename: user.ename, yearClassDept: user.yearClassDept, points: user.points || 0 });
+    setEditUserForm({
+      fname: user.fname,
+      ename: user.ename,
+      yearClassDept: user.yearClassDept,
+      points: user.points || 0,
+      studentId: (user.studentId !== undefined && user.studentId !== null) ? user.studentId : ""
+    });
     setEditUserOpen(true);
   };
 
@@ -351,6 +365,7 @@ const AdminDashboard = () => {
       const payload = {
         fullName: editUserForm.fname,
         email: editUserForm.ename,
+        studentId: editUserForm.studentId, // Added studentId
         yearClassDept: editUserForm.yearClassDept,
         points: editUserForm.points
       };
@@ -364,7 +379,7 @@ const AdminDashboard = () => {
       setTimeout(() => fetchAllData(), 500);
     } catch (err) {
       console.error("Update error:", err);
-      setError("Failed to update user");
+      setError(err.response?.data?.message || "Failed to update user");
     }
   };
 
@@ -973,6 +988,7 @@ const AdminDashboard = () => {
               value={createTaskForm.dueDate}
               onChange={e => setCreateTaskForm({ ...createTaskForm, dueDate: e.target.value })}
               InputLabelProps={{ shrink: true }}
+              inputProps={{ min: getMinDateTime() }}
               sx={{
                 "& .MuiInputBase-input": {
                   colorScheme: isDark ? "dark" : "light",
@@ -1076,7 +1092,14 @@ const AdminDashboard = () => {
             <TextField label="Title" fullWidth value={editTaskForm.title} onChange={e => setEditTaskForm({ ...editTaskForm, title: e.target.value })} />
             <TextField label="Description" multiline rows={3} fullWidth value={editTaskForm.description} onChange={e => setEditTaskForm({ ...editTaskForm, description: e.target.value })} />
             <TextField type="number" label="Points" fullWidth value={editTaskForm.points} onChange={e => setEditTaskForm({ ...editTaskForm, points: e.target.value })} />
-            <TextField type="datetime-local" fullWidth value={editTaskForm.dueDate} onChange={e => setEditTaskForm({ ...editTaskForm, dueDate: e.target.value })} InputLabelProps={{ shrink: true }} />
+            <TextField
+              type="datetime-local"
+              fullWidth
+              value={editTaskForm.dueDate}
+              onChange={e => setEditTaskForm({ ...editTaskForm, dueDate: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+              inputProps={{ min: getMinDateTime() }}
+            />
             <Button variant="contained" onClick={handleSaveEditedTask}>Save Changes</Button>
           </Stack>
         </DialogContent>
@@ -1100,6 +1123,7 @@ const AdminDashboard = () => {
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField label="Full Name" fullWidth value={editUserForm.fname} onChange={e => setEditUserForm({ ...editUserForm, fname: e.target.value })} />
+            <TextField label="Student ID" fullWidth value={editUserForm.studentId} onChange={e => setEditUserForm({ ...editUserForm, studentId: e.target.value })} />
             <TextField label="Email (Login ID)" fullWidth value={editUserForm.ename} onChange={e => setEditUserForm({ ...editUserForm, ename: e.target.value })} helperText="Warning: Changing this updates the user's login ID" />
             <TextField label="Year/Class/Dept" fullWidth value={editUserForm.yearClassDept} onChange={e => setEditUserForm({ ...editUserForm, yearClassDept: e.target.value })} />
             <TextField type="number" label="Total Points" fullWidth value={editUserForm.points} onChange={e => setEditUserForm({ ...editUserForm, points: Number(e.target.value) })} />
