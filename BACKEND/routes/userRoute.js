@@ -16,10 +16,21 @@ const POINT_VALUE_INR = parseFloat(process.env.POINT_VALUE_INR) || (15 / 100); /
 // ==========================
 router.post("/", async (req, res) => {
   try {
+    // Auto-generate studentId for Faculty/Staff
+    if (req.body.yearClassDept === "Faculty") {
+      req.body.studentId = "FAC-" + Date.now();
+      req.body.role = "faculty"; // Auto-set role to faculty
+    }
+
     const newUser = new userModel(req.body);
     await newUser.save();
     res.status(200).json({ message: "User added successfully", user: newUser });
   } catch (error) {
+    // Handle duplicate key error specially
+    if (error.code === 11000) {
+      if (error.keyPattern?.studentId) return res.status(400).json({ message: "Student ID already exists" });
+      if (error.keyPattern?.ename) return res.status(400).json({ message: "Email already exists" });
+    }
     res
       .status(500)
       .json({ message: "Something went wrong", error: error.message });
@@ -60,6 +71,7 @@ router.post("/login", async (req, res) => {
           rank, // <--- Added rank
           profilePic: user.profilePic || null,
           yearClassDept: user.yearClassDept || "",
+          department: user.department || "",
         },
       });
     }
@@ -83,7 +95,7 @@ router.get("/me", async (req, res) => {
     const decoded = jwt.verify(token, SECRET_KEY);
     const user = await userModel
       .findById(decoded.id)
-      .select("fname ename role points profilePic yearClassDept");
+      .select("fname ename role points profilePic yearClassDept department");
     if (!user) return res.status(404).json({ message: "User not found" });
 
     // Calculate rank (only among active users)
@@ -107,6 +119,7 @@ router.put("/users/:id", upload.single("profilePic"), async (req, res) => {
     if (fullName) user.fname = fullName;
     if (email) user.ename = email;
     if (yearClassDept) user.yearClassDept = yearClassDept;
+    if (req.body.department) user.department = req.body.department;
     if (points !== undefined && points !== "") user.points = Number(points);
     // Allow updating studentId if provided
     if (req.body.studentId) user.studentId = req.body.studentId;
@@ -173,7 +186,7 @@ router.get("/users", async (req, res) => {
     const users = await userModel
       .find()
       .select(
-        "fname ename studentId email role points yearClassDept profilePic status"
+        "fname ename studentId email role points yearClassDept department profilePic status"
       );
     res.status(200).json(users);
   } catch (error) {
@@ -190,7 +203,7 @@ router.get("/:id", async (req, res) => {
   try {
     const user = await userModel
       .findById(req.params.id)
-      .select("fname ename role points profilePic yearClassDept");
+      .select("fname ename role points profilePic yearClassDept department");
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const rank = await userModel.countDocuments({ points: { $gt: user.points }, status: 'active' }) + 1;

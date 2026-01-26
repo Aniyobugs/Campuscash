@@ -81,7 +81,7 @@ const StatCard = ({ icon: Icon, title, value, subtext, color, isDark }) => (
       }}>
         <Icon sx={{ fontSize: 28 }} />
       </Box>
-      <Box>
+      <Box position="relative" zIndex={1}>
         <Typography variant="body2" color="text.secondary" fontWeight={500}>
           {title}
         </Typography>
@@ -93,11 +93,13 @@ const StatCard = ({ icon: Icon, title, value, subtext, color, isDark }) => (
       {/* Decorative bg icon */}
       <Icon sx={{
         position: "absolute",
-        right: -10,
-        bottom: -10,
-        fontSize: 100,
-        opacity: 0.05,
-        transform: "rotate(-15deg)"
+        right: -20,
+        bottom: -20,
+        fontSize: 140,
+        opacity: isDark ? 0.15 : 0.1, // Increased opacity
+        color: color || "primary.main", // Added color
+        transform: "rotate(-15deg)",
+        filter: "drop-shadow(0 0 10px rgba(0,0,0,0.1))"
       }} />
     </CardContent>
   </Card>
@@ -294,26 +296,38 @@ const Userdash = () => {
       const user = userRes.data;
 
       // 2. Fetch other data in parallel, using user info for filtering
-      const [tasksRes, couponsRes, allUsersRes] = await Promise.all([
+      const [tasksRes, couponsRes, allUsersRes, submissionsRes] = await Promise.all([
         axios.get(`${baseurl}/api/tasks/active`, {
           params: { year: user.yearClassDept || "" }
         }),
         axios.get(`${baseurl}/api/users/${storedUser.id}/coupons`),
-        axios.get(`${baseurl}/api/users`)
+        axios.get(`${baseurl}/api/users`),
+        axios.get(`${baseurl}/api/submissions/user/${storedUser.id}`)
       ]);
 
       const usersList = allUsersRes.data || [];
       const fetchedTasks = tasksRes.data || [];
+      const mySubmissions = submissionsRes.data || [];
 
       // Calculate Rank
       const sortedUsers = [...usersList].sort((a, b) => (b.points || 0) - (a.points || 0));
       const myRank = sortedUsers.findIndex(u => u._id === user._id) + 1;
 
       // Calculate Pending Tasks
-      // Task is pending if I am not in the awardedTo list
+      // Task is pending if:
+      // 1. It is active (fetchedTasks are active)
+      // 2. I have NOT submitted it yet (check mySubmissions)
+      // 3. I have NOT been awarded it (check awardedTo, though usually covered by submission, admin awards matter too)
       const pendingCount = fetchedTasks.filter(t => {
-        const isCompleted = t.awardedTo && t.awardedTo.some(entry => entry.user === user._id);
-        return !isCompleted;
+        // Check if I submitted this task
+        const hasSubmitted = mySubmissions.some(sub =>
+          (typeof sub.task === 'object' ? sub.task._id : sub.task) === t._id
+        );
+
+        // Check if I was awarded (admin manual award or quiz auto-award)
+        const isAwarded = t.awardedTo && t.awardedTo.some(entry => entry.user === user._id);
+
+        return !hasSubmitted && !isAwarded;
       }).length;
 
       setData({
@@ -321,7 +335,8 @@ const Userdash = () => {
           id: user._id,
           name: user.fname || user.fullName,
           email: user.email,
-          department: user.yearClassDept || "Student",
+          department: user.department || "General",
+          year: user.yearClassDept || "Student",
           avatar: user.profilePic ? `${baseurl}${user.profilePic}` : null,
           rank: myRank,
         },
@@ -343,7 +358,8 @@ const Userdash = () => {
       setForm({
         fullName: user.fname || user.fullName || "",
         email: user.email || "",
-        department: user.yearClassDept || "N/A",
+        department: user.department || "",
+        year: user.yearClassDept || "Year 1",
         currentPassword: "",
         newPassword: ""
       });
@@ -484,23 +500,26 @@ const Userdash = () => {
       const storedUser = JSON.parse(sessionStorage.getItem("user"));
       if (!storedUser) return;
 
-      const updateData = {
-        fullName: form.fullName,
-        yearClassDept: form.department, // Map form.department to backend field
-      };
+      const formData = new FormData();
+      formData.append("fullName", form.fullName);
+      formData.append("yearClassDept", form.year);
+      formData.append("department", form.department);
 
       if (form.newPassword) {
         if (form.newPassword !== form.confirmPassword) {
           setError("Passwords do not match");
           return;
         }
-        updateData.password = form.newPassword;
+        formData.append("password", form.newPassword);
       }
 
-      // If user uploaded a new profile pic, handle that too (assuming backend supports it or mocking)
-      // For now, focusing on text fields as requested. 
+      if (profilePic) {
+        formData.append("profilePic", profilePic);
+      }
 
-      await axios.put(`${baseurl}/api/${storedUser.id}`, updateData);
+      await axios.put(`${baseurl}/api/users/${storedUser.id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
 
       setSuccess("Profile updated successfully!");
       setProfileOpen(false);
@@ -561,7 +580,8 @@ const Userdash = () => {
               Welcome back, {data.user.name.split(' ')[0]}!
             </Typography>
             <Box display="flex" alignItems="center" gap={2} mt={1}>
-              <Chip icon={<SchoolIcon sx={{ color: "#818cf8 !important" }} />} label={data.user.department} size="small" sx={{ bgcolor: "rgba(129, 140, 248, 0.1)", color: "#818cf8", borderColor: "rgba(129, 140, 248, 0.2)", border: 1 }} />
+              <Chip icon={<SchoolIcon sx={{ color: "#818cf8 !important" }} />} label={data.user.year} size="small" sx={{ bgcolor: "rgba(129, 140, 248, 0.1)", color: "#818cf8", borderColor: "rgba(129, 140, 248, 0.2)", border: 1 }} />
+              <Chip icon={<SchoolIcon sx={{ color: "#f472b6 !important" }} />} label={data.user.department} size="small" sx={{ bgcolor: "rgba(244, 114, 182, 0.1)", color: "#f472b6", borderColor: "rgba(244, 114, 182, 0.2)", border: 1 }} />
               <Chip icon={<TrophyIcon sx={{ color: "#fbbf24 !important" }} />} label={`#${data.user.rank} Rank`} size="small" sx={{ bgcolor: "rgba(251, 191, 36, 0.1)", color: "#fbbf24", borderColor: "rgba(251, 191, 36, 0.2)", border: 1 }} />
               <Chip icon={<CoffeeIcon sx={{ color: "#f472b6 !important" }} />} label={`${data.progress.points} Points`} size="small" sx={{ bgcolor: "rgba(244, 114, 182, 0.1)", color: "#f472b6", borderColor: "rgba(244, 114, 182, 0.2)", border: 1 }} />
               <Typography variant="caption" sx={{ cursor: 'pointer', textDecoration: 'underline', opacity: 0.7 }} onClick={() => setProfileOpen(true)}>Edit Profile</Typography>
@@ -574,22 +594,26 @@ const Userdash = () => {
       {/* --- Stats Grid --- */}
       <Grid container spacing={3} mb={4}>
         <Grid size={{ xs: 12, sm: 4 }}>
-          <StatCard
-            icon={AssignmentIcon}
-            title="Assignments Active"
-            value={data.stats?.activeAssignments || 0}
-            color="#6366f1"
-            isDark={isDark}
-          />
+          <div onClick={() => navigate('/tasks')} style={{ cursor: 'pointer', height: '100%' }}>
+            <StatCard
+              icon={AssignmentIcon}
+              title="Assignments and Quiz Active"
+              value={data.stats?.activeAssignments || 0}
+              color="#6366f1"
+              isDark={isDark}
+            />
+          </div>
         </Grid>
         <Grid size={{ xs: 12, sm: 4 }}>
-          <StatCard
-            icon={PendingIcon}
-            title="Pending Tasks"
-            value={data.stats?.pendingTasks || 0}
-            color="#8b5cf6"
-            isDark={isDark}
-          />
+          <div onClick={() => navigate('/tasks')} style={{ cursor: 'pointer', height: '100%' }}>
+            <StatCard
+              icon={PendingIcon}
+              title="Pending Tasks"
+              value={data.stats?.pendingTasks || 0}
+              color="#8b5cf6"
+              isDark={isDark}
+            />
+          </div>
         </Grid>
         <Grid size={{ xs: 12, sm: 4 }}>
           <StatCard
@@ -1096,11 +1120,11 @@ const Userdash = () => {
             </Grid>
             <Grid size={{ xs: 12 }}>
               <FormControl fullWidth>
-                <InputLabel>Department / Class</InputLabel>
+                <InputLabel>Year / Class</InputLabel>
                 <Select
-                  label="Department / Class"
-                  value={form.department || ""}
-                  onChange={(e) => setForm({ ...form, department: e.target.value })}
+                  label="Year / Class"
+                  value={form.year || ""}
+                  onChange={(e) => setForm({ ...form, year: e.target.value })}
                 >
                   <MenuItem value="Year 1">Year 1</MenuItem>
                   <MenuItem value="Year 2">Year 2</MenuItem>
@@ -1108,6 +1132,15 @@ const Userdash = () => {
                   <MenuItem value="Year 4">Year 4</MenuItem>
                 </Select>
               </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                fullWidth
+                label="Department"
+                value={form.department}
+                onChange={(e) => setForm({ ...form, department: e.target.value })}
+                placeholder="e.g. CSE, ECE"
+              />
             </Grid>
             <Grid size={{ xs: 12 }}>
               <Divider sx={{ my: 1 }}>
@@ -1197,7 +1230,7 @@ const Userdash = () => {
         <Alert severity="error">{error}</Alert>
       </Snackbar>
 
-    </Box>
+    </Box >
   );
 };
 

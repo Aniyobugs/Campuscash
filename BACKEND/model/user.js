@@ -14,11 +14,12 @@ var userSchema = mongoose.Schema({
     studentId: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     yearClassDept: { type: String, required: true },
+    department: { type: String, default: "" },
     termsAccepted: { type: Boolean, required: true },
     points: { type: Number, default: 0 }, // ⭐ Points field
     profilePic: { type: String, default: "" },
     role: { type: String, enum: ["admin", "faculty", "user", "store"], default: "user" },
-    status: { type: String, enum: ["active", "inactive"], default: "active"}
+    status: { type: String, enum: ["active", "inactive"], default: "active" }
 });
 var userModel = mongoose.model("user", userSchema);
 module.exports = userModel;

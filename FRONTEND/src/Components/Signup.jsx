@@ -60,6 +60,7 @@ const Signup = () => {
     if (!input.password || input.password.length < 6) nextErrors.password = 'Password must be at least 6 characters';
     if (input.yearClassDept !== 'Faculty' && !input.studentId) nextErrors.studentId = 'Student ID is required';
     if (!input.yearClassDept) nextErrors.yearClassDept = 'Please select your year/class/department';
+    if (!input.department) nextErrors.department = 'Department is required';
     if (!input.termsAccepted) nextErrors.termsAccepted = 'You must accept the Terms of Service';
 
     setErrors(nextErrors);
@@ -253,7 +254,7 @@ const Signup = () => {
                   <TextField
                     select
                     fullWidth
-                    label="Year / Dept"
+                    label="Year"
                     name="yearClassDept"
                     value={input.yearClassDept || ''}
                     onChange={inputHandler}
@@ -270,6 +271,34 @@ const Signup = () => {
                     <MenuItem value="Faculty">Faculty</MenuItem>
                   </TextField>
                 </Box>
+
+                <TextField
+                  select
+                  fullWidth
+                  label="Department"
+                  name="department"
+                  value={input.department || ''}
+                  onChange={inputHandler}
+                  error={!!errors.department}
+                  helperText={errors.department}
+                  variant="outlined"
+                  InputProps={{ sx: { borderRadius: 2 } }}
+                >
+                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="English">English</MenuItem>
+                  <MenuItem value="Food Technologyy">Food Technology</MenuItem>
+                  <MenuItem value="Commerce">Commerce</MenuItem>
+                  <MenuItem value="Computer Science">Computer Science</MenuItem>
+                  <MenuItem value="Multimedia">Multimedia</MenuItem>
+                  <MenuItem value="Hotel Management">Hotel Management</MenuItem>
+                  <MenuItem value="Tourism Management">Tourism Management</MenuItem>
+                  <MenuItem value="Costume & Fashion Designing">Costume & Fashion Designing</MenuItem>
+                  <MenuItem value="Management">Management</MenuItem>
+                  <MenuItem value="Languages">Language</MenuItem>
+                  <MenuItem value="Mathematics">Mathematics</MenuItem>
+                  <MenuItem value="Faculty">Faculty</MenuItem>
+
+                </TextField>
 
                 <Box>
                   <TextField

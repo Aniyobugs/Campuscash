@@ -57,14 +57,15 @@ import {
   Menu as MenuIcon,
   Logout as LogoutIcon,
   Add as AddIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Visibility
 } from "@mui/icons-material";
 import { useTheme } from "../contexts/ThemeContext";
-// import { useAuth } from "../contexts/AuthContext"; // Ensure this exists if needed
+import { useAuth } from "../contexts/AuthContext";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { PointsPieChart, TopPodium } from './AdminVisualizations';
+import { PointsPieChart, TopPodium, StudentBarChart } from './AdminVisualizations';
 
 // --- Framer Motion Variants ---
 const contentVariants = {
@@ -100,6 +101,7 @@ const DashboardStatCard = ({ title, value, icon, color, isDark }) => (
 );
 
 const AdminDashboard = () => {
+  const { user: currentUser, updateUser } = useAuth();
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:900px)");
@@ -114,6 +116,10 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [search, setSearch] = useState("");
+  const [selectedDept, setSelectedDept] = useState("All");
+  const [selectedRealDept, setSelectedRealDept] = useState("All");
+  const [dashboardDept, setDashboardDept] = useState("All");
+  const [dashboardYear, setDashboardYear] = useState("All");
   const [tasks, setTasks] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -137,8 +143,9 @@ const AdminDashboard = () => {
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [editUserOpen, setEditUserOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [editUserForm, setEditUserForm] = useState({ fname: "", ename: "", yearClassDept: "", points: 0, studentId: "" });
+  const [editUserForm, setEditUserForm] = useState({ fname: "", ename: "", yearClassDept: "", department: "", points: 0, studentId: "" });
   const [selectedMessage, setSelectedMessage] = useState(null);
+  const [selectedSubmission, setSelectedSubmission] = useState(null);
 
 
   const [success, setSuccess] = useState("");
@@ -154,7 +161,9 @@ const AdminDashboard = () => {
 
   // --- Create Task Form State ---
   const [createTaskForm, setCreateTaskForm] = useState({
-    title: '', description: '', dueDate: '', points: 10, category: 'General', assignedYears: [], quiz: { questions: [], passingScore: 70 },
+    title: "", description: "", points: 10, category: "General", dueDate: "",
+    assignedYears: [],
+    quiz: { questions: [], passingScore: 70 }
   });
 
   // --- Quiz Builder State ---
@@ -189,7 +198,38 @@ const AdminDashboard = () => {
     }));
   };
 
-  const yearOptions = Array.from(new Set(['All', 'Year 1', 'Year 2', 'Year 3', 'Year 4', ...(users || []).map((u) => u.yearClassDept).filter(Boolean)]));
+  const yearOptions = ['All', 'Year 1', 'Year 2', 'Year 3', 'Year 4'];
+  const departmentOptions = [
+    'All',
+    ...new Set([
+      'Computer Science',
+      'Commerce',
+      'English',
+      'Food Technologyy',
+      'Multimedia',
+      'Hotel Management',
+      'Tourism Management',
+      'Costume & Fashion Designing',
+      'Management',
+      'Languages',
+      'Mathematics',
+      ...(users || []).map(u => u.department).filter(Boolean)
+    ])
+  ];
+
+  const deptShortForms = {
+    'Computer Science': 'CS',
+    'Commerce': 'B.Com',
+    'English': 'BA English',
+    'Food Technologyy': 'Food Tech',
+    'Multimedia': 'Multimedia',
+    'Hotel Management': 'BHM',
+    'Tourism Management': 'BTTM',
+    'Costume & Fashion Designing': 'Fashion',
+    'Management': 'BBA',
+    'Languages': 'BA Lang',
+    'Mathematics': 'B.Sc Maths'
+  };
 
   // --- Fetch Methods ---
   const fetchAllData = async () => {
@@ -221,11 +261,13 @@ const AdminDashboard = () => {
     setFilteredUsers(
       users.filter(u => {
         const matchesSearch = (u.fname?.toLowerCase() || "").includes(search.toLowerCase()) || (u.studentId?.toLowerCase() || "").includes(search.toLowerCase());
+        const matchesYear = selectedDept === "All" || u.yearClassDept === selectedDept;
+        const matchesDept = selectedRealDept === "All" || u.department === selectedRealDept;
         const isStudent = u.role === 'user';
-        return matchesSearch && isStudent;
+        return matchesSearch && matchesYear && matchesDept && isStudent;
       })
     );
-  }, [search, users]);
+  }, [search, selectedDept, selectedRealDept, users]);
 
   // --- Handlers (Award, Edit User, Task, Submission) ---
   const handleAward = async () => {
@@ -318,13 +360,60 @@ const AdminDashboard = () => {
     } catch (err) { setError("Failed to clear messages"); }
   };
 
+  const handleDownloadFile = async (url, filename) => {
+    try {
+      const response = await axios.get(url, { responseType: 'blob' });
+      const blob = new Blob([response.data]);
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error("Download failed", err);
+      setError("Failed to download file");
+    }
+  };
+
   const handleEditTaskClick = (task) => {
     setEditingTask(task);
     setEditTaskForm({
       title: task.title, description: task.description, dueDate: task.dueDate.slice(0, 16), points: task.points,
       category: task.category || 'General', assignedYears: task.assignedYears || [], quiz: task.quiz || { questions: [], passingScore: 70 },
     });
+    setCurrentQuestion({ text: "", options: ["", "", "", ""], correctIndex: 0 }); // Reset question state
     setEditTaskOpen(true);
+  };
+
+  const handleAddQuestionToEdit = () => {
+    if (!currentQuestion.text || currentQuestion.options.some(o => !o)) {
+      return setError("Please fill all question fields");
+    }
+    setEditTaskForm(prev => ({
+      ...prev,
+      quiz: {
+        ...prev.quiz,
+        questions: [...(prev.quiz?.questions || []), currentQuestion]
+      }
+    }));
+    setCurrentQuestion({ text: "", options: ["", "", "", ""], correctIndex: 0 });
+  };
+
+  const handleRemoveQuestionFromEdit = (index) => {
+    setEditTaskForm(prev => ({
+      ...prev,
+      quiz: {
+        ...prev.quiz,
+        questions: prev.quiz.questions.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+  const handleEditQuestion = (index) => {
+    const q = editTaskForm.quiz.questions[index];
+    setCurrentQuestion(q);
+    handleRemoveQuestionFromEdit(index);
   };
 
   const handleSaveEditedTask = async () => {
@@ -347,12 +436,22 @@ const AdminDashboard = () => {
     } catch (err) { setError("Failed to delete task"); }
   };
 
+  const handleClearTasks = async () => {
+    if (!window.confirm("Are you sure you want to delete ALL tasks? This cannot be undone.")) return;
+    try {
+      await axios.delete(`${baseurl}/api/tasks`);
+      setSuccess("All tasks cleared");
+      setTasks([]);
+    } catch (err) { setError("Failed to clear tasks"); }
+  };
+
   const handleEditUserClick = (user) => {
     setEditingUser(user);
     setEditUserForm({
       fname: user.fname,
       ename: user.ename,
       yearClassDept: user.yearClassDept,
+      department: user.department || "",
       points: user.points || 0,
       studentId: (user.studentId !== undefined && user.studentId !== null) ? user.studentId : ""
     });
@@ -362,18 +461,28 @@ const AdminDashboard = () => {
   const handleSaveUser = async () => {
     if (!editingUser) return;
     try {
-      const payload = {
-        fullName: editUserForm.fname,
-        email: editUserForm.ename,
-        studentId: editUserForm.studentId, // Added studentId
-        yearClassDept: editUserForm.yearClassDept,
-        points: editUserForm.points
-      };
-      const res = await axios.put(`${baseurl}/api/users/${editingUser._id}`, payload);
+      const formData = new FormData();
+      formData.append("fullName", editUserForm.fname);
+      formData.append("email", editUserForm.ename);
+      if (editUserForm.studentId) formData.append("studentId", editUserForm.studentId);
+      formData.append("yearClassDept", editUserForm.yearClassDept);
+      formData.append("department", editUserForm.department);
+      formData.append("points", editUserForm.points);
+
+      const res = await axios.put(`${baseurl}/api/users/${editingUser._id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
       setSuccess("User updated successfully");
+
       // Update local state with the response from server
       const updatedUser = res.data.user;
       setUsers(prev => prev.map(u => u._id === editingUser._id ? updatedUser : u));
+
+      // If admin edited themselves, update global auth state (Navbar)
+      if (currentUser && (editingUser._id === currentUser.id || editingUser._id === currentUser._id)) {
+        updateUser(updatedUser);
+      }
+
       setEditUserOpen(false);
       // Refetch all data to ensure consistency
       setTimeout(() => fetchAllData(), 500);
@@ -394,7 +503,7 @@ const AdminDashboard = () => {
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: <DashboardIcon /> },
     { id: "users", label: "Students", icon: <PeopleIcon /> },
-    { id: "faculty", label: "Faculty & Other", icon: <PeopleIcon /> },
+    { id: "faculty", label: "Faculty & Store", icon: <PeopleIcon /> },
     { id: "tasks", label: "Tasks", icon: <TaskIcon /> },
     { id: "submissions", label: "Submissions", icon: <SubmissionIcon /> },
     { id: "award", label: "Award Points", icon: <AwardIcon /> },
@@ -515,41 +624,132 @@ const AdminDashboard = () => {
           {activeTab === "dashboard" && (
             <motion.div key="dashboard" variants={contentVariants} initial="hidden" animate="visible" exit="exit">
               {/* Stat Cards */}
+              <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+                <Typography variant="h5" fontWeight="bold">Dashboard Overview</Typography>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <FormControl size="small" sx={{ minWidth: 120 }}>
+                    <Select
+                      value={dashboardYear}
+                      onChange={(e) => setDashboardYear(e.target.value)}
+                      displayEmpty
+                      sx={{ bgcolor: isDark ? "rgba(255,255,255,0.04)" : "white", color: isDark ? '#e6eef8' : undefined }}
+                    >
+                      {yearOptions.map((opt) => (
+                        <MenuItem key={opt} value={opt}>{opt === 'All' ? 'All Years' : opt}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormControl size="small" sx={{ minWidth: 150 }}>
+                    <Select
+                      value={dashboardDept}
+                      onChange={(e) => setDashboardDept(e.target.value)}
+                      displayEmpty
+                      sx={{ bgcolor: isDark ? "rgba(255,255,255,0.04)" : "white", color: isDark ? '#e6eef8' : undefined }}
+                    >
+                      {departmentOptions.map((opt) => (
+                        <MenuItem key={opt} value={opt}>{opt === 'All' ? 'All Depts' : opt}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
+              </Box>
+
               <Grid container spacing={4} sx={{ mb: 4 }}>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <DashboardStatCard title="Total Students" value={users.filter(u => u.role === 'user' && u.status === 'active').length} icon={<PeopleIcon />} color="#3b82f6" isDark={isDark} />
+                  <DashboardStatCard
+                    title="Total Students"
+                    value={users.filter(u =>
+                      u.role === 'user' &&
+                      u.status === 'active' &&
+                      (dashboardDept === 'All' || u.department === dashboardDept) &&
+                      (dashboardYear === 'All' || u.yearClassDept === dashboardYear)
+                    ).length}
+                    icon={<PeopleIcon />}
+                    color="#3b82f6"
+                    isDark={isDark}
+                  />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <DashboardStatCard title="Points Awarded" value={users.filter(u => u.role === 'user').reduce((a, b) => a + (b.points || 0), 0)} icon={<AwardIcon />} color="#f59e0b" isDark={isDark} />
+                  <DashboardStatCard
+                    title="Points Awarded"
+                    value={users.filter(u =>
+                      u.role === 'user' &&
+                      (dashboardDept === 'All' || u.department === dashboardDept) &&
+                      (dashboardYear === 'All' || u.yearClassDept === dashboardYear)
+                    ).reduce((a, b) => a + (b.points || 0), 0)}
+                    icon={<AwardIcon />}
+                    color="#f59e0b"
+                    isDark={isDark}
+                  />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <DashboardStatCard title="Pending Submissions" value={submissions.filter(s => s.status === 'pending').length} icon={<SubmissionIcon />} color="#ec4899" isDark={isDark} />
+                  <DashboardStatCard
+                    title="Pending Submissions"
+                    value={submissions.filter(s =>
+                      s.status === 'pending' &&
+                      (dashboardDept === 'All' || s.user?.department === dashboardDept) &&
+                      (dashboardYear === 'All' || s.user?.yearClassDept === dashboardYear)
+                    ).length}
+                    icon={<SubmissionIcon />}
+                    color="#ec4899"
+                    isDark={isDark}
+                  />
                 </Grid>
               </Grid>
+
 
               {/* Visualizations */}
               <Grid container spacing={4}>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <PointsPieChart users={users.filter(u => u.status !== 'inactive')} isDark={isDark} />
+                  <PointsPieChart
+                    users={users.filter(u =>
+                      u.status !== 'inactive' &&
+                      u.role === 'user' &&
+                      (dashboardDept === 'All' || u.department === dashboardDept) &&
+                      (dashboardYear === 'All' || u.yearClassDept === dashboardYear)
+                    )}
+                    isDark={isDark}
+                  />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <TopPodium users={users.filter(u => u.role === 'user' && u.status !== 'inactive')} isDark={isDark} />
+                  <StudentBarChart
+                    users={users.filter(u =>
+                      u.status !== 'inactive' &&
+                      u.role === 'user' &&
+                      (dashboardDept === 'All' || u.department === dashboardDept) &&
+                      (dashboardYear === 'All' || u.yearClassDept === dashboardYear)
+                    )}
+                    isDark={isDark}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 12 }}>
+                  <TopPodium
+                    users={users.filter(u =>
+                      u.role === 'user' &&
+                      u.status !== 'inactive' &&
+                      (dashboardDept === 'All' || u.department === dashboardDept) &&
+                      (dashboardYear === 'All' || u.yearClassDept === dashboardYear)
+                    )}
+                    isDark={isDark}
+                  />
                 </Grid>
               </Grid>
+
+
             </motion.div>
           )}
 
           {activeTab === "faculty" && (
             <motion.div key="faculty" variants={contentVariants} initial="hidden" animate="visible" exit="exit">
               <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <Typography variant="h5" fontWeight="bold">Faculty & Other Staff</Typography>
+                <Typography variant="h5" fontWeight="bold">Faculty & Store</Typography>
               </Box>
               <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 2, bgcolor: isDark ? '#1e293b' : undefined, color: isDark ? '#e6eef8' : undefined }}>
                 <Table>
                   <TableHead sx={{ bgcolor: isDark ? "#0b1220" : "#f1f5f9" }}>
                     <TableRow>
                       <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Name</TableCell>
-                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>ID</TableCell>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Department</TableCell>
                       <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Role</TableCell>
                       <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Status</TableCell>
                       <TableCell align="right" sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Actions</TableCell>
@@ -569,9 +769,11 @@ const AdminDashboard = () => {
                               </Box>
                             </Box>
                           </TableCell>
+
                           <TableCell>
-                            {user.studentId || "—"}
+                            <Typography variant="body2">{user.department || user.yearClassDept || "N/A"}</Typography>
                           </TableCell>
+
                           <TableCell>
                             {user.role === 'admin' ? (
                               <Chip label="ADMIN" size="small" color="secondary" sx={{ fontWeight: 'bold' }} />
@@ -616,13 +818,39 @@ const AdminDashboard = () => {
             <motion.div key="users" variants={contentVariants} initial="hidden" animate="visible" exit="exit">
               <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <Typography variant="h5" fontWeight="bold">Manage Students</Typography>
-                <TextField
-                  size="small"
-                  placeholder="Search students..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  sx={{ width: 300, bgcolor: isDark ? "rgba(255,255,255,0.04)" : "white", color: isDark ? '#e6eef8' : undefined }}
-                />
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <FormControl size="small" sx={{ minWidth: 120 }}>
+                    <Select
+                      value={selectedRealDept}
+                      onChange={(e) => setSelectedRealDept(e.target.value)}
+                      displayEmpty
+                      sx={{ bgcolor: isDark ? "rgba(255,255,255,0.04)" : "white", color: isDark ? '#e6eef8' : undefined }}
+                    >
+                      {departmentOptions.map((opt) => (
+                        <MenuItem key={opt} value={opt}>{opt === 'All' ? 'All Depts' : opt}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormControl size="small" sx={{ minWidth: 120 }}>
+                    <Select
+                      value={selectedDept}
+                      onChange={(e) => setSelectedDept(e.target.value)}
+                      displayEmpty
+                      sx={{ bgcolor: isDark ? "rgba(255,255,255,0.04)" : "white", color: isDark ? '#e6eef8' : undefined }}
+                    >
+                      {yearOptions.map((opt) => (
+                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <TextField
+                    size="small"
+                    placeholder="Search students..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    sx={{ width: 250, bgcolor: isDark ? "rgba(255,255,255,0.04)" : "white", color: isDark ? '#e6eef8' : undefined }}
+                  />
+                </Box>
               </Box>
               <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 2, bgcolor: isDark ? '#1e293b' : undefined, color: isDark ? '#e6eef8' : undefined }}>
                 <Table>
@@ -630,6 +858,8 @@ const AdminDashboard = () => {
                     <TableRow>
                       <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Name</TableCell>
                       <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Email</TableCell>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Dept</TableCell>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Year</TableCell>
                       <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>ID</TableCell>
                       <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Points</TableCell>
                       <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Status</TableCell>
@@ -646,6 +876,8 @@ const AdminDashboard = () => {
                           </Box>
                         </TableCell>
                         <TableCell>{user.ename}</TableCell>
+                        <TableCell>{deptShortForms[user.department] || user.department || "-"}</TableCell>
+                        <TableCell>{user.yearClassDept || "-"}</TableCell>
                         <TableCell>{user.studentId}</TableCell>
                         <TableCell>
                           <Chip label={user.points} size="small" color="primary" variant="outlined" />
@@ -683,14 +915,26 @@ const AdminDashboard = () => {
             <motion.div key="tasks" variants={contentVariants} initial="hidden" animate="visible" exit="exit">
               <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <Typography variant="h5" fontWeight="bold">Active Tasks</Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => setCreateTaskOpen(true)}
-                  sx={{ background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: '#fff', borderRadius: 2 }}
-                >
-                  New Task
-                </Button>
+                <Box>
+                  {tasks.length > 0 && (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={handleClearTasks}
+                      sx={{ mr: 2 }}
+                    >
+                      Clear All
+                    </Button>
+                  )}
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => setCreateTaskOpen(true)}
+                    sx={{ background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: '#fff', borderRadius: 2 }}
+                  >
+                    New Task
+                  </Button>
+                </Box>
               </Box>
               <Grid container spacing={3}>
                 {tasks.map(task => (
@@ -762,6 +1006,13 @@ const AdminDashboard = () => {
                           }
                         />
                         <Box sx={{ display: "flex", gap: 1 }}>
+                          {s.task?.category !== 'Quiz' && (
+                            <Tooltip title="View Details">
+                              <IconButton size="small" onClick={() => setSelectedSubmission(s)} sx={{ color: "info.main" }}>
+                                <Visibility />
+                              </IconButton>
+                            </Tooltip>
+                          )}
                           <Button
                             variant="contained"
                             color="success"
@@ -926,6 +1177,111 @@ const AdminDashboard = () => {
         </AnimatePresence>
       </Box>
 
+      {/* View Submission Dialog */}
+      <Dialog
+        open={!!selectedSubmission}
+        onClose={() => setSelectedSubmission(null)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { bgcolor: isDark ? '#0f172a' : undefined, color: isDark ? '#e6eef8' : undefined, borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          Submission Details
+          <IconButton onClick={() => setSelectedSubmission(null)} size="small" sx={{ color: 'text.secondary' }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          {selectedSubmission && (
+            <Stack spacing={2}>
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">Student</Typography>
+                <Box display="flex" alignItems="center" gap={1} mt={0.5}>
+                  <Avatar src={selectedSubmission.user?.profilePic && `${baseurl}${selectedSubmission.user.profilePic}`} sx={{ width: 32, height: 32 }} />
+                  <Box>
+                    <Typography variant="body1" fontWeight="500">{selectedSubmission.user?.fname} {selectedSubmission.user?.ename}</Typography>
+                    <Typography variant="caption" color="text.secondary">{selectedSubmission.user?.studentId}</Typography>
+                  </Box>
+                </Box>
+              </Box>
+              <Divider />
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">Task</Typography>
+                <Typography variant="body1" fontWeight="500">{selectedSubmission.task?.title}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>Content</Typography>
+                {selectedSubmission.type === 'link' ? (
+                  <Paper variant="outlined" sx={{ p: 2, bgcolor: isDark ? 'rgba(0,0,0,0.3)' : 'grey.50', borderRadius: 2 }}>
+                    <a href={selectedSubmission.link} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', wordBreak: 'break-all' }}>{selectedSubmission.link}</a>
+                  </Paper>
+                ) : selectedSubmission.type === 'file' ? (
+                  <Paper variant="outlined" sx={{ p: 2, bgcolor: isDark ? 'rgba(0,0,0,0.3)' : 'grey.50', borderRadius: 2 }}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>File Attachment</Typography>
+                    <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        href={`${baseurl}${selectedSubmission.filePath}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        View File
+                      </Button>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={() => handleDownloadFile(`${baseurl}${selectedSubmission.filePath}`, selectedSubmission.filePath.split('/').pop())}
+                        color="primary"
+                      >
+                        Download File
+                      </Button>
+                    </Box>
+                  </Paper>
+                ) : (
+                  <Paper variant="outlined" sx={{ p: 2, bgcolor: isDark ? 'rgba(0,0,0,0.3)' : 'grey.50', borderRadius: 2, maxHeight: 300, overflow: 'auto' }}>
+                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                      {selectedSubmission.text || (selectedSubmission.type === 'quiz' ? `Quiz Score: ${selectedSubmission.score}%` : 'No content')}
+                    </Typography>
+                  </Paper>
+                )}
+              </Box>
+              <Box display="flex" gap={4}>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">Submitted At</Typography>
+                  <Typography variant="body2">{new Date(selectedSubmission.createdAt).toLocaleString()}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">Status</Typography>
+                  <Chip label={selectedSubmission.status} color={selectedSubmission.status === 'pending' ? 'warning' : selectedSubmission.status === 'accepted' ? 'success' : 'error'} size="small" />
+                </Box>
+              </Box>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          {selectedSubmission?.status === 'pending' && (
+            <>
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={() => { handleRejectSubmission(selectedSubmission); setSelectedSubmission(null); }}
+              >
+                Reject
+              </Button>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={() => { handleApproveSubmission(selectedSubmission); setSelectedSubmission(null); }}
+              >
+                Accept
+              </Button>
+            </>
+          )}
+          <Button onClick={() => setSelectedSubmission(null)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Message Dialog */}
       <Dialog
         open={!!selectedMessage}
@@ -981,7 +1337,44 @@ const AdminDashboard = () => {
             <TextField label="Title" fullWidth value={createTaskForm.title} onChange={e => setCreateTaskForm({ ...createTaskForm, title: e.target.value })} />
             <TextField label="Description" multiline rows={3} fullWidth value={createTaskForm.description} onChange={e => setCreateTaskForm({ ...createTaskForm, description: e.target.value })} />
             <TextField type="number" label="Points" fullWidth value={createTaskForm.points} onChange={e => setCreateTaskForm({ ...createTaskForm, points: e.target.value })} />
-            <TextField label="Category" fullWidth value={createTaskForm.category} onChange={e => setCreateTaskForm({ ...createTaskForm, category: e.target.value })} placeholder="e.g. Assessment, Lab, General" />
+            <FormControl fullWidth>
+              <InputLabel>Category</InputLabel>
+              <Select
+                value={createTaskForm.category}
+                label="Category"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCreateTaskForm({ ...createTaskForm, category: val });
+                  setShowQuizBuilder(val === 'Quiz');
+                }}
+              >
+                <MenuItem value="General">Assignment</MenuItem>
+                <MenuItem value="Quiz">Quiz</MenuItem>
+              </Select>
+            </FormControl>
+            <Autocomplete
+              multiple
+              options={yearOptions}
+              value={createTaskForm.assignedYears || []}
+              onChange={(_, newValue) => setCreateTaskForm({ ...createTaskForm, assignedYears: newValue })}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Assigned To (Years)"
+                  placeholder="Select years..."
+                />
+              )}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    label={option}
+                    size="small"
+                    {...getTagProps({ index })}
+                    sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }}
+                  />
+                ))
+              }
+            />
             <TextField
               type="datetime-local"
               fullWidth
@@ -998,21 +1391,6 @@ const AdminDashboard = () => {
                 }
               }}
             />
-
-            <Divider sx={{ my: 2 }}>
-              <Chip
-                label="Quiz 🧠"
-                onClick={() => {
-                  const newState = !showQuizBuilder;
-                  setShowQuizBuilder(newState);
-                  if (newState) {
-                    setCreateTaskForm(prev => ({ ...prev, category: "Quiz" }));
-                  }
-                }}
-                color={showQuizBuilder ? "primary" : "default"}
-                clickable
-              />
-            </Divider>
 
             {showQuizBuilder && (
               <Box sx={{ bgcolor: isDark ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.03)", p: 2, borderRadius: 2 }}>
@@ -1092,6 +1470,42 @@ const AdminDashboard = () => {
             <TextField label="Title" fullWidth value={editTaskForm.title} onChange={e => setEditTaskForm({ ...editTaskForm, title: e.target.value })} />
             <TextField label="Description" multiline rows={3} fullWidth value={editTaskForm.description} onChange={e => setEditTaskForm({ ...editTaskForm, description: e.target.value })} />
             <TextField type="number" label="Points" fullWidth value={editTaskForm.points} onChange={e => setEditTaskForm({ ...editTaskForm, points: e.target.value })} />
+            <FormControl fullWidth>
+              <InputLabel>Category</InputLabel>
+              <Select
+                value={editTaskForm.category === 'Quiz' ? 'Quiz' : 'General'}
+                label="Category"
+                onChange={(e) => {
+                  setEditTaskForm({ ...editTaskForm, category: e.target.value });
+                }}
+              >
+                <MenuItem value="General">Assignment</MenuItem>
+                <MenuItem value="Quiz">Quiz</MenuItem>
+              </Select>
+            </FormControl>
+            <Autocomplete
+              multiple
+              options={yearOptions}
+              value={editTaskForm.assignedYears || []}
+              onChange={(_, newValue) => setEditTaskForm({ ...editTaskForm, assignedYears: newValue })}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Assigned To (Years)"
+                  placeholder="Select years..."
+                />
+              )}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    label={option}
+                    size="small"
+                    {...getTagProps({ index })}
+                    sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }}
+                  />
+                ))
+              }
+            />
             <TextField
               type="datetime-local"
               fullWidth
@@ -1100,6 +1514,76 @@ const AdminDashboard = () => {
               InputLabelProps={{ shrink: true }}
               inputProps={{ min: getMinDateTime() }}
             />
+
+            {(editTaskForm.category === 'Quiz' || (editTaskForm.quiz && editTaskForm.quiz.questions.length > 0)) && (
+              <Box sx={{ bgcolor: isDark ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.03)", p: 2, borderRadius: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>Passing Score (%)</Typography>
+                <TextField
+                  type="number"
+                  size="small"
+                  fullWidth
+                  value={editTaskForm.quiz.passingScore}
+                  onChange={e => setEditTaskForm({ ...editTaskForm, quiz: { ...editTaskForm.quiz, passingScore: Number(e.target.value) } })}
+                  sx={{ mb: 2 }}
+                />
+
+                <Typography variant="subtitle2" gutterBottom>Add / Update Question</Typography>
+                <TextField
+                  label="Question Text"
+                  size="small"
+                  fullWidth
+                  value={currentQuestion.text}
+                  onChange={e => setCurrentQuestion({ ...currentQuestion, text: e.target.value })}
+                  sx={{ mb: 1 }}
+                />
+
+                {currentQuestion.options.map((opt, idx) => (
+                  <Box key={idx} display="flex" gap={1} mb={1}>
+                    <TextField
+                      placeholder={`Option ${idx + 1}`}
+                      size="small"
+                      fullWidth
+                      value={opt}
+                      onChange={e => {
+                        const newOpts = [...currentQuestion.options];
+                        newOpts[idx] = e.target.value;
+                        setCurrentQuestion({ ...currentQuestion, options: newOpts });
+                      }}
+                    />
+                    <Button
+                      variant={currentQuestion.correctIndex === idx ? "contained" : "outlined"}
+                      color={currentQuestion.correctIndex === idx ? "success" : "inherit"}
+                      onClick={() => setCurrentQuestion({ ...currentQuestion, correctIndex: idx })}
+                      sx={{ minWidth: 40 }}
+                    >
+                      {currentQuestion.correctIndex === idx ? "✓" : ""}
+                    </Button>
+                  </Box>
+                ))}
+
+                <Button variant="outlined" fullWidth onClick={handleAddQuestionToEdit} sx={{ mb: 2 }}>
+                  Add Question
+                </Button>
+
+                {editTaskForm.quiz && editTaskForm.quiz.questions.length > 0 && (
+                  <List dense sx={{ bgcolor: "background.paper", borderRadius: 1 }}>
+                    {editTaskForm.quiz.questions.map((q, i) => (
+                      <ListItem key={i} secondaryAction={
+                        <Box>
+                          <IconButton edge="end" size="small" onClick={() => handleEditQuestion(i)} sx={{ mr: 1 }}><Edit fontSize="small" /></IconButton>
+                          <IconButton edge="end" size="small" onClick={() => handleRemoveQuestionFromEdit(i)}><Cancel fontSize="small" /></IconButton>
+                        </Box>
+                      }>
+                        <ListItemText
+                          primary={`Q${i + 1}: ${q.text}`}
+                          secondary={`${q.options.length} options (Correct: ${q.options[q.correctIndex]})`}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
+              </Box>
+            )}
             <Button variant="contained" onClick={handleSaveEditedTask}>Save Changes</Button>
           </Stack>
         </DialogContent>
@@ -1119,14 +1603,30 @@ const AdminDashboard = () => {
 
       {/* Edit User Dialog */}
       <Dialog open={editUserOpen} onClose={() => setEditUserOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { bgcolor: isDark ? '#0f172a' : undefined, color: isDark ? '#e6eef8' : undefined } }}>
-        <DialogTitle>Edit Student</DialogTitle>
+        <DialogTitle>Edit User</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField label="Full Name" fullWidth value={editUserForm.fname} onChange={e => setEditUserForm({ ...editUserForm, fname: e.target.value })} />
-            <TextField label="Student ID" fullWidth value={editUserForm.studentId} onChange={e => setEditUserForm({ ...editUserForm, studentId: e.target.value })} />
+            {editingUser?.role === 'user' && (
+              <TextField label="Student ID" fullWidth value={editUserForm.studentId} onChange={e => setEditUserForm({ ...editUserForm, studentId: e.target.value })} />
+            )}
             <TextField label="Email (Login ID)" fullWidth value={editUserForm.ename} onChange={e => setEditUserForm({ ...editUserForm, ename: e.target.value })} helperText="Warning: Changing this updates the user's login ID" />
             <TextField label="Year/Class/Dept" fullWidth value={editUserForm.yearClassDept} onChange={e => setEditUserForm({ ...editUserForm, yearClassDept: e.target.value })} />
-            <TextField type="number" label="Total Points" fullWidth value={editUserForm.points} onChange={e => setEditUserForm({ ...editUserForm, points: Number(e.target.value) })} />
+            <FormControl fullWidth>
+              <InputLabel>Department</InputLabel>
+              <Select
+                label="Department"
+                value={editUserForm.department}
+                onChange={e => setEditUserForm({ ...editUserForm, department: e.target.value })}
+              >
+                {departmentOptions.filter(opt => opt !== 'All').map((opt) => (
+                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            {editingUser?.role === 'user' && (
+              <TextField type="number" label="Total Points" fullWidth value={editUserForm.points} onChange={e => setEditUserForm({ ...editUserForm, points: Number(e.target.value) })} />
+            )}
             <Button variant="contained" onClick={handleSaveUser}>Save User</Button>
           </Stack>
         </DialogContent>

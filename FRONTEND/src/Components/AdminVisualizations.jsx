@@ -1,17 +1,26 @@
 import React from 'react';
 import { Box, Typography, Paper, Avatar, useTheme } from '@mui/material';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { motion } from 'framer-motion';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 
 // --- Pie Chart Component ---
+// --- Pie Chart Component (Points) ---
 export const PointsPieChart = ({ users = [], isDark }) => {
     if (!users || !Array.isArray(users) || users.length === 0) return <Paper sx={{ p: 3, borderRadius: 4, height: '100%', bgcolor: isDark ? "#1e293b" : "white" }}><Typography align="center" color="text.secondary">No Data Available</Typography></Paper>;
 
-    // Aggregate points by year/class
+    // Determine grouping key: if filtered to one Year, group by Dept. If filtered to one Dept, group by Year.
+    const uniqueYears = new Set(users.map(u => u.yearClassDept).filter(Boolean));
+    const uniqueDepts = new Set(users.map(u => u.department).filter(Boolean));
+
+    // Default to Year. If only 1 Year present (and multiple depts), switch to Dept.
+    const groupBy = (uniqueYears.size <= 1 && uniqueDepts.size > 1) ? 'department' : 'yearClassDept';
+    const label = groupBy === 'department' ? 'By Department' : 'By Year';
+
+    // Aggregate points
     const dataMap = users.reduce((acc, user) => {
         if (!user) return acc;
-        const key = user.yearClassDept || "Unknown";
+        const key = user[groupBy] || "Unknown";
         acc[key] = (acc[key] || 0) + (user.points || 0);
         return acc;
     }, {});
@@ -25,7 +34,7 @@ export const PointsPieChart = ({ users = [], isDark }) => {
 
     return (
         <Paper sx={{ p: 3, borderRadius: 4, height: '100%', bgcolor: isDark ? "#1e293b" : "white", boxShadow: isDark ? 4 : 2 }}>
-            <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: isDark ? 'white' : '#0f172a' }}>Points Distribution</Typography>
+            <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: isDark ? 'white' : '#0f172a' }}>Points Distribution ({label})</Typography>
             <Box sx={{ width: '100%', height: 300 }}>
                 <ResponsiveContainer>
                     <PieChart>
@@ -48,6 +57,64 @@ export const PointsPieChart = ({ users = [], isDark }) => {
                         />
                         <Legend verticalAlign="bottom" height={36} wrapperStyle={{ color: isDark ? '#fff' : '#0f172a' }} />
                     </PieChart>
+                </ResponsiveContainer>
+            </Box>
+        </Paper>
+    );
+};
+
+// --- Bar Chart Component (Student Count) ---
+export const StudentBarChart = ({ users = [], isDark }) => {
+    if (!users || !Array.isArray(users) || users.length === 0) return null;
+
+    // Determine grouping key similar to Pie Chart
+    const uniqueYears = new Set(users.map(u => u.yearClassDept).filter(Boolean));
+    const uniqueDepts = new Set(users.map(u => u.department).filter(Boolean));
+    const groupBy = (uniqueYears.size <= 1 && uniqueDepts.size > 1) ? 'department' : 'yearClassDept';
+    const label = groupBy === 'department' ? 'Students by Department' : 'Students by Year';
+
+    const dataMap = users.reduce((acc, user) => {
+        const key = user[groupBy] || "Unknown";
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+    }, {});
+
+    const data = Object.entries(dataMap)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count);
+
+    return (
+        <Paper sx={{ p: 3, borderRadius: 4, height: '100%', bgcolor: isDark ? "#1e293b" : "white", boxShadow: isDark ? 4 : 2 }}>
+            <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: isDark ? 'white' : '#0f172a' }}>{label}</Typography>
+            <Box sx={{ width: '100%', height: 300 }}>
+                <ResponsiveContainer>
+                    <BarChart data={data}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "rgba(255,255,255,0.1)" : "#e2e8f0"} vertical={false} />
+                        <XAxis
+                            dataKey="name"
+                            stroke={isDark ? "#94a3b8" : "#64748b"}
+                            tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 12 }}
+                            tickLine={false}
+                            axisLine={false}
+                        />
+                        <YAxis
+                            stroke={isDark ? "#94a3b8" : "#64748b"}
+                            tick={{ fill: isDark ? "#94a3b8" : "#64748b", fontSize: 12 }}
+                            tickLine={false}
+                            axisLine={false}
+                        />
+                        <RechartsTooltip
+                            cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
+                            contentStyle={{ backgroundColor: isDark ? '#334155' : '#fff', borderRadius: 8, border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                            itemStyle={{ color: isDark ? '#fff' : '#000' }}
+                        />
+                        <Bar
+                            dataKey="count"
+                            fill="#8b5cf6"
+                            radius={[4, 4, 0, 0]}
+                            barSize={40}
+                        />
+                    </BarChart>
                 </ResponsiveContainer>
             </Box>
         </Paper>

@@ -374,7 +374,14 @@ export default function Navbar() {
                       ml: 1,
                       color: isDark ? '#ffffff' : '#212121',
                     }}>
-                      {user.fname || user.ename || user.email}
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1 }}>
+                        <Typography variant="body2" fontWeight="bold">{user.fname || user.ename || user.email}</Typography>
+                        {(user.department || user.yearClassDept) && (
+                          <Typography variant="caption" sx={{ opacity: 0.8, fontSize: '0.7rem' }}>
+                            {user.department || user.yearClassDept}
+                          </Typography>
+                        )}
+                      </Box>
                     </Button>
                   )}
                 </>

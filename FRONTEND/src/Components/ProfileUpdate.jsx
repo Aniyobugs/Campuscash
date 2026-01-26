@@ -29,7 +29,7 @@ const ProfileUpdate = ({ userId: propUserId }) => {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const baseurl = import.meta.env.VITE_API_BASE_URL;
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const userId = propUserId || user?.id || user?._id;
 
   useEffect(() => {
@@ -89,6 +89,10 @@ const ProfileUpdate = ({ userId: propUserId }) => {
       });
 
       setSuccess(res.data.message);
+      // Update global auth state if the updated user is the logged-in user
+      if (userId === user.id || userId === user._id) {
+        updateUser(res.data.user);
+      }
       setError("");
       setForm((prev) => ({ ...prev, currentPassword: "", newPassword: "" }));
     } catch (err) {
@@ -150,19 +154,27 @@ const ProfileUpdate = ({ userId: propUserId }) => {
           sx={{ mt: 3 }}
         />
 
-        {/* Year / Class Dropdown */}
+        {/* Faculty Department Dropdown */}
         <FormControl fullWidth sx={{ mt: 3 }}>
-          <InputLabel>Year / Class</InputLabel>
+          <InputLabel>Faculty Department</InputLabel>
           <Select
-            label="Year / Class"
+            label="Faculty Department"
             name="yearClassDept"
             value={form.yearClassDept}
             onChange={handleChange}
           >
-            <MenuItem value="Year 1">Year 1</MenuItem>
-            <MenuItem value="Year 2">Year 2</MenuItem>
-            <MenuItem value="Year 3">Year 3</MenuItem>
-            <MenuItem value="Year 4">Year 4</MenuItem>
+            <MenuItem value="">Select</MenuItem>
+            <MenuItem value="English">English</MenuItem>
+            <MenuItem value="Food Technologyy">Food Technology</MenuItem>
+            <MenuItem value="Commerce">Commerce</MenuItem>
+            <MenuItem value="Computer Science">Computer Science</MenuItem>
+            <MenuItem value="Multimedia">Multimedia</MenuItem>
+            <MenuItem value="Hotel Management">Hotel Management</MenuItem>
+            <MenuItem value="Tourism Management">Tourism Management</MenuItem>
+            <MenuItem value="Costume & Fashion Designing">Costume & Fashion Designing</MenuItem>
+            <MenuItem value="Management">Management</MenuItem>
+            <MenuItem value="Languages">Language</MenuItem>
+            <MenuItem value="Mathematics">Mathematics</MenuItem>
           </Select>
         </FormControl>
 

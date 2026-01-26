@@ -66,6 +66,8 @@ import {
     ListAlt as ListAltIcon,
     KeyboardArrowLeft,
     KeyboardArrowRight,
+    Fullscreen,
+    Close,
 } from "@mui/icons-material";
 import { useTheme } from "../contexts/ThemeContext";
 import axios from "axios";
@@ -163,6 +165,7 @@ const FacultyDashboard = () => {
     const [anchorEl, setAnchorEl] = useState(null);
     const [selectedStudentForAction, setSelectedStudentForAction] = useState(null);
     const [historyOpen, setHistoryOpen] = useState(false);
+    const [openChartDialog, setOpenChartDialog] = useState(false);
 
     // Derived options
     const yearOptions = Array.from(new Set([
@@ -575,9 +578,9 @@ const FacultyDashboard = () => {
                             { text: 'Tasks', icon: <AssignmentIcon />, id: 'tasks-card' },
                             { text: 'Submissions', icon: <RateReviewIcon />, id: 'submissions-card' },
                         ].map((item) => (
-                            <ListItemButton key={item.text} sx={{ borderRadius: 2, mb: 1, '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' } }} onClick={() => document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' })}>
-                                <ListItemIcon sx={{ color: textSecondary, minWidth: 40 }}>{item.icon}</ListItemIcon>
-                                <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: 14, fontWeight: 500, color: textSecondary }} />
+                            <ListItemButton key={item.text} sx={{ borderRadius: 2, mb: 1, '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }} onClick={() => document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' })}>
+                                <ListItemIcon sx={{ color: '#fff', minWidth: 40 }}>{item.icon}</ListItemIcon>
+                                <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: 14, fontWeight: 500, color: '#fff' }} />
                             </ListItemButton>
                         ))}
                     </List>
@@ -680,7 +683,12 @@ const FacultyDashboard = () => {
                                     <CardContent sx={{ p: 4 }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                                             <Box>
-                                                <Typography variant="h6" sx={gradientText}>Points Analytics</Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Typography variant="h6" sx={gradientText}>Points Analytics</Typography>
+                                                    <IconButton size="small" onClick={() => setOpenChartDialog(true)} sx={{ color: textSecondary }}>
+                                                        <Fullscreen fontSize="small" />
+                                                    </IconButton>
+                                                </Box>
                                                 <Typography variant="body2" color={textSecondary} sx={{ mt: 0.5 }}>
                                                     {getDateRangeLabel()}
                                                 </Typography>
@@ -743,6 +751,56 @@ const FacultyDashboard = () => {
                                     </CardContent>
                                 </Card>
 
+                                {/* Fullscreen Chart Dialog */}
+                                <Dialog
+                                    open={openChartDialog}
+                                    onClose={() => setOpenChartDialog(false)}
+                                    maxWidth="lg"
+                                    fullWidth
+                                    PaperProps={{
+                                        sx: {
+                                            bgcolor: "#0f172a",
+                                            backgroundImage: 'none',
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            borderRadius: 3
+                                        }
+                                    }}
+                                >
+                                    <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff' }}>
+                                        <Box>
+                                            Points Analytics
+                                            <Typography variant="body2" color={textSecondary} sx={{ mt: 0.5, fontWeight: 'normal' }}>
+                                                {getDateRangeLabel()}
+                                            </Typography>
+                                        </Box>
+                                        <IconButton onClick={() => setOpenChartDialog(false)} sx={{ color: textSecondary }}>
+                                            <Close />
+                                        </IconButton>
+                                    </DialogTitle>
+                                    <DialogContent>
+                                        <Box sx={{ height: 500, width: '100%', mt: 2 }}>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <AreaChart data={chartData}>
+                                                    <defs>
+                                                        <linearGradient id="colorPointsFull" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="5%" stopColor={accentColor} stopOpacity={0.4} />
+                                                            <stop offset="95%" stopColor={accentColor} stopOpacity={0} />
+                                                        </linearGradient>
+                                                    </defs>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: textSecondary, fontSize: 14, fontWeight: 500 }} dy={10} />
+                                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: textSecondary, fontSize: 14 }} />
+                                                    <RechartsTooltip
+                                                        contentStyle={{ backgroundColor: 'rgba(30, 41, 59, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}
+                                                        itemStyle={{ color: '#fff' }}
+                                                    />
+                                                    <Area type="monotone" dataKey="points" stroke={accentColor} strokeWidth={3} fillOpacity={1} fill="url(#colorPointsFull)" />
+                                                </AreaChart>
+                                            </ResponsiveContainer>
+                                        </Box>
+                                    </DialogContent>
+                                </Dialog>
+
                                 {/* Quick Award Points */}
                                 <Card sx={glassCard} id="award-card">
                                     <CardContent sx={{ p: 3 }}>
@@ -775,7 +833,7 @@ const FacultyDashboard = () => {
 
                                         {/* Inputs Row */}
                                         <Grid container spacing={2} sx={{ mb: 3 }}>
-                                            <Grid item xs={12} md={9}>
+                                            <Grid item xs={16} md={16}>
                                                 <Autocomplete
                                                     fullWidth
                                                     options={users}
@@ -820,7 +878,7 @@ const FacultyDashboard = () => {
                                                     )}
                                                 />
                                             </Grid>
-                                            <Grid item xs={12} md={3}>
+                                            <Grid item xs={12} md={2}>
                                                 <TextField
                                                     placeholder="Points"
                                                     type="number"

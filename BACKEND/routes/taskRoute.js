@@ -285,4 +285,15 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// ADMIN: delete all tasks (DELETE /api/tasks)
+router.delete("/", async (req, res) => {
+  try {
+    await Task.deleteMany({});
+    res.json({ message: "All tasks deleted successfully!" });
+  } catch (error) {
+    console.error("Error deleting all tasks:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 module.exports = router;
