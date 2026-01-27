@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTheme as useMuiTheme } from '@mui/material/styles';
 import { useTheme } from '../contexts/ThemeContext';
@@ -13,8 +13,11 @@ import LocalCafeIcon from '@mui/icons-material/LocalCafe';
 import StoreIcon from '@mui/icons-material/Store';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import { motion } from 'framer-motion';
+import CloseIcon from '@mui/icons-material/Close';
+import { motion, AnimatePresence } from 'framer-motion';
 import HeroImage from '../assets/hero-students.png';
+import axios from 'axios';
+import { Dialog, DialogContent, IconButton } from '@mui/material';
 
 const featureData = [
   {
@@ -56,21 +59,21 @@ const rewardsData = [
     icon: <LocalCafeIcon sx={{ fontSize: 40, color: '#6444e6' }} />,
     title: 'Free Coffee',
     desc: 'Grab a drink at the campus café.',
-    points: '100 Points',
+    points: '250 Points',
   },
   {
-    img: 'https://images.unsplash.com/photo-1532634896-26909d0d3a7e?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=4b2b4e3a1b',
+    img: 'https://th.bing.com/th/id/OIP.IRaX6VuqUeEbsqnIjuocVgHaE7?w=265&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3',
     icon: <ReceiptIcon sx={{ fontSize: 40, color: '#6444e6' }} />,
-    title: 'Transcript Fee Waiver',
-    desc: 'Waive your admin transcript fee.',
-    points: '200 Points',
+    title: 'Canteen Coupon Voucher',
+    desc: 'Get a free meal voucher at the campus canteen.',
+    points: '400 Points',
   },
   {
     img: 'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=2b2c2c',
     icon: <AccessTimeIcon sx={{ fontSize: 40, color: '#6444e6' }} />,
     title: 'Library Extension',
     desc: 'Extra week for book returns.',
-    points: '80 Points',
+    points: '350 Points',
   },
 ];
 
@@ -188,6 +191,28 @@ export default function Home() {
   const navigate = useNavigate();
   const muiTheme = useMuiTheme();
   const { isDark } = useTheme();
+  const baseurl = import.meta.env.VITE_API_BASE_URL;
+
+  // Banner State
+  const [bannerOpen, setBannerOpen] = useState(false);
+  const [activeBanner, setActiveBanner] = useState(null);
+
+  useEffect(() => {
+    const fetchBanner = async () => {
+      try {
+        const res = await axios.get(`${baseurl}/api/events/active`);
+        if (res.data) {
+          setActiveBanner(res.data);
+          setTimeout(() => {
+            setBannerOpen(true);
+          }, 5000);
+        }
+      } catch (err) {
+        console.log("No active banner or error fetching");
+      }
+    };
+    fetchBanner();
+  }, [baseurl]);
 
   useEffect(() => {
     const id = location.state?.scrollTo;
@@ -650,6 +675,104 @@ export default function Home() {
       </Container>
 
 
+      {/* Banner Popup */}
+      <Dialog
+        open={bannerOpen}
+        onClose={() => setBannerOpen(false)}
+        maxWidth={activeBanner?.templateId === 3 ? "lg" : "md"}
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            overflow: 'hidden',
+            bgcolor: 'transparent',
+            boxShadow: 'none'
+          }
+        }}
+      >
+        {activeBanner && (
+          <Box sx={{ position: 'relative', bgcolor: isDark ? '#1e293b' : '#fff', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+            <IconButton
+              onClick={() => setBannerOpen(false)}
+              sx={{ position: 'absolute', right: 8, top: 8, zIndex: 10, color: activeBanner.templateId === 3 ? '#fff' : (isDark ? '#fff' : '#000'), bgcolor: 'rgba(0,0,0,0.1)', '&:hover': { bgcolor: 'rgba(0,0,0,0.2)' } }}
+            >
+              <CloseIcon />
+            </IconButton>
+
+            {/* Template 1: Simple Centered */}
+            {activeBanner.templateId === 1 && (
+              <Box sx={{ p: 6, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                {activeBanner.imageUrl && (
+                  <Box component="img" src={`${baseurl}${activeBanner.imageUrl}`} sx={{ maxHeight: 200, maxWidth: '100%', borderRadius: 2, objectFit: 'contain' }} />
+                )}
+                <Typography variant="h4" fontWeight="bold" sx={{ color: isDark ? '#fff' : '#1e293b' }}>
+                  {activeBanner.title}
+                </Typography>
+                <Typography variant="body1" sx={{ color: isDark ? '#94a3b8' : '#64748b', maxWidth: 600 }}>
+                  {activeBanner.description}
+                </Typography>
+                <Button variant="contained" size="large" onClick={() => setBannerOpen(false)} sx={{ bgcolor: '#6366f1', color: '#fff', borderRadius: 50, px: 5 }}>
+                  Got it!
+                </Button>
+              </Box>
+            )}
+
+            {/* Template 2: Split Image/Text */}
+            {activeBanner.templateId === 2 && (
+              <Grid container>
+                <Grid item xs={12} md={6} sx={{ p: 0 }}>
+                  {activeBanner.imageUrl ? (
+                    <Box component="img" src={`${baseurl}${activeBanner.imageUrl}`} sx={{ width: '100%', height: '100%', minHeight: 400, objectFit: 'cover' }} />
+                  ) : (
+                    <Box sx={{ width: '100%', height: '100%', minHeight: 400, bgcolor: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <DiamondIcon sx={{ fontSize: 100, color: 'rgba(255,255,255,0.5)' }} />
+                    </Box>
+                  )}
+                </Grid>
+                <Grid item xs={12} md={6} sx={{ p: 6, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <Typography variant="overline" sx={{ color: '#6366f1', fontWeight: 'bold', letterSpacing: 1.5 }}>
+                    NEW ANNOUNCEMENT
+                  </Typography>
+                  <Typography variant="h3" fontWeight="bold" sx={{ mb: 2, color: isDark ? '#fff' : '#1e293b' }}>
+                    {activeBanner.title}
+                  </Typography>
+                  <Typography variant="body1" sx={{ mb: 4, color: isDark ? '#94a3b8' : '#64748b', lineHeight: 1.7 }}>
+                    {activeBanner.description}
+                  </Typography>
+                  <Button variant="outlined" size="large" onClick={() => setBannerOpen(false)} sx={{ alignSelf: 'flex-start', borderRadius: 2 }}>
+                    Close
+                  </Button>
+                </Grid>
+              </Grid>
+            )}
+
+            {/* Template 3: Full Background */}
+            {activeBanner.templateId === 3 && (
+              <Box sx={{
+                position: 'relative',
+                height: 500,
+                backgroundImage: activeBanner.imageUrl ? `url(${baseurl}${activeBanner.imageUrl})` : 'none',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                bgcolor: '#111'
+              }}>
+                <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)' }} />
+                <Box sx={{ position: 'absolute', bottom: 0, left: 0, width: '100%', p: 6 }}>
+                  <Typography variant="h2" fontWeight="bold" sx={{ color: '#fff', mb: 2, textShadow: '0 4px 10px rgba(0,0,0,0.5)' }}>
+                    {activeBanner.title}
+                  </Typography>
+                  <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.9)', maxWidth: 800, mb: 3 }}>
+                    {activeBanner.description}
+                  </Typography>
+                  <Button variant="contained" size="large" onClick={() => setBannerOpen(false)} sx={{ bgcolor: '#fff', color: '#000', borderRadius: 2, fontWeight: 'bold' }}>
+                    Learn More
+                  </Button>
+                </Box>
+              </Box>
+            )}
+          </Box>
+        )}
+      </Dialog>
     </Box>
   );
 }

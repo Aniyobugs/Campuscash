@@ -41,6 +41,7 @@ import {
     Menu,
     Stack,
     LinearProgress,
+    Drawer,
 } from "@mui/material";
 import {
     Edit,
@@ -68,6 +69,7 @@ import {
     KeyboardArrowRight,
     Fullscreen,
     Close,
+    Campaign as CampaignIcon,
 } from "@mui/icons-material";
 import { useTheme } from "../contexts/ThemeContext";
 import axios from "axios";
@@ -87,10 +89,10 @@ import {
 const FacultyDashboard = () => {
     const { isDark } = useTheme();
     // Force dark aesthetic for dashboard content if user prefers, or just consistent dark theme
-    const dashboardBg = "#0f172a";
-    const cardBg = "#1e293b";
-    const textPrimary = "#f1f5f9";
-    const textSecondary = "#94a3b8";
+    const dashboardBg = isDark ? "#0f172a" : "#f1f5f9"; // Slate 900 vs Slate 100
+    const cardBg = isDark ? "#1e293b" : "#ffffff"; // Slate 800 vs White
+    const textPrimary = isDark ? "#f1f5f9" : "#0f172a"; // Slate 50 vs Slate 900
+    const textSecondary = isDark ? "#94a3b8" : "#64748b"; // Slate 400 vs Slate 500
     const accentColor = "#818cf8"; // Indigo
     const successColor = "#4ade80"; // Green
     const warningColor = "#fbbf24"; // Amber
@@ -167,6 +169,12 @@ const FacultyDashboard = () => {
     const [historyOpen, setHistoryOpen] = useState(false);
     const [openChartDialog, setOpenChartDialog] = useState(false);
 
+    // Sidebar State
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState(null);
+    const [studentChartFilter, setStudentChartFilter] = useState('Monthly'); // Daily, Weekly, Monthly, Yearly
+    const [yearFilter, setYearFilter] = useState('All'); // NEW: Year Filter State
+
     // Derived options
     const yearOptions = Array.from(new Set([
         "All", "Year 1", "Year 2", "Year 3", "Year 4",
@@ -178,6 +186,12 @@ const FacultyDashboard = () => {
     const [subsLoading, setSubsLoading] = useState(false);
     const [viewSubOpen, setViewSubOpen] = useState(false);
     const [selectedSub, setSelectedSub] = useState(null);
+
+    // Banner Management State
+    const [banners, setBanners] = useState([]);
+    const [manageBannersOpen, setManageBannersOpen] = useState(false);
+    const [bannerForm, setBannerForm] = useState({ title: '', description: '', templateId: 1, image: null });
+    const [bannerImagePreview, setBannerImagePreview] = useState(null);
 
     // Data Loading
     useEffect(() => {
@@ -193,12 +207,35 @@ const FacultyDashboard = () => {
                 (u) => u.status !== "inactive" && !["admin", "faculty", "store"].includes(u.role)
             );
             setUsers(activeUsers);
-            setFiltered(activeUsers);
+            setUsers(activeUsers);
+            // Initial filter set not needed as useEffect handles it, but good for safety
         } catch (err) {
             console.error("Users fetch error:", err);
             setError("Failed to load users");
         }
     };
+
+    // Filter Logic Effect
+    useEffect(() => {
+        let result = users;
+
+        // 1. Filter by Year
+        if (yearFilter !== 'All') {
+            result = result.filter(u => u.yearClassDept === yearFilter);
+        }
+
+        // 2. Filter by Search
+        if (search) {
+            const q = search.toLowerCase();
+            result = result.filter(u =>
+                u.fname?.toLowerCase().includes(q) ||
+                u.ename?.toLowerCase().includes(q) ||
+                u.studentId?.toLowerCase().includes(q)
+            );
+        }
+
+        setFiltered(result);
+    }, [users, search, yearFilter]);
 
     const fetchTasks = async () => {
         setTasksLoading(true);
@@ -225,6 +262,17 @@ const FacultyDashboard = () => {
             setSubsLoading(false);
         }
     };
+
+    const fetchBanners = async () => {
+        try {
+            const res = await axios.get(`${baseurl}/api/events/all`);
+            setBanners(res.data || []);
+        } catch (err) {
+            console.error("Banners fetch error:", err);
+        }
+    };
+
+
 
     // --- Handlers (Keep logic, just reformatted) ---
     const handleOpenTask = async (task) => {
@@ -446,17 +494,17 @@ const FacultyDashboard = () => {
             type: 'submission'
         }));
 
+    // Helper: Deterministic mock data for demo
+    const getMockPoints = (dateObj) => {
+        const seed = dateObj.getDate() + dateObj.getMonth() * 31 + dateObj.getFullYear() * 365;
+        return Math.floor((Math.abs(Math.sin(seed)) * 80) + 10);
+    };
+
     // Process Submissions for Points Analytics
     const chartData = React.useMemo(() => {
         let labels = [];
         let data = [];
         const offset = chartOffset;
-
-        // Deterministic mock data for demo
-        const getMockPoints = (dateObj) => {
-            const seed = dateObj.getDate() + dateObj.getMonth() * 31 + dateObj.getFullYear() * 365;
-            return Math.floor((Math.abs(Math.sin(seed)) * 80) + 10);
-        };
 
         if (chartTimeFilter === 'Week') {
             // Last 7 Days + Offset
@@ -531,13 +579,121 @@ const FacultyDashboard = () => {
     // Points this week
     const pointsThisWeek = chartData.reduce((sum, d) => sum + d.points, 0);
 
+    // Student Specific Chart Data
+    const studentChartData = React.useMemo(() => {
+        if (!selectedStudent) return [];
+
+        let data = [];
+        const now = new Date();
+
+        if (studentChartFilter === 'Daily') {
+            // Last 7 Days
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+
+                const realPoints = submissions
+                    .filter(s => {
+                        if (s.status !== 'accepted' || s.user?._id !== selectedStudent._id) return false;
+                        const sDate = new Date(s.createdAt);
+                        return sDate.getDate() === d.getDate() && sDate.getMonth() === d.getMonth() && sDate.getFullYear() === d.getFullYear();
+                    })
+                    .reduce((sum, s) => sum + (s.task?.points || 0), 0);
+
+                const points = realPoints > 0 ? realPoints : getMockPoints(d);
+
+                data.push({ name: dayName, points, fullDate: d.toLocaleDateString() });
+            }
+        } else if (studentChartFilter === 'Weekly') {
+            // Last 8 Weeks
+            for (let i = 7; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - (i * 7));
+                // Get start of week (approx for labeling)
+                const weekLabel = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+
+                // We need to match submissions in this week window
+                // This is a simplified "week bucket" logic
+                const weekStart = new Date(d);
+                weekStart.setHours(0, 0, 0, 0);
+                const weekEnd = new Date(d);
+                weekEnd.setDate(weekEnd.getDate() + 7);
+                weekEnd.setHours(23, 59, 59, 999);
+
+                const realPoints = submissions
+                    .filter(s => {
+                        if (s.status !== 'accepted' || s.user?._id !== selectedStudent._id) return false;
+                        const sDate = new Date(s.createdAt);
+                        // Very rough weekly check - ideally use strict week numbers or library
+                        return sDate >= weekStart && sDate <= weekEnd;
+                    })
+                    .reduce((sum, s) => sum + (s.task?.points || 0), 0);
+
+                const points = realPoints > 0 ? realPoints : getMockPoints(d) * 3; // Weekly points roughly 3x daily
+
+                data.push({ name: weekLabel, points });
+            }
+        } else if (studentChartFilter === 'Monthly') {
+            // Last 6 Months
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date();
+                d.setMonth(d.getMonth() - i);
+                const monthStr = d.toLocaleString('default', { month: 'short' });
+
+                const realPoints = submissions
+                    .filter(s => {
+                        if (s.status !== 'accepted' || s.user?._id !== selectedStudent._id) return false;
+                        const sDate = new Date(s.createdAt);
+                        return sDate.getMonth() === d.getMonth() && sDate.getFullYear() === d.getFullYear();
+                    })
+                    .reduce((sum, s) => sum + (s.task?.points || 0), 0);
+
+                const points = realPoints > 0 ? realPoints : getMockPoints(d) * 10; // Monthly points
+
+                data.push({ name: monthStr, points });
+            }
+        } else if (studentChartFilter === 'Yearly') {
+            // Last 4 Years
+            for (let i = 3; i >= 0; i--) {
+                const d = new Date();
+                d.setFullYear(d.getFullYear() - i);
+                const yearStr = d.getFullYear().toString();
+                const realPoints = submissions
+                    .filter(s => {
+                        if (s.status !== 'accepted' || s.user?._id !== selectedStudent._id) return false;
+                        const sDate = new Date(s.createdAt);
+                        return sDate.getFullYear() === d.getFullYear();
+                    })
+                    .reduce((sum, s) => sum + (s.task?.points || 0), 0);
+
+                const points = realPoints > 0 ? realPoints : getMockPoints(d) * 100; // Yearly points 
+
+                data.push({ name: yearStr, points });
+            }
+        }
+
+        return data;
+    }, [selectedStudent, submissions, studentChartFilter]);
+
+    // Student Stats
+    const studentStats = React.useMemo(() => {
+        if (!selectedStudent) return { rank: '-', tasks: 0, total: 0 };
+        const rank = users.sort((a, b) => b.points - a.points).findIndex(u => u._id === selectedStudent._id) + 1;
+        const tasks = submissions.filter(s => s.user?._id === selectedStudent._id && s.status === 'accepted').length;
+        return { rank, tasks, total: selectedStudent.points || 0 };
+    }, [selectedStudent, users, submissions]);
+
+
     // --- Styles & Aesthetics ---
     const glassCard = {
-        background: 'linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.6) 100%)',
+        background: isDark
+            ? 'linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.6) 100%)'
+            : 'linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%)',
         borderRadius: 4,
-        border: `1px solid rgba(255,255,255,0.08)`,
+        border: isDark ? `1px solid rgba(255,255,255,0.08)` : `1px solid rgba(0,0,0,0.05)`,
         backdropFilter: 'blur(20px)',
-        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+        boxShadow: isDark ? '0 8px 32px 0 rgba(0, 0, 0, 0.3)' : '0 4px 12px 0 rgba(0, 0, 0, 0.05)',
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
@@ -545,7 +701,7 @@ const FacultyDashboard = () => {
         transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
         '&:hover': {
             transform: 'translateY(-4px)',
-            boxShadow: '0 12px 40px 0 rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(129, 140, 248, 0.2)',
+            boxShadow: isDark ? '0 12px 40px 0 rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(129, 140, 248, 0.2)' : '0 12px 24px 0 rgba(0, 0, 0, 0.1)',
         }
     };
 
@@ -562,8 +718,8 @@ const FacultyDashboard = () => {
             <Box sx={{
                 width: { xs: 0, md: 250 },
                 flexShrink: 0,
-                bgcolor: '#0f172a',
-                borderRight: '1px solid rgba(255,255,255,0.05)',
+                bgcolor: cardBg,
+                borderRight: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)',
                 display: { xs: 'none', md: 'block' }
             }}>
                 <Box sx={{ p: 3 }}>
@@ -577,10 +733,54 @@ const FacultyDashboard = () => {
                             { text: 'Students List', icon: <PeopleIcon />, id: 'students-card' },
                             { text: 'Tasks', icon: <AssignmentIcon />, id: 'tasks-card' },
                             { text: 'Submissions', icon: <RateReviewIcon />, id: 'submissions-card' },
-                        ].map((item) => (
-                            <ListItemButton key={item.text} sx={{ borderRadius: 2, mb: 1, '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }} onClick={() => document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' })}>
-                                <ListItemIcon sx={{ color: '#fff', minWidth: 40 }}>{item.icon}</ListItemIcon>
-                                <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: 14, fontWeight: 500, color: '#fff' }} />
+                            { text: 'View All Students', icon: <PeopleIcon />, action: () => setViewAllStudentsOpen(true) },
+                            { text: 'Manage Banners', icon: <CampaignIcon />, action: () => { fetchBanners(); setManageBannersOpen(true); } }
+                        ].map((item, index) => (
+                            <ListItemButton
+                                key={index}
+                                onClick={item.action || (() => document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' }))}
+                                sx={{ borderRadius: 2, mb: 1, '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' } }}
+                            >
+                                <ListItemIcon sx={{ color: textSecondary, minWidth: 40 }}>{item.icon}</ListItemIcon>
+                                <ListItemText primary={item.text} primaryTypographyProps={{ fontSize: 14, fontWeight: 500, color: textPrimary }} />
+                            </ListItemButton>
+                        ))
+                        }
+                    </List>
+
+                    <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.1)' }} />
+
+                    <Typography variant="caption" fontWeight="bold" sx={{ color: textSecondary, mb: 2, display: 'block', letterSpacing: 1 }}>
+                        CLASSES / YEARS
+                    </Typography>
+                    <List>
+                        {yearOptions.map((year) => (
+                            <ListItemButton
+                                key={year}
+                                onClick={() => {
+                                    setYearFilter(year);
+                                    document.getElementById('students-card')?.scrollIntoView({ behavior: 'smooth' });
+                                }}
+                                sx={{
+                                    borderRadius: 2,
+                                    mb: 0.5,
+                                    bgcolor: yearFilter === year ? accentColor : 'transparent',
+                                    color: yearFilter === year ? '#fff' : textSecondary,
+                                    '&:hover': { bgcolor: yearFilter === year ? accentColor : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'), color: yearFilter === year ? '#fff' : textPrimary }
+                                }}
+                            >
+                                <ListItemText primary={year} primaryTypographyProps={{ fontSize: 13, fontWeight: 600 }} />
+                                {year !== 'All' && (
+                                    <Chip
+                                        label={users.filter(u => u.yearClassDept === year).length}
+                                        size="small"
+                                        sx={{
+                                            height: 20, fontSize: 10, fontWeight: 'bold',
+                                            bgcolor: yearFilter === year ? 'rgba(0,0,0,0.2)' : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'),
+                                            color: 'inherit'
+                                        }}
+                                    />
+                                )}
                             </ListItemButton>
                         ))}
                     </List>
@@ -612,7 +812,7 @@ const FacultyDashboard = () => {
                                         <PeopleIcon sx={{ color: '#60a5fa' }} />
                                     </Box>
                                     <Typography variant="body2" color={textSecondary} sx={{ letterSpacing: 0.5, textTransform: 'uppercase', fontSize: 11, fontWeight: 600 }}>Total Students</Typography>
-                                    <Typography variant="h3" fontWeight="bold" sx={{ color: '#f1f5f9', mt: 0.5 }}>{totalUsers}</Typography>
+                                    <Typography variant="h3" fontWeight="bold" sx={{ color: textPrimary, mt: 0.5 }}>{totalUsers}</Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
@@ -623,7 +823,7 @@ const FacultyDashboard = () => {
                                         <EmojiEvents sx={{ color: successColor }} />
                                     </Box>
                                     <Typography variant="body2" color={textSecondary} sx={{ letterSpacing: 0.5, textTransform: 'uppercase', fontSize: 11, fontWeight: 600 }}>Points Awarded</Typography>
-                                    <Typography variant="h3" fontWeight="bold" sx={{ color: '#f1f5f9', mt: 0.5 }}>{totalPoints}</Typography>
+                                    <Typography variant="h3" fontWeight="bold" sx={{ color: textPrimary, mt: 0.5 }}>{totalPoints}</Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
@@ -634,7 +834,7 @@ const FacultyDashboard = () => {
                                     <Avatar src={topStudent?.profilePic ? `${baseurl}${topStudent.profilePic}` : undefined} sx={{ width: 72, height: 72, border: `3px solid ${accentColor}`, boxShadow: `0 0 20px ${accentColor}40` }}>{topStudent?.fname[0]}</Avatar>
                                     <Box>
                                         <Typography variant="overline" color={accentColor} fontWeight="bold">TOP PERFORMER</Typography>
-                                        <Typography variant="h5" fontWeight="bold" sx={{ mb: 0.5, color: '#f1f5f9' }}>{topStudent?.fname || "None"}</Typography>
+                                        <Typography variant="h5" fontWeight="bold" sx={{ mb: 0.5, color: textPrimary }}>{topStudent?.fname || "None"}</Typography>
                                         <Chip label={`${topStudent?.points || 0} pts`} size="small" sx={{ bgcolor: accentColor, color: '#fff', fontWeight: 'bold', height: 24 }} />
                                     </Box>
                                 </CardContent>
@@ -709,10 +909,9 @@ const FacultyDashboard = () => {
                                                             onClick={() => { setChartTimeFilter(filter); setChartOffset(0); }}
                                                             sx={{
                                                                 px: 1.5, py: 0.5, borderRadius: 1.5,
-                                                                bgcolor: chartTimeFilter === filter ? accentColor : 'rgba(255,255,255,0.05)',
-                                                                color: chartTimeFilter === filter ? '#fff' : textSecondary,
+                                                                bgcolor: chartTimeFilter === filter ? accentColor : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'),
+                                                                color: chartTimeFilter === filter ? '#fff' : textPrimary,
                                                                 fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                                                                transition: 'all 0.2s',
                                                                 '&:hover': { bgcolor: chartTimeFilter === filter ? accentColor : 'rgba(255,255,255,0.1)', color: '#fff' }
                                                             }}
                                                         >
@@ -861,16 +1060,21 @@ const FacultyDashboard = () => {
                                                             sx={{
                                                                 '& .MuiOutlinedInput-root': {
                                                                     bgcolor: 'rgba(30, 41, 59, 0.5)',
-                                                                    borderRadius: 2,
+                                                                    borderRadius: 1,
+                                                                    width: '200px',
                                                                     border: '1px solid rgba(255,255,255,0.1)',
                                                                     '& fieldset': { border: 'none' }
+                                                                },
+                                                                '& .MuiOutlinedInput-input': {
+                                                                    color: 'white',
+                                                                    fontWeight: 'bold'
                                                                 }
                                                             }}
                                                         />
                                                     )}
                                                     renderOption={(props, option) => (
                                                         <li {...props} style={{ backgroundColor: '#1e293b' }}>
-                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 0.5 }}>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 0.5, width: '100px' }}>
                                                                 <Avatar src={option.profilePic ? `${baseurl}${option.profilePic}` : undefined} sx={{ width: 24, height: 24 }} />
                                                                 <Typography variant="body2">{option.fname} {option.ename}</Typography>
                                                             </Box>
@@ -965,8 +1169,8 @@ const FacultyDashboard = () => {
                                                     <ListItem key={i} disablePadding sx={{ mb: 2 }}>
                                                         <Box sx={{
                                                             display: 'flex', gap: 2, alignItems: 'center', width: '100%',
-                                                            p: 2, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.03)',
-                                                            border: '1px solid rgba(255,255,255,0.05)'
+                                                            p: 2, borderRadius: 3, bgcolor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+                                                            border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)'
                                                         }}>
                                                             <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: warningColor, flexShrink: 0, boxShadow: `0 0 10px ${warningColor}` }} />
                                                             <Box sx={{ flex: 1 }}>
@@ -976,7 +1180,7 @@ const FacultyDashboard = () => {
                                                                     {sub.user?.fname} • 10m ago
                                                                 </Typography>
                                                             </Box>
-                                                            <IconButton size="small" onClick={() => { setSelectedSub(sub); setViewSubOpen(true); }} sx={{ bgcolor: 'rgba(255,255,255,0.05)' }}>
+                                                            <IconButton size="small" onClick={() => { setSelectedSub(sub); setViewSubOpen(true); }} sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
                                                                 <VisibilityIcon fontSize="small" sx={{ color: textSecondary }} />
                                                             </IconButton>
                                                         </Box>
@@ -997,7 +1201,7 @@ const FacultyDashboard = () => {
                                 <Card sx={glassCard}>
                                     <CardContent sx={{ p: 4 }}>
                                         <Typography variant="h6" sx={{ ...gradientText, mb: 3 }}>Activity Timeline</Typography>
-                                        <Box sx={{ position: 'relative', borderLeft: `2px solid rgba(255,255,255,0.1)`, pl: 4, ml: 1 }}>
+                                        <Box sx={{ position: 'relative', borderLeft: isDark ? `2px solid rgba(255,255,255,0.1)` : `2px solid rgba(0,0,0,0.1)`, pl: 4, ml: 1 }}>
                                             {recentActivity.map((act, i) => (
                                                 <Box key={i} sx={{ mb: 3, position: 'relative' }}>
                                                     <Box sx={{
@@ -1051,14 +1255,24 @@ const FacultyDashboard = () => {
                         <Grid item xs={12}>
                             <Card sx={glassCard} id="students-card">
                                 <CardContent>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                                        <Typography variant="h6" fontWeight="bold">Students Directory</Typography>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, alignItems: 'center' }}>
+                                        <Box>
+                                            <Typography variant="h6" fontWeight="bold">Students Directory</Typography>
+                                            {yearFilter !== 'All' && (
+                                                <Chip
+                                                    label={`Filtered by: ${yearFilter}`}
+                                                    onDelete={() => setYearFilter('All')}
+                                                    size="small"
+                                                    sx={{ mt: 0.5, bgcolor: accentColor, color: '#fff' }}
+                                                />
+                                            )}
+                                        </Box>
                                         <TextField
                                             placeholder="Search..."
                                             size="small"
                                             value={search}
                                             onChange={(e) => setSearch(e.target.value)}
-                                            sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(0,0,0,0.2)' } }}
+                                            sx={{ '& .MuiOutlinedInput-root': { bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)', color: textPrimary } }}
                                         />
                                     </Box>
                                     <TableContainer>
@@ -1074,7 +1288,7 @@ const FacultyDashboard = () => {
                                             </TableHead>
                                             <TableBody>
                                                 {filtered.slice(0, 5).map(u => (
-                                                    <TableRow key={u._id} sx={{ '& td': { borderColor: 'rgba(255,255,255,0.05)' } }}>
+                                                    <TableRow key={u._id} sx={{ '& td': { borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' } }}>
                                                         <TableCell>
                                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                                                 <Avatar src={u.profilePic ? `${baseurl}${u.profilePic}` : undefined} sx={{ width: 32, height: 32 }} />
@@ -1182,7 +1396,7 @@ const FacultyDashboard = () => {
                                 value={createTaskForm.category}
                                 label="Category"
                                 onChange={(e) => setCreateTaskForm({ ...createTaskForm, category: e.target.value })}
-                                sx={{ color: textPrimary, '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' } }}
+                                sx={{ color: textPrimary, '.MuiOutlinedInput-notchedOutline': { borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' } }}
                             >
                                 <MenuItem value="General">General Task</MenuItem>
                                 <MenuItem value="Quiz">Quiz</MenuItem>
@@ -1204,7 +1418,7 @@ const FacultyDashboard = () => {
                             )}
                             renderTags={(value, getTagProps) =>
                                 value.map((option, index) => (
-                                    <Chip label={option} size="small" {...getTagProps({ index })} sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: textPrimary }} />
+                                    <Chip label={option} size="small" {...getTagProps({ index })} sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', color: textPrimary }} />
                                 ))
                             }
                         />
@@ -1217,7 +1431,7 @@ const FacultyDashboard = () => {
                             onChange={(e) => setCreateTaskForm({ ...createTaskForm, dueDate: e.target.value })}
                             InputLabelProps={{ shrink: true }}
                             sx={{
-                                "& .MuiInputBase-input": { colorScheme: "dark", color: textPrimary },
+                                "& .MuiInputBase-input": { colorScheme: isDark ? "dark" : "light", color: textPrimary },
                                 "& .MuiInputLabel-root": { color: textSecondary }
                             }}
                         />
@@ -1291,7 +1505,7 @@ const FacultyDashboard = () => {
                                 value={editTaskForm.category}
                                 label="Category"
                                 onChange={(e) => setEditTaskForm({ ...editTaskForm, category: e.target.value })}
-                                sx={{ color: textPrimary, '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' } }}
+                                sx={{ color: textPrimary, '.MuiOutlinedInput-notchedOutline': { borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' } }}
                             >
                                 <MenuItem value="General">General Task</MenuItem>
                                 <MenuItem value="Quiz">Quiz</MenuItem>
@@ -1313,7 +1527,7 @@ const FacultyDashboard = () => {
                             )}
                             renderTags={(value, getTagProps) =>
                                 value.map((option, index) => (
-                                    <Chip label={option} size="small" {...getTagProps({ index })} sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: textPrimary }} />
+                                    <Chip label={option} size="small" {...getTagProps({ index })} sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', color: textPrimary }} />
                                 ))
                             }
                         />
@@ -1326,7 +1540,7 @@ const FacultyDashboard = () => {
                             onChange={(e) => setEditTaskForm({ ...editTaskForm, dueDate: e.target.value })}
                             InputLabelProps={{ shrink: true }}
                             sx={{
-                                "& .MuiInputBase-input": { colorScheme: "dark", color: textPrimary },
+                                "& .MuiInputBase-input": { colorScheme: isDark ? "dark" : "light", color: textPrimary },
                                 "& .MuiInputLabel-root": { color: textSecondary }
                             }}
                         />
@@ -1408,20 +1622,20 @@ const FacultyDashboard = () => {
             </Dialog>
 
             {/* View All Students Dialog */}
-            <Dialog open={viewAllStudentsOpen} onClose={() => setViewAllStudentsOpen(false)} maxWidth="lg" fullWidth PaperProps={{ sx: { bgcolor: cardBg, color: textPrimary, borderRadius: 3, backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)' } }}>
-                <DialogTitle sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Dialog open={viewAllStudentsOpen} onClose={() => setViewAllStudentsOpen(false)} maxWidth="lg" fullWidth PaperProps={{ sx: { bgcolor: cardBg, color: textPrimary, borderRadius: 3, backdropFilter: 'blur(20px)', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)' } }}>
+                <DialogTitle sx={{ borderBottom: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="h6" fontWeight="bold" sx={gradientText}>All Students Directory</Typography>
                     <IconButton onClick={() => setViewAllStudentsOpen(false)} sx={{ color: textSecondary }}><Cancel /></IconButton>
                 </DialogTitle>
                 <DialogContent sx={{ p: 0 }}>
-                    <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <Box sx={{ p: 2, borderBottom: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)' }}>
                         <TextField
                             placeholder="Search students..."
                             fullWidth
                             size="small"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'rgba(0,0,0,0.2)' } }}
+                            sx={{ '& .MuiOutlinedInput-root': { bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)', color: textPrimary } }}
                             InputProps={{
                                 startAdornment: <PeopleIcon sx={{ color: textSecondary, mr: 1, opacity: 0.5 }} />
                             }}
@@ -1440,7 +1654,7 @@ const FacultyDashboard = () => {
                             </TableHead>
                             <TableBody>
                                 {filtered.map(u => (
-                                    <TableRow key={u._id} hover sx={{ '& td': { borderColor: 'rgba(255,255,255,0.05)' } }}>
+                                    <TableRow key={u._id} hover sx={{ '& td': { borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' } }}>
                                         <TableCell>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                                 <Avatar src={u.profilePic ? `${baseurl}${u.profilePic}` : undefined} sx={{ width: 40, height: 40 }} />
@@ -1488,15 +1702,211 @@ const FacultyDashboard = () => {
                         bgcolor: cardBg,
                         color: textPrimary,
                         backdropFilter: 'blur(20px)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        width: 180
+                        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
+                        width: 220
                     }
                 }}
             >
+                <MenuItem onClick={() => {
+                    setAnchorEl(null);
+                    setSelectedStudent(selectedStudentForAction);
+                    setSidebarOpen(true);
+                }} sx={{ gap: 1.5, fontSize: 14 }}>
+                    <TrendingUp fontSize="small" sx={{ color: accentColor }} /> View Performance
+                </MenuItem>
                 <MenuItem onClick={() => { setAnchorEl(null); setHistoryOpen(true); }} sx={{ gap: 1.5, fontSize: 14 }}>
                     <VisibilityIcon fontSize="small" sx={{ color: textSecondary }} /> View History
                 </MenuItem>
             </Menu>
+
+            {/* Student Details Sidebar */}
+            <Drawer
+                anchor="right"
+                open={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+                PaperProps={{
+                    sx: {
+                        width: { xs: '100%', md: 450 },
+                        bgcolor: dashboardBg,
+                        color: textPrimary,
+                        borderLeft: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)'
+                    }
+                }}
+            >
+                {selectedStudent && (
+                    <Box sx={{ p: 0, height: '100%', overflowY: 'auto' }}>
+                        {/* Header Banner */}
+                        <Box sx={{
+                            height: 120,
+                            background: `linear-gradient(135deg, ${accentColor} 0%, #4f46e5 100%)`,
+                            position: 'relative',
+                            mb: 6
+                        }}>
+                            <IconButton
+                                onClick={() => setSidebarOpen(false)}
+                                sx={{ position: 'absolute', top: 10, right: 10, color: '#fff', bgcolor: 'rgba(0,0,0,0.2)' }}
+                            >
+                                <Close />
+                            </IconButton>
+                        </Box>
+
+                        <Box sx={{ px: 4 }}>
+                            {/* Profile Info */}
+                            <Box sx={{ mt: -8, mb: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <Avatar
+                                    src={selectedStudent.profilePic ? `${baseurl}${selectedStudent.profilePic}` : undefined}
+                                    sx={{
+                                        width: 100,
+                                        height: 100,
+                                        border: `4px solid ${dashboardBg}`,
+                                        boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+                                        bgcolor: cardBg
+                                    }}
+                                />
+                                <Typography variant="h5" fontWeight="bold" sx={{ mt: 2 }}>
+                                    {selectedStudent.fname} {selectedStudent.ename}
+                                </Typography>
+                                <Typography variant="body2" color={textSecondary}>
+                                    {selectedStudent.studentId} • {selectedStudent.yearClassDept || 'Student'}
+                                </Typography>
+                                <Chip
+                                    label={selectedStudent.status}
+                                    size="small"
+                                    sx={{
+                                        mt: 1,
+                                        bgcolor: selectedStudent.status === 'active' ? 'rgba(74, 222, 128, 0.1)' : 'rgba(255,255,255,0.1)',
+                                        color: selectedStudent.status === 'active' ? successColor : textSecondary
+                                    }}
+                                />
+                            </Box>
+
+                            {/* Stats Grid */}
+                            {/* Stats Grid */}
+                            <Grid container spacing={2} sx={{ mb: 4 }}>
+                                <Grid item xs={4}>
+                                    <Box sx={{
+                                        p: 2, borderRadius: 3, bgcolor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+                                        textAlign: 'center', border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)'
+                                    }}>
+                                        <Typography variant="h6" fontWeight="bold" color={successColor}>{studentStats.total}</Typography>
+                                        <Typography variant="caption" color={textSecondary}>Points</Typography>
+                                    </Box>
+                                </Grid>
+                                <Grid item xs={4}>
+                                    <Box sx={{
+                                        p: 2, borderRadius: 3, bgcolor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+                                        textAlign: 'center', border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)'
+                                    }}>
+                                        <Typography variant="h6" fontWeight="bold" color={isDark ? "#fff" : textPrimary}>#{studentStats.rank}</Typography>
+                                        <Typography variant="caption" color={textSecondary}>Rank</Typography>
+                                    </Box>
+                                </Grid>
+                                <Grid item xs={4}>
+                                    <Box sx={{
+                                        p: 2, borderRadius: 3, bgcolor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+                                        textAlign: 'center', border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)'
+                                    }}>
+                                        <Typography variant="h6" fontWeight="bold" color={accentColor}>{studentStats.tasks}</Typography>
+                                        <Typography variant="caption" color={textSecondary}>Tasks</Typography>
+                                    </Box>
+                                </Grid>
+                            </Grid>
+
+                            {/* Performance Graph */}
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                <Typography variant="subtitle1" fontWeight="bold">Points Growth</Typography>
+                                <Box sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', borderRadius: 2, p: 0.5, display: 'flex' }}>
+                                    {['Daily', 'Weekly', 'Monthly', 'Yearly'].map((f) => (
+                                        <Box
+                                            key={f}
+                                            onClick={() => setStudentChartFilter(f)}
+                                            sx={{
+                                                px: 1, py: 0.5, borderRadius: 1.5, cursor: 'pointer', fontSize: 10, fontWeight: 600,
+                                                color: studentChartFilter === f ? (isDark ? '#fff' : '#fff') : textSecondary,
+                                                bgcolor: studentChartFilter === f ? accentColor : 'transparent',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            {f}
+                                        </Box>
+                                    ))}
+                                </Box>
+                            </Box>
+                            <Box sx={{
+                                height: 200, bgcolor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', borderRadius: 3, p: 2, mb: 4,
+                                border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)'
+                            }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={studentChartData}>
+                                        <defs>
+                                            <linearGradient id="colorStudentPoints" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor={accentColor} stopOpacity={0.4} />
+                                                <stop offset="95%" stopColor={accentColor} stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} vertical={false} />
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: textSecondary, fontSize: 10 }} />
+                                        <RechartsTooltip cursor={{ opacity: 0.2 }} contentStyle={{ backgroundColor: cardBg, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', borderRadius: 8 }} itemStyle={{ color: textPrimary }} />
+                                        <Area type="monotone" dataKey="points" stroke={accentColor} strokeWidth={2} fill="url(#colorStudentPoints)" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </Box>
+
+                            {/* Recent Activity Mini List */}
+                            <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2 }}>Recent History</Typography>
+                            <List disablePadding>
+                                {submissions
+                                    .filter(s => s.user?._id === selectedStudent._id)
+                                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                                    .slice(0, 5)
+                                    .map(s => (
+                                        <ListItem key={s._id} disablePadding sx={{ mb: 2 }}>
+                                            <Box sx={{
+                                                width: '100%', display: 'flex', gap: 2, alignItems: 'center',
+                                                p: 1.5, borderRadius: 2, bgcolor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'
+                                            }}>
+                                                <Box sx={{
+                                                    width: 8, height: 8, borderRadius: '50%',
+                                                    bgcolor: s.status === 'accepted' ? successColor : s.status === 'rejected' ? 'error.main' : warningColor
+                                                }} />
+                                                <Box sx={{ flex: 1 }}>
+                                                    <Typography variant="body2" fontWeight={500}>{s.task?.title || 'Unknown Task'}</Typography>
+                                                    <Typography variant="caption" color={textSecondary}>
+                                                        {new Date(s.createdAt).toLocaleDateString()} • {s.status}
+                                                    </Typography>
+                                                </Box>
+                                                <Typography variant="body2" fontWeight="bold" color={s.status === 'accepted' ? successColor : textSecondary}>
+                                                    {s.status === 'accepted' ? `+${s.task?.points}` : '-'}
+                                                </Typography>
+                                            </Box>
+                                        </ListItem>
+                                    ))}
+                                {submissions.filter(s => s.user?._id === selectedStudent._id).length === 0 && (
+                                    <Typography variant="body2" color={textSecondary} sx={{ fontStyle: 'italic', textAlign: 'center', py: 2 }}>
+                                        No recent activity found.
+                                    </Typography>
+                                )}
+                            </List>
+
+                            <Box sx={{ my: 4 }}>
+                                <Button
+                                    fullWidth variant="outlined"
+                                    color="inherit"
+                                    sx={{ borderRadius: 2, borderColor: 'rgba(255,255,255,0.1)' }}
+                                    onClick={() => {
+                                        setSidebarOpen(false);
+                                        // Maybe open full history dialog for this student?
+                                        setSelectedStudentForAction(selectedStudent);
+                                        setHistoryOpen(true);
+                                    }}
+                                >
+                                    View Full History
+                                </Button>
+                            </Box>
+                        </Box>
+                    </Box>
+                )}
+            </Drawer>
 
             {/* Student History Dialog */}
             <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { bgcolor: cardBg, color: textPrimary, borderRadius: 3, backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)' } }}>
@@ -1541,6 +1951,115 @@ const FacultyDashboard = () => {
                 <Alert severity="error" onClose={() => setError("")} variant="filled">{error}</Alert>
             </Snackbar>
 
+
+            {/* Manage Banners Dialog */}
+            <Dialog open={manageBannersOpen} onClose={() => setManageBannersOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: { bgcolor: cardBg, color: textPrimary } }}>
+                <DialogTitle>Manage Advertisement Banners</DialogTitle>
+                <DialogContent>
+                    <Grid container spacing={4}>
+                        <Grid item xs={12} md={6}>
+                            <Typography variant="h6" sx={{ mb: 2 }}>Create New Banner</Typography>
+                            <Stack spacing={2}>
+                                <TextField
+                                    label="Title" fullWidth size="small"
+                                    value={bannerForm.title}
+                                    onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
+                                    sx={{ '& .MuiInputBase-root': { color: textPrimary }, '& .MuiInputLabel-root': { color: textSecondary } }}
+                                />
+                                <TextField
+                                    label="Description" fullWidth multiline rows={2} size="small"
+                                    value={bannerForm.description}
+                                    onChange={(e) => setBannerForm({ ...bannerForm, description: e.target.value })}
+                                    sx={{ '& .MuiInputBase-root': { color: textPrimary }, '& .MuiInputLabel-root': { color: textSecondary } }}
+                                />
+
+                                <FormControl fullWidth>
+                                    <InputLabel sx={{ color: textSecondary }}>Template Style</InputLabel>
+                                    <Select
+                                        value={bannerForm.templateId}
+                                        label="Template Style"
+                                        onChange={(e) => setBannerForm({ ...bannerForm, templateId: e.target.value })}
+                                        sx={{ color: textPrimary, '.MuiOutlinedInput-notchedOutline': { borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' } }}
+                                    >
+                                        <MenuItem value={1}>Template 1: Simple Centered</MenuItem>
+                                        <MenuItem value={2}>Template 2: Split Image/Text</MenuItem>
+                                        <MenuItem value={3}>Template 3: Full Background</MenuItem>
+                                    </Select>
+                                </FormControl>
+
+                                <Box>
+                                    <Button variant="outlined" component="label" fullWidth sx={{ color: textPrimary, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' }}>
+                                        Upload Banner Image
+                                        <input type="file" hidden accept="image/*" onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            if (file) {
+                                                setBannerForm({ ...bannerForm, image: file });
+                                                setBannerImagePreview(URL.createObjectURL(file));
+                                            }
+                                        }} />
+                                    </Button>
+                                    {bannerImagePreview && (
+                                        <Box sx={{ mt: 2, borderRadius: 2, overflow: 'hidden', height: 100, width: '100%', bgcolor: 'rgba(0,0,0,0.1)' }}>
+                                            <img src={bannerImagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        </Box>
+                                    )}
+                                </Box>
+
+                                <Button variant="contained" color="primary" onClick={async () => {
+                                    try {
+                                        const formData = new FormData();
+                                        formData.append('title', bannerForm.title);
+                                        formData.append('description', bannerForm.description);
+                                        formData.append('templateId', bannerForm.templateId);
+                                        if (bannerForm.image) formData.append('image', bannerForm.image);
+
+                                        await axios.post(`${baseurl}/api/events/add`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                                        setSuccess("Banner created successfully");
+                                        setBannerForm({ title: '', description: '', templateId: 1, image: null });
+                                        setBannerImagePreview(null);
+                                        fetchBanners();
+                                    } catch (err) {
+                                        setError("Failed to create banner");
+                                    }
+                                }}>Publish Banner</Button>
+                            </Stack>
+                        </Grid>
+
+                        <Grid item xs={12} md={6}>
+                            <Typography variant="h6" sx={{ mb: 2 }}>Active Banners</Typography>
+                            <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+                                {banners.length === 0 ? (
+                                    <Typography color={textSecondary} align="center" sx={{ mt: 4 }}>No active banners found.</Typography>
+                                ) : (
+                                    banners.map(b => (
+                                        <Box key={b._id} sx={{
+                                            p: 2, mb: 2, borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                                            border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)'
+                                        }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                                <Typography variant="subtitle2" fontWeight="bold">{b.title}</Typography>
+                                                <Chip label={`Template ${b.templateId}`} size="small" sx={{ height: 20, fontSize: 10 }} />
+                                            </Box>
+                                            <Typography variant="caption" color={textSecondary} display="block" sx={{ mb: 1 }}>{b.description.substring(0, 50)}...</Typography>
+                                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                                <Button size="small" variant={b.isActive ? "outlined" : "contained"} color={b.isActive ? "warning" : "success"} onClick={async () => {
+                                                    await axios.put(`${baseurl}/api/events/toggle/${b._id}`);
+                                                    fetchBanners();
+                                                }}>{b.isActive ? "Deactivate" : "Activate"}</Button>
+                                                <Button size="small" color="error" onClick={async () => {
+                                                    await axios.delete(`${baseurl}/api/events/${b._id}`);
+                                                    fetchBanners();
+                                                }}>Delete</Button>
+                                            </Box>
+                                        </Box>
+                                    ))
+                                )}
+                            </Box>
+                        </Grid>
+                    </Grid>
+                </DialogContent>
+            </Dialog>
         </Box>
     );
 };
