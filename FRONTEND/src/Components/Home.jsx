@@ -205,7 +205,7 @@ export default function Home() {
           setActiveBanner(res.data);
           setTimeout(() => {
             setBannerOpen(true);
-          }, 5000);
+          }, 2500);
         }
       } catch (err) {
         console.log("No active banner or error fetching");
