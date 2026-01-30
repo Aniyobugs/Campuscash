@@ -69,7 +69,7 @@ const Footer = () => {
                 </Grid>
                 <Divider sx={{ my: 4, bgcolor: 'rgba(255, 255, 255, 0.2)' }} />
                 <Typography variant="caption" display="block" align="center" sx={{ color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
-                    © 2025 Campus Cash. All rights reserved.
+                    © 2026 Campus Cash. All rights reserved.
                 </Typography>
             </Container>
         </Box >
