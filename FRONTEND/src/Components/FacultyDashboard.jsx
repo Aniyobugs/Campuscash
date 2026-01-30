@@ -42,6 +42,8 @@ import {
     Stack,
     LinearProgress,
     Drawer,
+    ToggleButton,
+    ToggleButtonGroup,
 } from "@mui/material";
 import {
     Edit,
@@ -70,6 +72,8 @@ import {
     Fullscreen,
     Close,
     Campaign as CampaignIcon,
+    Link as LinkIcon,
+    CloudUpload,
 } from "@mui/icons-material";
 import { useTheme } from "../contexts/ThemeContext";
 import axios from "axios";
@@ -84,6 +88,7 @@ import {
     AreaChart,
     Area,
 } from "recharts";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Faculty Dashboard — Redesigned
 const FacultyDashboard = () => {
@@ -96,6 +101,7 @@ const FacultyDashboard = () => {
     const accentColor = "#818cf8"; // Indigo
     const successColor = "#4ade80"; // Green
     const warningColor = "#fbbf24"; // Amber
+    const yellowAccent = "#fbbf24"; // Amber Accent
 
     const baseurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
@@ -190,8 +196,11 @@ const FacultyDashboard = () => {
     // Banner Management State
     const [banners, setBanners] = useState([]);
     const [manageBannersOpen, setManageBannersOpen] = useState(false);
-    const [bannerForm, setBannerForm] = useState({ title: '', description: '', templateId: 1, image: null });
+    const [bannerForm, setBannerForm] = useState({ title: '', description: '', templateId: 1, image: null, imageType: 'upload', imageUrl: '' });
     const [bannerImagePreview, setBannerImagePreview] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editingId, setEditingId] = useState(null);
+
 
     // Data Loading
     useEffect(() => {
@@ -1952,109 +1961,451 @@ const FacultyDashboard = () => {
             </Snackbar>
 
 
-            {/* Manage Banners Dialog */}
-            <Dialog open={manageBannersOpen} onClose={() => setManageBannersOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: { bgcolor: cardBg, color: textPrimary } }}>
-                <DialogTitle>Manage Advertisement Banners</DialogTitle>
-                <DialogContent>
+            {/* Manage Banners Dialog - Redesigned */}
+            <Dialog
+                open={manageBannersOpen}
+                onClose={() => setManageBannersOpen(false)}
+                maxWidth="lg"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                        backdropFilter: 'blur(20px)',
+                        borderRadius: 4,
+                        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.5)',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                        color: textPrimary
+                    }
+                }}
+            >
+                <DialogTitle sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderBottom: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)',
+                    pb: 2
+                }}>
+                    <Box>
+                        <Typography variant="h5" fontWeight="900" sx={{ ...gradientText, letterSpacing: -0.5 }}>
+                            Advertisement Banners
+                        </Typography>
+                        <Typography variant="body2" color={textSecondary}>
+                            Manage promotional content visible to students
+                        </Typography>
+                    </Box>
+                    <IconButton onClick={() => setManageBannersOpen(false)} sx={{ color: textSecondary, '&:hover': { color: textPrimary, bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' } }}>
+                        <Close />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ p: 4 }}>
                     <Grid container spacing={4}>
-                        <Grid item xs={12} md={6}>
-                            <Typography variant="h6" sx={{ mb: 2 }}>Create New Banner</Typography>
-                            <Stack spacing={2}>
-                                <TextField
-                                    label="Title" fullWidth size="small"
-                                    value={bannerForm.title}
-                                    onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
-                                    sx={{ '& .MuiInputBase-root': { color: textPrimary }, '& .MuiInputLabel-root': { color: textSecondary } }}
-                                />
-                                <TextField
-                                    label="Description" fullWidth multiline rows={2} size="small"
-                                    value={bannerForm.description}
-                                    onChange={(e) => setBannerForm({ ...bannerForm, description: e.target.value })}
-                                    sx={{ '& .MuiInputBase-root': { color: textPrimary }, '& .MuiInputLabel-root': { color: textSecondary } }}
-                                />
-
-                                <FormControl fullWidth>
-                                    <InputLabel sx={{ color: textSecondary }}>Template Style</InputLabel>
-                                    <Select
-                                        value={bannerForm.templateId}
-                                        label="Template Style"
-                                        onChange={(e) => setBannerForm({ ...bannerForm, templateId: e.target.value })}
-                                        sx={{ color: textPrimary, '.MuiOutlinedInput-notchedOutline': { borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' } }}
-                                    >
-                                        <MenuItem value={1}>Template 1: Simple Centered</MenuItem>
-                                        <MenuItem value={2}>Template 2: Split Image/Text</MenuItem>
-                                        <MenuItem value={3}>Template 3: Full Background</MenuItem>
-                                    </Select>
-                                </FormControl>
-
-                                <Box>
-                                    <Button variant="outlined" component="label" fullWidth sx={{ color: textPrimary, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' }}>
-                                        Upload Banner Image
-                                        <input type="file" hidden accept="image/*" onChange={(e) => {
-                                            const file = e.target.files[0];
-                                            if (file) {
-                                                setBannerForm({ ...bannerForm, image: file });
-                                                setBannerImagePreview(URL.createObjectURL(file));
-                                            }
-                                        }} />
-                                    </Button>
-                                    {bannerImagePreview && (
-                                        <Box sx={{ mt: 2, borderRadius: 2, overflow: 'hidden', height: 100, width: '100%', bgcolor: 'rgba(0,0,0,0.1)' }}>
-                                            <img src={bannerImagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        {/* Left Column: Create Form */}
+                        <Grid item xs={12} md={5}>
+                            <Card sx={{
+                                height: '100%',
+                                bgcolor: isDark ? 'rgba(30, 41, 59, 0.4)' : 'rgba(255, 255, 255, 0.6)',
+                                borderRadius: 3,
+                                border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)',
+                                overflow: 'visible'
+                            }}>
+                                <CardContent sx={{ p: 3 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+                                        <Box sx={{ p: 1, borderRadius: 2, bgcolor: 'rgba(99, 102, 241, 0.1)', color: accentColor }}>
+                                            <Add fontSize="small" />
                                         </Box>
-                                    )}
-                                </Box>
+                                        <Typography variant="h6" fontWeight="bold">Create New Banner</Typography>
+                                    </Box>
 
-                                <Button variant="contained" color="primary" onClick={async () => {
-                                    try {
-                                        const formData = new FormData();
-                                        formData.append('title', bannerForm.title);
-                                        formData.append('description', bannerForm.description);
-                                        formData.append('templateId', bannerForm.templateId);
-                                        if (bannerForm.image) formData.append('image', bannerForm.image);
+                                    <Stack spacing={3}>
+                                        <TextField
+                                            label="Campaign Title"
+                                            fullWidth
+                                            value={bannerForm.title}
+                                            onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)',
+                                                    borderRadius: 2,
+                                                    '& fieldset': { borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' },
+                                                    '&:hover fieldset': { borderColor: accentColor },
+                                                    '&.Mui-focused fieldset': { borderColor: accentColor }
+                                                },
+                                                '& .MuiInputLabel-root': { color: textSecondary },
+                                                '& .MuiInputBase-input': { color: textPrimary }
+                                            }}
+                                        />
 
-                                        await axios.post(`${baseurl}/api/events/add`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-                                        setSuccess("Banner created successfully");
-                                        setBannerForm({ title: '', description: '', templateId: 1, image: null });
-                                        setBannerImagePreview(null);
-                                        fetchBanners();
-                                    } catch (err) {
-                                        setError("Failed to create banner");
-                                    }
-                                }}>Publish Banner</Button>
-                            </Stack>
+                                        <TextField
+                                            label="Description"
+                                            fullWidth
+                                            multiline
+                                            rows={3}
+                                            value={bannerForm.description}
+                                            onChange={(e) => setBannerForm({ ...bannerForm, description: e.target.value })}
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)',
+                                                    borderRadius: 2,
+                                                    '& fieldset': { borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' },
+                                                    '&:hover fieldset': { borderColor: accentColor },
+                                                    '&.Mui-focused fieldset': { borderColor: accentColor }
+                                                },
+                                                '& .MuiInputLabel-root': { color: textSecondary },
+                                                '& .MuiInputBase-input': { color: textPrimary }
+                                            }}
+                                        />
+
+                                        <FormControl fullWidth>
+                                            <InputLabel sx={{ color: textSecondary }}>Template Style</InputLabel>
+                                            <Select
+                                                value={bannerForm.templateId}
+                                                label="Template Style"
+                                                onChange={(e) => setBannerForm({ ...bannerForm, templateId: e.target.value })}
+                                                sx={{
+                                                    color: textPrimary,
+                                                    bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)',
+                                                    borderRadius: 2,
+                                                    '.MuiOutlinedInput-notchedOutline': { borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' },
+                                                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: accentColor },
+                                                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: accentColor }
+                                                }}
+                                            >
+                                                <MenuItem value={1}>Template 1: Simple Centered</MenuItem>
+                                                <MenuItem value={2}>Template 2: Split Image/Text</MenuItem>
+                                                <MenuItem value={3}>Template 3: Full Background</MenuItem>
+                                            </Select>
+                                        </FormControl>
+
+                                        <Box>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                                <Typography variant="caption" color={textSecondary} sx={{ fontWeight: 600 }}>BANNER IMAGE</Typography>
+                                                <ToggleButtonGroup
+                                                    value={bannerForm.imageType}
+                                                    exclusive
+                                                    onChange={(_, newVal) => {
+                                                        if (newVal) setBannerForm({ ...bannerForm, imageType: newVal });
+                                                    }}
+                                                    size="small"
+                                                    sx={{
+                                                        height: 24,
+                                                        '& .MuiToggleButton-root': {
+                                                            fontSize: 10,
+                                                            px: 1,
+                                                            py: 0.5,
+                                                            color: textSecondary,
+                                                            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                                                            '&.Mui-selected': {
+                                                                bgcolor: accentColor,
+                                                                color: '#fff',
+                                                                '&:hover': { bgcolor: accentColor }
+                                                            }
+                                                        }
+                                                    }}
+                                                >
+                                                    <ToggleButton value="upload">Upload</ToggleButton>
+                                                    <ToggleButton value="url">Link</ToggleButton>
+                                                </ToggleButtonGroup>
+                                            </Box>
+
+                                            {bannerForm.imageType === 'upload' ? (
+                                                <Button
+                                                    component="label"
+                                                    fullWidth
+                                                    sx={{
+                                                        height: 120,
+                                                        border: `2px dashed ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                                        borderRadius: 2,
+                                                        color: textSecondary,
+                                                        flexDirection: 'column',
+                                                        bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)',
+                                                        '&:hover': {
+                                                            borderColor: accentColor,
+                                                            bgcolor: isDark ? 'rgba(99, 102, 241, 0.05)' : 'rgba(99, 102, 241, 0.05)',
+                                                            color: accentColor
+                                                        }
+                                                    }}
+                                                >
+                                                    {bannerImagePreview ? (
+                                                        <Box sx={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', borderRadius: 1 }}>
+                                                            <img src={bannerImagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            <Box sx={{
+                                                                position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.5)',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                opacity: 0, transition: 'opacity 0.2s', '&:hover': { opacity: 1 }
+                                                            }}>
+                                                                <Typography variant="caption" color="white" fontWeight="bold">Change Image</Typography>
+                                                            </Box>
+                                                        </Box>
+                                                    ) : (
+                                                        <>
+                                                            <Box sx={{ p: 1, borderRadius: '50%', bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', mb: 1 }}>
+                                                                <CloudUpload />
+                                                            </Box>
+                                                            <Typography variant="body2">Click to upload image</Typography>
+                                                            <Typography variant="caption" sx={{ opacity: 0.7 }}>SVG, PNG, JPG or GIF</Typography>
+                                                        </>
+                                                    )}
+                                                    <input type="file" hidden accept="image/*" onChange={(e) => {
+                                                        const file = e.target.files[0];
+                                                        if (file) {
+                                                            setBannerForm({ ...bannerForm, image: file });
+                                                            setBannerImagePreview(URL.createObjectURL(file));
+                                                        }
+                                                    }} />
+                                                </Button>
+                                            ) : (
+                                                <Box>
+                                                    <TextField
+                                                        placeholder="https://example.com/image.png"
+                                                        fullWidth
+                                                        size="small"
+                                                        value={bannerForm.imageUrl}
+                                                        onChange={(e) => {
+                                                            setBannerForm({ ...bannerForm, imageUrl: e.target.value });
+                                                            setBannerImagePreview(e.target.value);
+                                                        }}
+                                                        InputProps={{
+                                                            startAdornment: <LinkIcon sx={{ color: textSecondary, mr: 1, fontSize: 20 }} />
+                                                        }}
+                                                        sx={{
+                                                            mb: 2,
+                                                            '& .MuiOutlinedInput-root': {
+                                                                bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)',
+                                                                borderRadius: 2,
+                                                                '& fieldset': { borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' },
+                                                                '&:hover fieldset': { borderColor: accentColor },
+                                                                '&.Mui-focused fieldset': { borderColor: accentColor }
+                                                            }
+                                                        }}
+                                                    />
+                                                    {bannerForm.imageUrl && (
+                                                        <Box sx={{
+                                                            height: 120,
+                                                            width: '100%',
+                                                            borderRadius: 2,
+                                                            overflow: 'hidden',
+                                                            bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)',
+                                                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                        }}>
+                                                            <img
+                                                                src={bannerForm.imageUrl}
+                                                                alt="Preview"
+                                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                                onError={(e) => { e.target.style.display = 'none'; }}
+                                                                onLoad={(e) => { e.target.style.display = 'block'; }}
+                                                            />
+                                                        </Box>
+                                                    )}
+                                                </Box>
+                                            )}
+                                        </Box>
+
+                                        <Box sx={{ display: 'flex', gap: 2 }}>
+                                            <Button
+                                                variant="contained"
+                                                size="large"
+                                                fullWidth
+                                                onClick={async () => {
+                                                    try {
+                                                        const formData = new FormData();
+                                                        formData.append('title', bannerForm.title);
+                                                        formData.append('description', bannerForm.description);
+                                                        formData.append('templateId', bannerForm.templateId);
+
+                                                        if (bannerForm.imageType === 'upload' && bannerForm.image) {
+                                                            formData.append('image', bannerForm.image);
+                                                        } else if (bannerForm.imageType === 'url' && bannerForm.imageUrl) {
+                                                            formData.append('imageUrl', bannerForm.imageUrl);
+                                                        }
+
+                                                        if (isEditing) {
+                                                            await axios.put(`${baseurl}/api/events/update/${editingId}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                                                            setSuccess("Banner updated successfully");
+                                                            setIsEditing(false);
+                                                            setEditingId(null);
+                                                        } else {
+                                                            await axios.post(`${baseurl}/api/events/add`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                                                            setSuccess("Banner created successfully");
+                                                        }
+
+                                                        setBannerForm({ title: '', description: '', templateId: 1, image: null, imageType: 'upload', imageUrl: '' });
+                                                        setBannerImagePreview(null);
+                                                        fetchBanners();
+                                                    } catch (err) {
+                                                        setError(isEditing ? "Failed to update banner" : "Failed to create banner");
+                                                    }
+                                                }}
+                                                sx={{
+                                                    bgcolor: accentColor,
+                                                    color: '#fff',
+                                                    py: 1.5,
+                                                    borderRadius: 2,
+                                                    fontWeight: 'bold',
+                                                    boxShadow: `0 8px 20px -4px ${accentColor}80`,
+                                                    '&:hover': { bgcolor: '#6366f1', boxShadow: `0 12px 24px -4px ${accentColor}90` }
+                                                }}
+                                            >
+                                                {isEditing ? "Update Campaign" : "Publish Campaign"}
+                                            </Button>
+                                            {isEditing && (
+                                                <Button
+                                                    variant="outlined"
+                                                    onClick={() => {
+                                                        setIsEditing(false);
+                                                        setEditingId(null);
+                                                        setBannerForm({ title: '', description: '', templateId: 1, image: null, imageType: 'upload', imageUrl: '' });
+                                                        setBannerImagePreview(null);
+                                                    }}
+                                                    sx={{ borderRadius: 2, borderColor: textSecondary, color: textSecondary }}
+                                                >
+                                                    Cancel
+                                                </Button>
+                                            )}
+                                        </Box>
+                                    </Stack>
+                                </CardContent>
+                            </Card>
                         </Grid>
 
-                        <Grid item xs={12} md={6}>
-                            <Typography variant="h6" sx={{ mb: 2 }}>Active Banners</Typography>
-                            <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
-                                {banners.length === 0 ? (
-                                    <Typography color={textSecondary} align="center" sx={{ mt: 4 }}>No active banners found.</Typography>
-                                ) : (
-                                    banners.map(b => (
-                                        <Box key={b._id} sx={{
-                                            p: 2, mb: 2, borderRadius: 2,
-                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                                            border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)'
+                        {/* Right Column: Active Banners */}
+                        <Grid item xs={12} md={7}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                                <Typography variant="h6" fontWeight="bold">Active Campaigns</Typography>
+                                <Chip label={`${banners.length} Active`} size="small" sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', color: textSecondary, fontWeight: 600 }} />
+                            </Box>
+
+                            <Box sx={{ maxHeight: 500, overflowY: 'auto', pr: 1 }}>
+                                <AnimatePresence>
+                                    {banners.length === 0 ? (
+                                        <Box sx={{
+                                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                            py: 8, opacity: 0.5, border: `2px dashed ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`, borderRadius: 3
                                         }}>
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                                <Typography variant="subtitle2" fontWeight="bold">{b.title}</Typography>
-                                                <Chip label={`Template ${b.templateId}`} size="small" sx={{ height: 20, fontSize: 10 }} />
-                                            </Box>
-                                            <Typography variant="caption" color={textSecondary} display="block" sx={{ mb: 1 }}>{b.description.substring(0, 50)}...</Typography>
-                                            <Box sx={{ display: 'flex', gap: 1 }}>
-                                                <Button size="small" variant={b.isActive ? "outlined" : "contained"} color={b.isActive ? "warning" : "success"} onClick={async () => {
-                                                    await axios.put(`${baseurl}/api/events/toggle/${b._id}`);
-                                                    fetchBanners();
-                                                }}>{b.isActive ? "Deactivate" : "Activate"}</Button>
-                                                <Button size="small" color="error" onClick={async () => {
-                                                    await axios.delete(`${baseurl}/api/events/${b._id}`);
-                                                    fetchBanners();
-                                                }}>Delete</Button>
-                                            </Box>
+                                            <CampaignIcon sx={{ fontSize: 48, mb: 2, color: textSecondary }} />
+                                            <Typography color={textSecondary} fontWeight="500">No active banners running</Typography>
+                                            <Typography variant="caption" color={textSecondary}>Create one to get started</Typography>
                                         </Box>
-                                    ))
-                                )}
+                                    ) : (
+                                        banners.map((b) => (
+                                            <motion.div
+                                                key={b._id}
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, x: -20 }}
+                                                transition={{ duration: 0.2 }}
+                                            >
+                                                <Card sx={{
+                                                    mb: 2,
+                                                    bgcolor: isDark ? 'rgba(30, 41, 59, 0.4)' : 'rgba(255, 255, 255, 0.6)',
+                                                    borderRadius: 3,
+                                                    border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)',
+                                                    transition: 'transform 0.2s, box-shadow 0.2s',
+                                                    '&:hover': { transform: 'translateY(-2px)', boxShadow: isDark ? '0 10px 30px -10px rgba(0,0,0,0.5)' : '0 10px 20px -10px rgba(0,0,0,0.1)' }
+                                                }}>
+                                                    <Box sx={{ display: 'flex', p: 2, gap: 2 }}>
+                                                        {/* Thumbnail */}
+                                                        <Box sx={{
+                                                            width: 80, height: 80, borderRadius: 2, flexShrink: 0,
+                                                            bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            overflow: 'hidden'
+                                                        }}>
+                                                            {b.imageUrl ? (
+                                                                <img src={b.imageUrl.startsWith('http') ? b.imageUrl : `${baseurl}${b.imageUrl}`} alt={b.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            ) : (
+                                                                <CampaignIcon sx={{ color: textSecondary, opacity: 0.5 }} />
+                                                            )}
+                                                        </Box>
+
+                                                        {/* Content */}
+                                                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+                                                                <Typography variant="subtitle1" fontWeight="bold" noWrap>{b.title}</Typography>
+                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                    <Box sx={{
+                                                                        width: 8, height: 8, borderRadius: '50%',
+                                                                        bgcolor: b.isActive ? successColor : textSecondary,
+                                                                        boxShadow: b.isActive ? `0 0 8px ${successColor}` : 'none'
+                                                                    }} />
+                                                                    <Typography variant="caption" fontWeight="600" color={b.isActive ? successColor : textSecondary}>
+                                                                        {b.isActive ? 'LIVE' : 'INACTIVE'}
+                                                                    </Typography>
+                                                                </Box>
+                                                            </Box>
+
+                                                            <Typography variant="body2" color={textSecondary} sx={{
+                                                                mb: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.4
+                                                            }}>
+                                                                {b.description}
+                                                            </Typography>
+
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                                <Chip label={`Template ${b.templateId}`} size="small" sx={{ height: 20, fontSize: 10, bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', color: textSecondary }} />
+
+                                                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                                                    <Tooltip title="Edit">
+                                                                        <IconButton
+                                                                            size="small"
+                                                                            onClick={() => {
+                                                                                setBannerForm({
+                                                                                    title: b.title,
+                                                                                    description: b.description,
+                                                                                    templateId: b.templateId,
+                                                                                    image: null,
+                                                                                    imageType: b.imageUrl?.startsWith('http') ? 'url' : 'upload',
+                                                                                    imageUrl: b.imageUrl?.startsWith('http') ? b.imageUrl : ''
+                                                                                });
+                                                                                setBannerImagePreview(b.imageUrl?.startsWith('http') ? b.imageUrl : `${baseurl}${b.imageUrl}`);
+                                                                                setIsEditing(true);
+                                                                                setEditingId(b._id);
+                                                                            }}
+                                                                            sx={{ color: yellowAccent, bgcolor: isDark ? 'rgba(251, 191, 36, 0.1)' : 'rgba(251, 191, 36, 0.1)', '&:hover': { bgcolor: 'rgba(251, 191, 36, 0.2)' } }}
+                                                                        >
+                                                                            <Edit fontSize="small" />
+                                                                        </IconButton>
+                                                                    </Tooltip>
+                                                                    <Tooltip title={b.isActive ? "Deactivate" : "Activate"}>
+                                                                        <IconButton
+                                                                            size="small"
+                                                                            onClick={async () => {
+                                                                                await axios.put(`${baseurl}/api/events/toggle/${b._id}`);
+                                                                                fetchBanners();
+                                                                            }}
+                                                                            sx={{
+                                                                                color: b.isActive ? warningColor : successColor,
+                                                                                bgcolor: b.isActive ? 'rgba(251, 191, 36, 0.1)' : 'rgba(74, 222, 128, 0.1)',
+                                                                                '&:hover': { bgcolor: b.isActive ? 'rgba(251, 191, 36, 0.2)' : 'rgba(74, 222, 128, 0.2)' }
+                                                                            }}
+                                                                        >
+                                                                            {b.isActive ? <PersonOff fontSize="small" /> : <CheckCircle fontSize="small" />}
+                                                                        </IconButton>
+                                                                    </Tooltip>
+                                                                    <Tooltip title="Delete">
+                                                                        <IconButton
+                                                                            size="small"
+                                                                            onClick={async () => {
+                                                                                await axios.delete(`${baseurl}/api/events/${b._id}`);
+                                                                                fetchBanners();
+                                                                            }}
+                                                                            sx={{
+                                                                                color: 'error.main',
+                                                                                bgcolor: 'rgba(239, 68, 68, 0.1)',
+                                                                                '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.2)' }
+                                                                            }}
+                                                                        >
+                                                                            <Cancel fontSize="small" />
+                                                                        </IconButton>
+                                                                    </Tooltip>
+                                                                </Box>
+                                                            </Box>
+                                                        </Box>
+                                                    </Box>
+                                                </Card>
+                                            </motion.div>
+                                        ))
+                                    )}
+                                </AnimatePresence>
                             </Box>
                         </Grid>
                     </Grid>

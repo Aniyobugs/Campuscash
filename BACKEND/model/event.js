@@ -3,15 +3,15 @@ var mongoose = require('mongoose');
 var eventSchema = new mongoose.Schema({
     title: {
         type: String,
-       
+
     },
     description: {
         type: String,
-     
+
     },
     templateId: {
         type: Number,
-       
+
         enum: [1, 2, 3] // 1: Simple Centered, 2: Split Image/Text, 3: Full Background
     },
     imageUrl: {

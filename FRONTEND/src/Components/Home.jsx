@@ -675,104 +675,439 @@ export default function Home() {
       </Container>
 
 
-      {/* Banner Popup */}
-      <Dialog
-        open={bannerOpen}
-        onClose={() => setBannerOpen(false)}
-        maxWidth={activeBanner?.templateId === 3 ? "lg" : "md"}
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 4,
-            overflow: 'hidden',
-            bgcolor: 'transparent',
-            boxShadow: 'none'
-          }
-        }}
-      >
-        {activeBanner && (
-          <Box sx={{ position: 'relative', bgcolor: isDark ? '#1e293b' : '#fff', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
-            <IconButton
-              onClick={() => setBannerOpen(false)}
-              sx={{ position: 'absolute', right: 8, top: 8, zIndex: 10, color: activeBanner.templateId === 3 ? '#fff' : (isDark ? '#fff' : '#000'), bgcolor: 'rgba(0,0,0,0.1)', '&:hover': { bgcolor: 'rgba(0,0,0,0.2)' } }}
-            >
-              <CloseIcon />
-            </IconButton>
+      {/* Banner Popup - Redesigned */}
+      <AnimatePresence>
+        {bannerOpen && activeBanner && (
+          <Dialog
+            open={bannerOpen}
+            onClose={() => setBannerOpen(false)}
+            maxWidth={activeBanner?.templateId === 3 ? "lg" : "md"}
+            fullWidth
+            PaperProps={{
+              component: motion.div,
+              initial: { opacity: 0, scale: 0.9, y: 20 },
+              animate: { opacity: 1, scale: 1, y: 0 },
+              exit: { opacity: 0, scale: 0.9, y: 20 },
+              transition: { duration: 0.4, type: "spring", damping: 25, stiffness: 300 },
+              sx: {
+                borderRadius: 4,
+                overflow: 'hidden',
+                bgcolor: isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(255, 255, 255, 0.6)',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.4)',
+              }
+            }}
+            BackdropProps={{
+              sx: {
+                backdropFilter: 'blur(5px)',
+                bgcolor: 'rgba(0, 0, 0, 0.3)'
+              }
+            }}
+          >
+            <Box sx={{ position: 'relative' }}>
+              <IconButton
+                onClick={() => setBannerOpen(false)}
+                sx={{
+                  position: 'absolute',
+                  right: 12,
+                  top: 12,
+                  zIndex: 20,
+                  color: activeBanner.templateId === 3 ? '#fff' : textPrimary,
+                  bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                  backdropFilter: 'blur(4px)',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    bgcolor: 'error.main',
+                    color: '#fff',
+                    transform: 'rotate(90deg)'
+                  }
+                }}
+              >
+                <CloseIcon />
+              </IconButton>
 
-            {/* Template 1: Simple Centered */}
-            {activeBanner.templateId === 1 && (
-              <Box sx={{ p: 6, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                {activeBanner.imageUrl && (
-                  <Box component="img" src={`${baseurl}${activeBanner.imageUrl}`} sx={{ maxHeight: 200, maxWidth: '100%', borderRadius: 2, objectFit: 'contain' }} />
-                )}
-                <Typography variant="h4" fontWeight="bold" sx={{ color: isDark ? '#fff' : '#1e293b' }}>
-                  {activeBanner.title}
-                </Typography>
-                <Typography variant="body1" sx={{ color: isDark ? '#94a3b8' : '#64748b', maxWidth: 600 }}>
-                  {activeBanner.description}
-                </Typography>
-                <Button variant="contained" size="large" onClick={() => setBannerOpen(false)} sx={{ bgcolor: '#6366f1', color: '#fff', borderRadius: 50, px: 5 }}>
-                  Got it!
-                </Button>
-              </Box>
-            )}
+              {/* Template 1: Simple Centered - Enhanced */}
+              {activeBanner.templateId === 1 && (
+                <Box sx={{
+                  p: 6,
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 3,
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}>
+                  {/* Decorative Background Glow */}
+                  <Box sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: '120%',
+                    height: '120%',
+                    background: isDark
+                      ? 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(0,0,0,0) 70%)'
+                      : 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, rgba(255,255,255,0) 70%)',
+                    zIndex: 0,
+                    pointerEvents: 'none'
+                  }} />
 
-            {/* Template 2: Split Image/Text */}
-            {activeBanner.templateId === 2 && (
-              <Grid container>
-                <Grid item xs={12} md={6} sx={{ p: 0 }}>
-                  {activeBanner.imageUrl ? (
-                    <Box component="img" src={`${baseurl}${activeBanner.imageUrl}`} sx={{ width: '100%', height: '100%', minHeight: 400, objectFit: 'cover' }} />
-                  ) : (
-                    <Box sx={{ width: '100%', height: '100%', minHeight: 400, bgcolor: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <DiamondIcon sx={{ fontSize: 100, color: 'rgba(255,255,255,0.5)' }} />
-                    </Box>
+                  {activeBanner.imageUrl && (
+                    <motion.div
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.2, type: "spring" }}
+                      style={{ position: 'relative', zIndex: 1, width: '100%', display: 'flex', justifyContent: 'center' }}
+                    >
+                      <Box
+                        component="img"
+                        src={activeBanner.imageUrl.startsWith('http') ? activeBanner.imageUrl : `${baseurl}${activeBanner.imageUrl}`}
+                        sx={{
+                          maxHeight: 280,
+                          maxWidth: '100%',
+                          borderRadius: 3,
+                          objectFit: 'contain',
+                          boxShadow: '0 20px 40px -10px rgba(0,0,0,0.3)',
+                          border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)'
+                        }}
+                      />
+                    </motion.div>
                   )}
-                </Grid>
-                <Grid item xs={12} md={6} sx={{ p: 6, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                  <Typography variant="overline" sx={{ color: '#6366f1', fontWeight: 'bold', letterSpacing: 1.5 }}>
-                    NEW ANNOUNCEMENT
-                  </Typography>
-                  <Typography variant="h3" fontWeight="bold" sx={{ mb: 2, color: isDark ? '#fff' : '#1e293b' }}>
-                    {activeBanner.title}
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 4, color: isDark ? '#94a3b8' : '#64748b', lineHeight: 1.7 }}>
-                    {activeBanner.description}
-                  </Typography>
-                  <Button variant="outlined" size="large" onClick={() => setBannerOpen(false)} sx={{ alignSelf: 'flex-start', borderRadius: 2 }}>
-                    Close
-                  </Button>
-                </Grid>
-              </Grid>
-            )}
 
-            {/* Template 3: Full Background */}
-            {activeBanner.templateId === 3 && (
-              <Box sx={{
-                position: 'relative',
-                height: 500,
-                backgroundImage: activeBanner.imageUrl ? `url(${baseurl}${activeBanner.imageUrl})` : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                bgcolor: '#111'
-              }}>
-                <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)' }} />
-                <Box sx={{ position: 'absolute', bottom: 0, left: 0, width: '100%', p: 6 }}>
-                  <Typography variant="h2" fontWeight="bold" sx={{ color: '#fff', mb: 2, textShadow: '0 4px 10px rgba(0,0,0,0.5)' }}>
-                    {activeBanner.title}
-                  </Typography>
-                  <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.9)', maxWidth: 800, mb: 3 }}>
-                    {activeBanner.description}
-                  </Typography>
-                  <Button variant="contained" size="large" onClick={() => setBannerOpen(false)} sx={{ bgcolor: '#fff', color: '#000', borderRadius: 2, fontWeight: 'bold' }}>
-                    Learn More
-                  </Button>
+                  <Box sx={{ position: 'relative', zIndex: 1 }}>
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      <Typography variant="h3" fontWeight="900" sx={{
+                        mb: 1,
+                        background: 'linear-gradient(135deg, #6366f1 0%, #ec4899 100%)',
+                        backgroundClip: 'text',
+                        textFillColor: 'transparent',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        letterSpacing: '-0.02em'
+                      }}>
+                        {activeBanner.title}
+                      </Typography>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.4 }}
+                    >
+                      <Typography variant="h6" sx={{ color: textSecondary, maxWidth: 600, lineHeight: 1.6, fontWeight: 500 }}>
+                        {activeBanner.description}
+                      </Typography>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                    >
+                      <Box sx={{ mt: 4, display: 'flex', gap: 2, justifyContent: 'center' }}>
+                        <Button
+                          variant="contained"
+                          size="large"
+                          onClick={() => setBannerOpen(false)}
+                          sx={{
+                            bgcolor: accentColor,
+                            color: '#fff',
+                            borderRadius: 50,
+                            px: 6,
+                            py: 1.5,
+                            fontSize: '1.1rem',
+                            fontWeight: 'bold',
+                            boxShadow: `0 10px 20px -5px ${accentColor}80`,
+                            '&:hover': {
+                              bgcolor: '#4f46e5',
+                              transform: 'translateY(-2px)',
+                              boxShadow: `0 15px 30px -5px ${accentColor}90`
+                            },
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          GOT IT!
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          size="large"
+                          onClick={() => {
+                            // Placeholder for Learn More action
+                            setBannerOpen(false);
+                          }}
+                          sx={{
+                            borderRadius: 50,
+                            px: 4,
+                            py: 1.5,
+                            fontSize: '1.1rem',
+                            fontWeight: 'bold',
+                            borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)',
+                            color: textPrimary,
+                            '&:hover': {
+                              borderColor: accentColor,
+                              color: accentColor,
+                              bgcolor: 'rgba(99, 102, 241, 0.05)',
+                              transform: 'translateY(-2px)'
+                            },
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          Learn More
+                        </Button>
+                      </Box>
+                    </motion.div>
+                  </Box>
                 </Box>
-              </Box>
-            )}
-          </Box>
+              )}
+
+              {/* Template 2: Split Image/Text - Enhanced */}
+              {activeBanner.templateId === 2 && (
+                <Grid container sx={{ minHeight: 450 }}>
+                  <Grid item xs={12} md={6} sx={{ p: 0, position: 'relative', overflow: 'hidden', bgcolor: '#000' }}>
+                    {activeBanner.imageUrl ? (
+                      <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
+                        {/* Blurred Background Layer */}
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            inset: 0,
+                            backgroundImage: `url(${activeBanner.imageUrl.startsWith('http') ? activeBanner.imageUrl : `${baseurl}${activeBanner.imageUrl}`})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            filter: 'blur(20px)',
+                            opacity: 0.6,
+                            transform: 'scale(1.1)'
+                          }}
+                        />
+                        {/* Main Image Layer */}
+                        <Box
+                          component={motion.img}
+                          initial={{ scale: 0.9, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ duration: 0.8 }}
+                          src={activeBanner.imageUrl.startsWith('http') ? activeBanner.imageUrl : `${baseurl}${activeBanner.imageUrl}`}
+                          sx={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'contain',
+                            position: 'relative',
+                            zIndex: 1,
+                            display: 'block'
+                          }}
+                        />
+                      </Box>
+                    ) : (
+                      <Box sx={{ width: '100%', height: '100%', bgcolor: accentColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <DiamondIcon sx={{ fontSize: 120, color: 'rgba(255,255,255,0.2)' }} />
+                      </Box>
+                    )}
+                  </Grid>
+                  <Grid item xs={12} md={6} sx={{ p: 4, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative' }}>
+                    <motion.div
+                      initial={{ x: 20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      <Chip
+                        label="NEW ANNOUNCEMENT"
+                        size="small"
+                        sx={{
+                          mb: 3,
+                          bgcolor: 'rgba(99, 102, 241, 0.1)',
+                          color: accentColor,
+                          fontWeight: 800,
+                          letterSpacing: 1,
+                          alignSelf: 'flex-start'
+                        }}
+                      />
+                      <Typography variant="h3" fontWeight="900" sx={{
+                        mb: 2,
+                        lineHeight: 1.1,
+                        background: isDark ? 'linear-gradient(to right, #fff, #94a3b8)' : 'linear-gradient(to right, #1e293b, #475569)',
+                        backgroundClip: 'text',
+                        textFillColor: 'transparent',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
+                      }}>
+                        {activeBanner.title}
+                      </Typography>
+
+                      <Box sx={{
+                        maxHeight: 150,
+                        overflowY: 'auto',
+                        mb: 3,
+                        pr: 1,
+                        '&::-webkit-scrollbar': { width: '6px' },
+                        '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
+                        '&::-webkit-scrollbar-thumb': { bgcolor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)', borderRadius: '3px' },
+                        '&::-webkit-scrollbar-thumb:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }
+                      }}>
+                        <Typography variant="body1" sx={{ color: textSecondary, lineHeight: 1.8, fontSize: '1.1rem' }}>
+                          {activeBanner.description}
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', gap: 2 }}>
+                        <Button
+                          variant="contained"
+                          size="large"
+                          onClick={() => setBannerOpen(false)} // Placeholder for Learn More
+                          sx={{
+                            bgcolor: accentColor,
+                            color: '#fff',
+                            borderRadius: 3,
+                            px: 4,
+                            py: 1.2,
+                            fontWeight: 'bold',
+                            boxShadow: `0 10px 20px -5px ${accentColor}80`,
+                            '&:hover': {
+                              bgcolor: '#4f46e5',
+                              transform: 'translateY(-2px)',
+                              boxShadow: `0 15px 30px -5px ${accentColor}90`
+                            },
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          Learn More
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          size="large"
+                          onClick={() => setBannerOpen(false)}
+                          sx={{
+                            borderRadius: 3,
+                            borderWidth: 2,
+                            borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                            color: textPrimary,
+                            px: 4,
+                            fontWeight: 'bold',
+                            '&:hover': {
+                              borderWidth: 2,
+                              borderColor: accentColor,
+                              color: accentColor,
+                              bgcolor: 'rgba(99, 102, 241, 0.05)',
+                              transform: 'translateY(-2px)'
+                            }
+                          }}
+                        >
+                          Close
+                        </Button>
+                      </Box>
+                    </motion.div>
+                  </Grid>
+                </Grid>
+              )}
+
+              {/* Template 3: Full Background - Enhanced */}
+              {activeBanner.templateId === 3 && (
+                <Box sx={{
+                  position: 'relative',
+                  height: 550,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  bgcolor: '#000'
+                }}>
+                  {/* Blurred Background Layer */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      backgroundImage: activeBanner.imageUrl ? `url(${activeBanner.imageUrl.startsWith('http') ? activeBanner.imageUrl : `${baseurl}${activeBanner.imageUrl}`})` : 'none',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      filter: 'blur(30px)',
+                      opacity: 0.5,
+                      transform: 'scale(1.2)',
+                      zIndex: 0
+                    }}
+                  />
+
+                  {/* Main Image Layer - Contained */}
+                  {activeBanner.imageUrl && (
+                    <Box
+                      component={motion.img}
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.8 }}
+                      src={activeBanner.imageUrl.startsWith('http') ? activeBanner.imageUrl : `${baseurl}${activeBanner.imageUrl}`}
+                      sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        zIndex: 1
+                      }}
+                    />
+                  )}
+
+                  {/* Gradient Overlay for Text Readability */}
+                  <Box sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)',
+                    zIndex: 2
+                  }} />
+
+                  <Box sx={{ position: 'relative', zIndex: 3, p: 6, width: '100%' }}>
+                    <motion.div
+                      initial={{ y: 40, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      <Typography variant="h2" fontWeight="900" sx={{
+                        color: '#fff',
+                        mb: 2,
+                        textShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                        letterSpacing: '-0.03em'
+                      }}>
+                        {activeBanner.title}
+                      </Typography>
+                      <Typography variant="h5" sx={{
+                        color: 'rgba(255,255,255,0.9)',
+                        maxWidth: 800,
+                        mb: 4,
+                        fontWeight: 400,
+                        textShadow: '0 2px 10px rgba(0,0,0,0.5)'
+                      }}>
+                        {activeBanner.description}
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        size="large"
+                        onClick={() => setBannerOpen(false)}
+                        sx={{
+                          bgcolor: '#fff',
+                          color: '#000',
+                          borderRadius: 3,
+                          fontWeight: 'bold',
+                          px: 5,
+                          py: 1.5,
+                          fontSize: '1.1rem',
+                          '&:hover': {
+                            bgcolor: '#f8fafc',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 10px 20px rgba(0,0,0,0.3)'
+                          }
+                        }}
+                      >
+                        Learn More
+                      </Button>
+                    </motion.div>
+                  </Box>
+                </Box>
+              )}
+            </Box>
+          </Dialog>
         )}
-      </Dialog>
+      </AnimatePresence>
     </Box>
   );
 }

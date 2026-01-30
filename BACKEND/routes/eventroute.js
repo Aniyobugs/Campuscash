@@ -31,6 +31,8 @@ router.post('/add', upload.single('image'), async (req, res) => {
             });
 
             imageUrl = `/api/files/${uploadStream.id}`;
+        } else if (req.body.imageUrl) {
+            imageUrl = req.body.imageUrl;
         }
 
         const newEvent = new Event({
@@ -89,6 +91,52 @@ router.put('/toggle/:id', async (req, res) => {
 
         res.status(200).json({ message: `Event is now ${event.isActive ? 'active' : 'inactive'}`, event });
     } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// ==========================
+// Update event
+// ==========================
+router.put('/update/:id', upload.single('image'), async (req, res) => {
+    try {
+        const { title, description, templateId } = req.body;
+        const event = await Event.findById(req.params.id);
+
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+
+        event.title = title || event.title;
+        event.description = description || event.description;
+        event.templateId = templateId ? Number(templateId) : event.templateId;
+
+        if (req.file) {
+            const db = mongoose.connection.db;
+            const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: 'uploads' });
+
+            const filename = `${Date.now()}-${req.file.originalname}`;
+            const readable = Readable.from(req.file.buffer);
+
+            const uploadStream = bucket.openUploadStream(filename, {
+                contentType: req.file.mimetype
+            });
+
+            await new Promise((resolve, reject) => {
+                readable.pipe(uploadStream)
+                    .on('error', reject)
+                    .on('finish', resolve);
+            });
+
+            event.imageUrl = `/api/files/${uploadStream.id}`;
+        } else if (req.body.imageUrl) {
+            event.imageUrl = req.body.imageUrl;
+        }
+
+        await event.save();
+        res.status(200).json({ message: 'Event updated successfully', event });
+    } catch (error) {
+        console.error("Error updating event:", error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
