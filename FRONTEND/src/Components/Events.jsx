@@ -52,7 +52,11 @@ export default function Events() {
             setSnackbar({ open: true, message: 'Application submitted successfully!', severity: 'success' });
             setFormData({ name: '', email: '', studentId: '', department: '', year: '', reason: '' });
         } catch (error) {
-            setSnackbar({ open: true, message: 'Failed to submit application. Please try again.', severity: 'error' });
+            setSnackbar({
+                open: true,
+                message: error.response?.data?.message || 'Failed to submit application. Please try again.',
+                severity: 'error'
+            });
         } finally {
             setLoading(false);
         }
@@ -211,7 +215,7 @@ export default function Events() {
                                             onChange={handleChange}
                                             sx={{ color: textPrimary, '.MuiOutlinedInput-notchedOutline': { borderColor: isDark ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)' } }}
                                         >
-                                            {['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'IT', 'AIDS', 'AIML'].map((dept) => (
+                                            {['English', 'Food Technology', 'Commerce', 'Computer Science', 'Multimedia', 'Hotel Management', 'Tourism Management', 'Costume & Fashion Designing', 'Management', 'Language', 'Mathematics'].map((dept) => (
                                                 <MenuItem key={dept} value={dept}>{dept}</MenuItem>
                                             ))}
                                         </Select>

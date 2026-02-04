@@ -838,8 +838,8 @@ export default function Home() {
                           variant="outlined"
                           size="large"
                           onClick={() => {
-                            // Placeholder for Learn More action
                             setBannerOpen(false);
+                            navigate('/events');
                           }}
                           sx={{
                             borderRadius: 50,
@@ -957,7 +957,10 @@ export default function Home() {
                         <Button
                           variant="contained"
                           size="large"
-                          onClick={() => setBannerOpen(false)} // Placeholder for Learn More
+                          onClick={() => {
+                            setBannerOpen(false);
+                            navigate('/events');
+                          }}
                           sx={{
                             bgcolor: accentColor,
                             color: '#fff',
@@ -1082,7 +1085,10 @@ export default function Home() {
                       <Button
                         variant="contained"
                         size="large"
-                        onClick={() => setBannerOpen(false)}
+                        onClick={() => {
+                          setBannerOpen(false);
+                          navigate('/events');
+                        }}
                         sx={{
                           bgcolor: '#fff',
                           color: '#000',

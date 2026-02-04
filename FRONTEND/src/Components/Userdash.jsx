@@ -32,7 +32,8 @@ import {
   ListItemText,
   ListItemIcon,
   Divider,
-  Paper
+  Paper,
+  Stack
 } from "@mui/material";
 import {
   LocalFireDepartment as StreakIcon,
@@ -50,7 +51,8 @@ import {
   Close as CloseIcon,
   FilterList as FilterListIcon,
   MoreHoriz as MoreIcon,
-  School as SchoolIcon
+  School as SchoolIcon,
+  Campaign as CampaignIcon
 } from "@mui/icons-material";
 
 import axios from "axios";
@@ -264,6 +266,8 @@ const Userdash = () => {
   const [tasks, setTasks] = useState([]);
   const [coupons, setCoupons] = useState([]);
   const [allUsers, setAllUsers] = useState([]); // Store all users for leaderboard
+  const [activeBanner, setActiveBanner] = useState(null);
+  const [notifications, setNotifications] = useState([]);
   const [couponTab, setCouponTab] = useState(0);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
   const [redeemOpen, setRedeemOpen] = useState(false);
@@ -296,18 +300,22 @@ const Userdash = () => {
       const user = userRes.data;
 
       // 2. Fetch other data in parallel, using user info for filtering
-      const [tasksRes, couponsRes, allUsersRes, submissionsRes] = await Promise.all([
+      const [tasksRes, couponsRes, allUsersRes, submissionsRes, bannerRes, notifRes] = await Promise.all([
         axios.get(`${baseurl}/api/tasks/active`, {
           params: { year: user.yearClassDept || "" }
         }),
         axios.get(`${baseurl}/api/users/${storedUser.id}/coupons`),
         axios.get(`${baseurl}/api/users`),
-        axios.get(`${baseurl}/api/submissions/user/${storedUser.id}`)
+        axios.get(`${baseurl}/api/submissions/user/${storedUser.id}`),
+        axios.get(`${baseurl}/api/events/active`).catch(() => ({ data: null })),
+        axios.get(`${baseurl}/api/notifications/my`).catch(() => ({ data: [] }))
       ]);
 
       const usersList = allUsersRes.data || [];
       const fetchedTasks = tasksRes.data || [];
       const mySubmissions = submissionsRes.data || [];
+      setActiveBanner(bannerRes.data);
+      setNotifications(notifRes.data || []);
 
       // Calculate Rank
       const sortedUsers = [...usersList].sort((a, b) => (b.points || 0) - (a.points || 0));
@@ -877,8 +885,68 @@ const Userdash = () => {
                 <Typography variant="h6" fontWeight={700}>Notifications</Typography>
               </Box>
               <Box sx={{ p: 2, bgcolor: isDark ? "rgba(0,0,0,0.2)" : "#f1f5f9", borderRadius: 3 }}>
-                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic", opacity: 0.7 }}>No new notifications</Typography>
+                <Stack spacing={2}>
+                  {activeBanner && (
+                    <Box
+                      onClick={() => navigate('/events')}
+                      sx={{
+                        display: 'flex', alignItems: 'center', gap: 2,
+                        p: 1.5, borderRadius: 2,
+                        bgcolor: isDark ? 'rgba(99, 102, 241, 0.1)' : '#e0e7ff',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        border: '1px solid',
+                        borderColor: isDark ? 'rgba(99, 102, 241, 0.3)' : '#c7d2fe',
+                        '&:hover': { bgcolor: isDark ? 'rgba(99, 102, 241, 0.2)' : '#c7d2fe', transform: 'translateY(-2px)' }
+                      }}
+                    >
+                      <Box sx={{ p: 1, bgcolor: '#6366f1', borderRadius: '50%', color: 'white', display: 'flex' }}>
+                        <CampaignIcon fontSize="small" />
+                      </Box>
+                      <Box>
+                        <Typography variant="subtitle2" fontWeight={700} color="primary.main">
+                          New Event: {activeBanner.title}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Click to view details & apply!
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
 
+                  {notifications.map((notif) => (
+                    <Box
+                      key={notif._id}
+                      sx={{
+                        display: 'flex', alignItems: 'center', gap: 2,
+                        p: 1.5, borderRadius: 2,
+                        bgcolor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#ffffff',
+                        border: '1px solid',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0,0,0,0.05)',
+                        position: 'relative'
+                      }}
+                    >
+                      <Box sx={{ p: 1, bgcolor: notif.type === 'success' ? 'success.main' : notif.type === 'error' ? 'error.main' : 'info.main', borderRadius: '50%', color: 'white', display: 'flex' }}>
+                        <BellIcon fontSize="small" />
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" fontWeight={600}>
+                          {notif.message}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {new Date(notif.createdAt).toLocaleDateString()}
+                        </Typography>
+                      </Box>
+                      {!notif.isRead && (
+                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'error.main', position: 'absolute', top: 12, right: 12 }} />
+                      )}
+                    </Box>
+                  ))}
+
+                  {!activeBanner && notifications.length === 0 && (
+                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic", opacity: 0.7 }}>No new notifications</Typography>
+                  )}
+                </Stack>
               </Box>
             </CardContent>
           </Card>

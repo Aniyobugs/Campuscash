@@ -10,7 +10,7 @@ const { Readable } = require('stream');
 // ==========================
 router.post('/add', upload.single('image'), async (req, res) => {
     try {
-        const { title, description, templateId } = req.body;
+        const { title, description, templateId, points } = req.body;
 
         let imageUrl = '';
         if (req.file) {
@@ -39,6 +39,7 @@ router.post('/add', upload.single('image'), async (req, res) => {
             title,
             description,
             templateId: Number(templateId),
+            points: points ? Number(points) : 50,
             imageUrl
         });
 
@@ -100,7 +101,7 @@ router.put('/toggle/:id', async (req, res) => {
 // ==========================
 router.put('/update/:id', upload.single('image'), async (req, res) => {
     try {
-        const { title, description, templateId } = req.body;
+        const { title, description, templateId, points } = req.body;
         const event = await Event.findById(req.params.id);
 
         if (!event) {
@@ -110,6 +111,7 @@ router.put('/update/:id', upload.single('image'), async (req, res) => {
         event.title = title || event.title;
         event.description = description || event.description;
         event.templateId = templateId ? Number(templateId) : event.templateId;
+        event.points = points ? Number(points) : event.points;
 
         if (req.file) {
             const db = mongoose.connection.db;

@@ -22,6 +22,10 @@ var eventSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    points: {
+        type: Number,
+        default: 50 // Points awarded for volunteering
+    },
     createdAt: {
         type: Date,
         default: Date.now

@@ -243,8 +243,6 @@ const AdminDashboard = () => {
         axios.get(`${baseurl}/api/users`),
         axios.get(`${baseurl}/api/tasks`),
         axios.get(`${baseurl}/api/submissions`),
-        axios.get(`${baseurl}/api/tasks`),
-        axios.get(`${baseurl}/api/submissions`),
         axios.get(`${baseurl}/api/contact/all`),
         axios.get(`${baseurl}/api/volunteers/all`)
       ]);
