@@ -191,7 +191,7 @@ export default function Home() {
   const navigate = useNavigate();
   const muiTheme = useMuiTheme();
   const { isDark } = useTheme();
-  const baseurl = import.meta.env.VITE_API_BASE_URL;
+  const baseurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
   // Banner State
   const [bannerOpen, setBannerOpen] = useState(false);

@@ -58,7 +58,8 @@ import {
   Logout as LogoutIcon,
   Add as AddIcon,
   Close as CloseIcon,
-  Visibility
+  Visibility,
+  VolunteerActivism as VolunteerIcon
 } from "@mui/icons-material";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -146,6 +147,9 @@ const AdminDashboard = () => {
   const [editUserForm, setEditUserForm] = useState({ fname: "", ename: "", yearClassDept: "", department: "", points: 0, studentId: "" });
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
+
+  // Volunteer State
+  const [volunteers, setVolunteers] = useState([]);
 
 
   const [success, setSuccess] = useState("");
@@ -235,21 +239,25 @@ const AdminDashboard = () => {
   const fetchAllData = async () => {
     setLoading({ users: true, tasks: true, submissions: true, messages: true });
     try {
-      const [uRes, tRes, sRes, mRes] = await Promise.all([
+      const [uRes, tRes, sRes, mRes, vRes] = await Promise.all([
         axios.get(`${baseurl}/api/users`),
         axios.get(`${baseurl}/api/tasks`),
         axios.get(`${baseurl}/api/submissions`),
-        axios.get(`${baseurl}/api/contact/all`)
+        axios.get(`${baseurl}/api/tasks`),
+        axios.get(`${baseurl}/api/submissions`),
+        axios.get(`${baseurl}/api/contact/all`),
+        axios.get(`${baseurl}/api/volunteers/all`)
       ]);
       setUsers(uRes.data);
       setFilteredUsers(uRes.data);
       setTasks(tRes.data);
       setSubmissions(sRes.data);
       setMessages(mRes.data || []);
+      setVolunteers(vRes.data || []);
     } catch (err) {
       console.error("Error fetching data", err);
     } finally {
-      setLoading({ users: false, tasks: false, submissions: false, messages: false });
+      setLoading({ users: false, tasks: false, submissions: false, messages: false, volunteers: false });
     }
   };
 
@@ -508,6 +516,7 @@ const AdminDashboard = () => {
     { id: "submissions", label: "Submissions", icon: <SubmissionIcon /> },
     { id: "award", label: "Award Points", icon: <AwardIcon /> },
     { id: "messages", label: "Messages", icon: <MessageIcon /> },
+    { id: "volunteers", label: "Volunteers", icon: <VolunteerIcon /> },
   ];
 
   const SidebarContent = (
@@ -736,6 +745,95 @@ const AdminDashboard = () => {
               </Grid>
 
 
+            </motion.div>
+          )}
+
+          {activeTab === "volunteers" && (
+            <motion.div key="volunteers" variants={contentVariants} initial="hidden" animate="visible" exit="exit">
+              <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="h5" fontWeight="bold">Volunteer Applications</Typography>
+              </Box>
+              <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 2, bgcolor: isDark ? '#1e293b' : undefined, color: isDark ? '#e6eef8' : undefined }}>
+                <Table>
+                  <TableHead sx={{ bgcolor: isDark ? "#0b1220" : "#f1f5f9" }}>
+                    <TableRow>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Name</TableCell>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Department</TableCell>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Year</TableCell>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Reason</TableCell>
+                      <TableCell sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Status</TableCell>
+                      <TableCell align="right" sx={{ color: isDark ? "#e6eef8" : "#0f172a", fontWeight: "bold" }}>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {volunteers.map((vol) => (
+                      <TableRow key={vol._id} hover>
+                        <TableCell>
+                          <Typography fontWeight="500">{vol.name}</Typography>
+                          <Typography variant="caption" color={isDark ? "text.secondary" : "#475569"}>{vol.email}</Typography>
+                          <Typography variant="caption" display="block" color={isDark ? "text.secondary" : "#475569"}>{vol.studentId}</Typography>
+                        </TableCell>
+                        <TableCell>{vol.department}</TableCell>
+                        <TableCell>{vol.year}</TableCell>
+                        <TableCell sx={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <Tooltip title={vol.reason}>
+                            <span>{vol.reason}</span>
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={vol.status}
+                            size="small"
+                            color={vol.status === 'approved' ? 'success' : vol.status === 'rejected' ? 'error' : 'warning'}
+                            sx={{ textTransform: 'capitalize' }}
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          {vol.status === 'pending' && (
+                            <Box display="flex" justifyContent="flex-end" gap={1}>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                color="success"
+                                onClick={async () => {
+                                  try {
+                                    await axios.put(`${baseurl}/api/volunteers/${vol._id}/status`, { status: 'approved' });
+                                    setSuccess("Volunteer approved");
+                                    setVolunteers(prev => prev.map(v => v._id === vol._id ? { ...v, status: 'approved' } : v));
+                                  } catch (err) { setError("Failed to approve"); }
+                                }}
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="error"
+                                onClick={async () => {
+                                  try {
+                                    await axios.put(`${baseurl}/api/volunteers/${vol._id}/status`, { status: 'rejected' });
+                                    setSuccess("Volunteer rejected");
+                                    setVolunteers(prev => prev.map(v => v._id === vol._id ? { ...v, status: 'rejected' } : v));
+                                  } catch (err) { setError("Failed to reject"); }
+                                }}
+                              >
+                                Reject
+                              </Button>
+                            </Box>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {volunteers.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                          <Typography color="text.secondary">No volunteer applications found.</Typography>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </motion.div>
           )}
 

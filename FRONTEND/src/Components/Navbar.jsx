@@ -104,6 +104,14 @@ export default function Navbar() {
             </ListItem>
           ))}
 
+        {!role && (
+          <ListItem disablePadding>
+            <ListItemButton component={Link} to="/events">
+              <ListItemText primary="Event" />
+            </ListItemButton>
+          </ListItem>
+        )}
+
         {role === "admin" && (
           <>
             <ListItem disablePadding>
@@ -136,6 +144,14 @@ export default function Navbar() {
           <ListItem disablePadding>
             <ListItemButton component={Link} to="/faculty">
               <ListItemText primary="Faculty" />
+            </ListItemButton>
+          </ListItem>
+        )}
+
+        {role === "user" && (
+          <ListItem disablePadding>
+            <ListItemButton component={Link} to="/events">
+              <ListItemText primary="Event" />
             </ListItemButton>
           </ListItem>
         )}
@@ -247,6 +263,24 @@ export default function Navbar() {
                   </Button>
                 ))}
 
+              {!role && (
+                <Button
+                  color="inherit"
+                  component={Link}
+                  to="/events"
+                  sx={{
+                    mx: 1,
+                    textTransform: "none",
+                    color: isDark ? '#ffffff' : '#212121',
+                    '&:hover': {
+                      color: isDark ? '#8866ff' : '#6444e6',
+                    }
+                  }}
+                >
+                  Event
+                </Button>
+              )}
+
               {/* Role-specific links */}
               {role === "admin" && (
                 <>
@@ -259,6 +293,9 @@ export default function Navbar() {
                   <Button color="inherit" component={Link} to="/admin/roles" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
                     Roles
                   </Button>
+                  <Button color="inherit" component={Link} to="/events" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
+                    Event
+                  </Button>
                 </>
               )}
 
@@ -269,9 +306,14 @@ export default function Navbar() {
               )}
 
               {role === "faculty" && (
-                <Button color="inherit" component={Link} to="/faculty" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
-                  Faculty
-                </Button>
+                <>
+                  <Button color="inherit" component={Link} to="/faculty" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
+                    Faculty
+                  </Button>
+                  <Button color="inherit" component={Link} to="/events" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
+                    Event
+                  </Button>
+                </>
               )}
 
               {role === "user" && (
@@ -281,6 +323,9 @@ export default function Navbar() {
                   </Button>
                   <Button color="inherit" component={Link} to="/tasks" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
                     Tasks
+                  </Button>
+                  <Button color="inherit" component={Link} to="/events" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
+                    Event
                   </Button>
                   {/* Coupons is part of dashboard now per design, but keeping a mental note if direct link needed. 
                       Design just shows "Coupons" in top nav, so adding it. */}

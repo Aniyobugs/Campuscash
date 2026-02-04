@@ -25,6 +25,8 @@ const notificationRoute = require("./routes/notificationRoute");
 app.use('/api/notifications', notificationRoute);
 const eventRoute = require("./routes/eventroute");
 app.use('/api/events', eventRoute);
+const volunteerRoute = require("./routes/volunteerRoute");
+app.use('/api/volunteers', volunteerRoute);
 app.use("/uploads", express.static("uploads"));
 app.listen(port, () => {
     console.log(`Server is up and Running ${port}`)

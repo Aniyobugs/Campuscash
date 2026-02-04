@@ -29,6 +29,7 @@ import Footer from './Components/Footer'
 import AboutUs from './Components/AboutUs'
 import ContactUs from './Components/ContactUs'
 import StudentTasks from './Components/StudentTasks'
+import Events from './Components/Events'
 
 function AppContent() {
   const { isDark } = useTheme()
@@ -47,6 +48,7 @@ function AppContent() {
               <Route path='/L' element={<Login />} />
               <Route path='/about' element={<AboutUs />} />
               <Route path='/contact' element={<ContactUs />} />
+              <Route path='/events' element={<Events />} />
               <Route path='/user' element={<ProtectedRoute allowedRoles={["user"]}><Userdash /></ProtectedRoute>} />
               <Route path='/tsk' element={<ProtectedRoute allowedRoles={["admin", "faculty"]}><AssignTask /></ProtectedRoute>} />
               <Route path='/award' element={<ProtectedRoute allowedRoles={["admin", "faculty"]}><Awardpoints /></ProtectedRoute>} />

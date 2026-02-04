@@ -74,6 +74,7 @@ import {
     Campaign as CampaignIcon,
     Link as LinkIcon,
     CloudUpload,
+    VolunteerActivism,
 } from "@mui/icons-material";
 import { useTheme } from "../contexts/ThemeContext";
 import axios from "axios";
@@ -201,13 +202,30 @@ const FacultyDashboard = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [editingId, setEditingId] = useState(null);
 
+    // Volunteers
+    const [volunteers, setVolunteers] = useState([]);
+    const [volunteersLoading, setVolunteersLoading] = useState(false);
+
 
     // Data Loading
     useEffect(() => {
         fetchUsers();
         fetchTasks();
         fetchSubmissions();
+        fetchVolunteers();
     }, [baseurl]);
+
+    const fetchVolunteers = async () => {
+        setVolunteersLoading(true);
+        try {
+            const res = await axios.get(`${baseurl}/api/volunteers/all`);
+            setVolunteers(res.data || []);
+        } catch (err) {
+            console.error("Volunteers fetch error:", err);
+        } finally {
+            setVolunteersLoading(false);
+        }
+    };
 
     const fetchUsers = async () => {
         try {
@@ -742,6 +760,7 @@ const FacultyDashboard = () => {
                             { text: 'Students List', icon: <PeopleIcon />, id: 'students-card' },
                             { text: 'Tasks', icon: <AssignmentIcon />, id: 'tasks-card' },
                             { text: 'Submissions', icon: <RateReviewIcon />, id: 'submissions-card' },
+                            { text: 'Volunteers', icon: <VolunteerActivism />, id: 'volunteers-card' },
                             { text: 'View All Students', icon: <PeopleIcon />, action: () => setViewAllStudentsOpen(true) },
                             { text: 'Manage Banners', icon: <CampaignIcon />, action: () => { fetchBanners(); setManageBannersOpen(true); } }
                         ].map((item, index) => (
@@ -1367,6 +1386,96 @@ const FacultyDashboard = () => {
                                             </ListItem>
                                         ))}
                                     </List>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+
+                        <Grid item xs={12} id="volunteers-card">
+                            <Card sx={glassCard}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                                        <Typography variant="h6" fontWeight="bold">Volunteer Applications</Typography>
+                                    </Box>
+                                    <TableContainer>
+                                        <Table>
+                                            <TableHead>
+                                                <TableRow>
+                                                    <TableCell sx={{ color: textSecondary }}>Name</TableCell>
+                                                    <TableCell sx={{ color: textSecondary }}>Department</TableCell>
+                                                    <TableCell sx={{ color: textSecondary }}>Year</TableCell>
+                                                    <TableCell sx={{ color: textSecondary }}>Reason</TableCell>
+                                                    <TableCell sx={{ color: textSecondary }}>Status</TableCell>
+                                                    <TableCell align="right" sx={{ color: textSecondary }}>Actions</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {volunteers.map((vol) => (
+                                                    <TableRow key={vol._id} sx={{ '& td': { borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' } }}>
+                                                        <TableCell>
+                                                            <Typography fontWeight="500" sx={{ color: textPrimary }}>{vol.name}</Typography>
+                                                            <Typography variant="caption" color={textSecondary}>{vol.studentId}</Typography>
+                                                        </TableCell>
+                                                        <TableCell sx={{ color: textPrimary }}>{vol.department}</TableCell>
+                                                        <TableCell sx={{ color: textPrimary }}>{vol.year}</TableCell>
+                                                        <TableCell sx={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: textPrimary }}>
+                                                            <Tooltip title={vol.reason}>
+                                                                <span>{vol.reason}</span>
+                                                            </Tooltip>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Chip
+                                                                label={vol.status}
+                                                                size="small"
+                                                                color={vol.status === 'approved' ? 'success' : vol.status === 'rejected' ? 'error' : 'warning'}
+                                                                sx={{ textTransform: 'capitalize' }}
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell align="right">
+                                                            {vol.status === 'pending' && (
+                                                                <Box display="flex" justifyContent="flex-end" gap={1}>
+                                                                    <Button
+                                                                        size="small"
+                                                                        variant="contained"
+                                                                        color="success"
+                                                                        onClick={async () => {
+                                                                            try {
+                                                                                await axios.put(`${baseurl}/api/volunteers/${vol._id}/status`, { status: 'approved' });
+                                                                                setSuccess("Volunteer approved");
+                                                                                setVolunteers(prev => prev.map(v => v._id === vol._id ? { ...v, status: 'approved' } : v));
+                                                                            } catch (err) { setError("Failed to approve"); }
+                                                                        }}
+                                                                    >
+                                                                        Approve
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="small"
+                                                                        variant="outlined"
+                                                                        color="error"
+                                                                        onClick={async () => {
+                                                                            try {
+                                                                                await axios.put(`${baseurl}/api/volunteers/${vol._id}/status`, { status: 'rejected' });
+                                                                                setSuccess("Volunteer rejected");
+                                                                                setVolunteers(prev => prev.map(v => v._id === vol._id ? { ...v, status: 'rejected' } : v));
+                                                                            } catch (err) { setError("Failed to reject"); }
+                                                                        }}
+                                                                    >
+                                                                        Reject
+                                                                    </Button>
+                                                                </Box>
+                                                            )}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                                {volunteers.length === 0 && (
+                                                    <TableRow>
+                                                        <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                                                            <Typography color={textSecondary}>No volunteer applications found.</Typography>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
                                 </CardContent>
                             </Card>
                         </Grid>
