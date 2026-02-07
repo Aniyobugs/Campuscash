@@ -2069,6 +2069,98 @@ const FacultyDashboard = () => {
                 <Alert severity="error" onClose={() => setError("")} variant="filled">{error}</Alert>
             </Snackbar>
 
+            {/* View Submission Dialog */}
+            <Dialog
+                open={viewSubOpen}
+                onClose={() => setViewSubOpen(false)}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: cardBg,
+                        color: textPrimary,
+                        borderRadius: 3,
+                        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)'
+                    }
+                }}
+            >
+                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="h6" fontWeight="bold">Review Submission</Typography>
+                    <IconButton onClick={() => setViewSubOpen(false)} sx={{ color: textSecondary }}><Close /></IconButton>
+                </DialogTitle>
+                <DialogContent>
+                    {selectedSub && (
+                        <Box sx={{ mt: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                                <Avatar src={selectedSub.user?.profilePic ? `${baseurl}${selectedSub.user.profilePic}` : undefined} />
+                                <Box>
+                                    <Typography variant="subtitle1" fontWeight="bold">{selectedSub.user?.fname} {selectedSub.user?.ename}</Typography>
+                                    <Typography variant="caption" color={textSecondary}>{selectedSub.user?.studentId}</Typography>
+                                </Box>
+                            </Box>
+
+                            <Typography variant="subtitle2" color={textSecondary} gutterBottom>Task</Typography>
+                            <Typography variant="body1" fontWeight="bold" sx={{ mb: 2 }}>{selectedSub.task?.title}</Typography>
+
+                            <Box sx={{ p: 2, bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)', borderRadius: 2, mb: 3 }}>
+                                <Typography variant="caption" color={textSecondary} sx={{ display: 'block', mb: 1, textTransform: 'uppercase', fontWeight: 'bold' }}>
+                                    Submission Content ({selectedSub.type})
+                                </Typography>
+
+                                {selectedSub.type === 'text' && (
+                                    <Typography variant="body2">{selectedSub.text}</Typography>
+                                )}
+                                {selectedSub.type === 'link' && (
+                                    <a href={selectedSub.link} target="_blank" rel="noopener noreferrer" style={{ color: accentColor, textDecoration: 'underline' }}>
+                                        {selectedSub.link}
+                                    </a>
+                                )}
+                                {selectedSub.type === 'file' && (
+                                    <Button
+                                        variant="outlined"
+                                        startIcon={<LinkIcon />}
+                                        href={`${baseurl}${selectedSub.filePath}`}
+                                        target="_blank"
+                                        sx={{ color: accentColor, borderColor: accentColor }}
+                                    >
+                                        Download File
+                                    </Button>
+                                )}
+                                {selectedSub.type === 'quiz' && (
+                                    <Box>
+                                        <Typography variant="h4" color={selectedSub.passed ? successColor : 'error'}>
+                                            {selectedSub.score}%
+                                        </Typography>
+                                        <Typography variant="caption" color={textSecondary}>
+                                            {selectedSub.passed ? 'PASSED' : 'FAILED'}
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </Box>
+
+                            {selectedSub.status === 'pending' && (
+                                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                                    <Button
+                                        variant="outlined"
+                                        color="error"
+                                        onClick={() => { handleRejectSubmission(selectedSub); setViewSubOpen(false); }}
+                                    >
+                                        Reject
+                                    </Button>
+                                    <Button
+                                        variant="contained"
+                                        sx={{ bgcolor: successColor, '&:hover': { bgcolor: '#22c55e' } }}
+                                        onClick={() => { handleApproveSubmission(selectedSub); setViewSubOpen(false); }}
+                                    >
+                                        Approve
+                                    </Button>
+                                </Box>
+                            )}
+                        </Box>
+                    )}
+                </DialogContent>
+            </Dialog>
+
 
             {/* Manage Banners Dialog - Redesigned */}
             <Dialog
