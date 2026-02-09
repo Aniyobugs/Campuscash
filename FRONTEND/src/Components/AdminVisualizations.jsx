@@ -9,19 +9,18 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 export const PointsPieChart = ({ users = [], isDark }) => {
     if (!users || !Array.isArray(users) || users.length === 0) return <Paper sx={{ p: 3, borderRadius: 4, height: '100%', bgcolor: isDark ? "#1e293b" : "white" }}><Typography align="center" color="text.secondary">No Data Available</Typography></Paper>;
 
-    // Determine grouping key: if filtered to one Year, group by Dept. If filtered to one Dept, group by Year.
-    const uniqueYears = new Set(users.map(u => u.yearClassDept).filter(Boolean));
-    const uniqueDepts = new Set(users.map(u => u.department).filter(Boolean));
-
-    // Default to Year. If only 1 Year present (and multiple depts), switch to Dept.
-    const groupBy = (uniqueYears.size <= 1 && uniqueDepts.size > 1) ? 'department' : 'yearClassDept';
-    const label = groupBy === 'department' ? 'By Department' : 'By Year';
+    // Force grouping by Year and filter for specific years
+    const groupBy = 'yearClassDept';
+    const label = 'By Year';
 
     // Aggregate points
     const dataMap = users.reduce((acc, user) => {
         if (!user) return acc;
-        const key = user[groupBy] || "Unknown";
-        acc[key] = (acc[key] || 0) + (user.points || 0);
+        const key = user[groupBy];
+        // Only include Year 1, Year 2, Year 3, Year 4
+        if (['Year 1', 'Year 2', 'Year 3', 'Year 4'].includes(key)) {
+            acc[key] = (acc[key] || 0) + (user.points || 0);
+        }
         return acc;
     }, {});
 

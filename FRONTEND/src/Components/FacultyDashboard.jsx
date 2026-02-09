@@ -183,10 +183,8 @@ const FacultyDashboard = () => {
     const [yearFilter, setYearFilter] = useState('All'); // NEW: Year Filter State
 
     // Derived options
-    const yearOptions = Array.from(new Set([
-        "All", "Year 1", "Year 2", "Year 3", "Year 4",
-        ...(users || []).map((u) => u.yearClassDept).filter(Boolean),
-    ]));
+    // Derived options
+    const yearOptions = ["All", "Year 1", "Year 2", "Year 3", "Year 4"];
 
     // Submissions
     const [submissions, setSubmissions] = useState([]);

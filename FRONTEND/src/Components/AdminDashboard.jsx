@@ -366,6 +366,15 @@ const AdminDashboard = () => {
     } catch (err) { setError("Failed to clear messages"); }
   };
 
+  const handleClearVolunteers = async () => {
+    if (!window.confirm("Are you sure you want to delete ALL volunteer applications? This cannot be undone.")) return;
+    try {
+      await axios.delete(`${baseurl}/api/volunteers/all`);
+      setSuccess("All volunteer applications cleared");
+      setVolunteers([]);
+    } catch (err) { setError("Failed to clear volunteers"); }
+  };
+
   const handleDownloadFile = async (url, filename) => {
     try {
       const response = await axios.get(url, { responseType: 'blob' });
@@ -750,6 +759,11 @@ const AdminDashboard = () => {
             <motion.div key="volunteers" variants={contentVariants} initial="hidden" animate="visible" exit="exit">
               <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <Typography variant="h5" fontWeight="bold">Volunteer Applications</Typography>
+                {volunteers.length > 0 && (
+                  <Button variant="outlined" color="error" onClick={handleClearVolunteers}>
+                    Clear All
+                  </Button>
+                )}
               </Box>
               <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 2, bgcolor: isDark ? '#1e293b' : undefined, color: isDark ? '#e6eef8' : undefined }}>
                 <Table>
@@ -787,38 +801,56 @@ const AdminDashboard = () => {
                           />
                         </TableCell>
                         <TableCell align="right">
-                          {vol.status === 'pending' && (
-                            <Box display="flex" justifyContent="flex-end" gap={1}>
-                              <Button
-                                size="small"
-                                variant="contained"
-                                color="success"
-                                onClick={async () => {
-                                  try {
-                                    await axios.put(`${baseurl}/api/volunteers/${vol._id}/status`, { status: 'approved' });
-                                    setSuccess("Volunteer approved");
-                                    setVolunteers(prev => prev.map(v => v._id === vol._id ? { ...v, status: 'approved' } : v));
-                                  } catch (err) { setError("Failed to approve"); }
-                                }}
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                color="error"
-                                onClick={async () => {
-                                  try {
-                                    await axios.put(`${baseurl}/api/volunteers/${vol._id}/status`, { status: 'rejected' });
-                                    setSuccess("Volunteer rejected");
-                                    setVolunteers(prev => prev.map(v => v._id === vol._id ? { ...v, status: 'rejected' } : v));
-                                  } catch (err) { setError("Failed to reject"); }
-                                }}
-                              >
-                                Reject
-                              </Button>
-                            </Box>
-                          )}
+                          <Box display="flex" justifyContent="flex-end" gap={1}>
+                            {vol.status === 'pending' && (
+                              <>
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  color="success"
+                                  onClick={async () => {
+                                    try {
+                                      await axios.put(`${baseurl}/api/volunteers/${vol._id}/status`, { status: 'approved' });
+                                      setSuccess("Volunteer approved");
+                                      setVolunteers(prev => prev.map(v => v._id === vol._id ? { ...v, status: 'approved' } : v));
+                                    } catch (err) { setError("Failed to approve"); }
+                                  }}
+                                >
+                                  Approve
+                                </Button>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  color="error"
+                                  onClick={async () => {
+                                    try {
+                                      await axios.put(`${baseurl}/api/volunteers/${vol._id}/status`, { status: 'rejected' });
+                                      setSuccess("Volunteer rejected");
+                                      setVolunteers(prev => prev.map(v => v._id === vol._id ? { ...v, status: 'rejected' } : v));
+                                    } catch (err) { setError("Failed to reject"); }
+                                  }}
+                                >
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              color="primary"
+                              onClick={() => {
+                                const user = users.find(u => u.email === vol.email || u.studentId === vol.studentId);
+                                if (user) {
+                                  setAwardData({ studentId: user._id, points: "", reason: `Volunteer: ${vol.reason}` });
+                                  setActiveTab("award");
+                                } else {
+                                  setError("User not found in system");
+                                }
+                              }}
+                            >
+                              Award
+                            </Button>
+                          </Box>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1152,6 +1184,7 @@ const AdminDashboard = () => {
 
                     <Stack spacing={3}>
                       <Autocomplete
+                        value={users.find(u => u._id === awardData.studentId) || null}
                         options={users.filter(u => u.role === 'user')}
                         getOptionLabel={(u) => u.fname}
                         onChange={(_, val) => setAwardData({ ...awardData, studentId: val?._id || "" })}

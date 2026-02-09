@@ -110,4 +110,14 @@ router.put('/:id/status', async (req, res) => {
     }
 });
 
+// Delete all volunteers
+router.delete('/all', async (req, res) => {
+    try {
+        await Volunteer.deleteMany({});
+        res.status(200).json({ message: 'All volunteers cleared successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
 module.exports = router;
