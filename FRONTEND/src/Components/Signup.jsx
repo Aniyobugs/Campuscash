@@ -268,7 +268,7 @@ const Signup = () => {
                     <MenuItem value="Year 2">Year 2</MenuItem>
                     <MenuItem value="Year 3">Year 3</MenuItem>
                     <MenuItem value="Year 4">Year 4</MenuItem>
-                    <MenuItem value="Faculty">Faculty</MenuItem>
+                   
                   </TextField>
                 </Box>
 
@@ -296,7 +296,7 @@ const Signup = () => {
                   <MenuItem value="Management">Management</MenuItem>
                   <MenuItem value="Languages">Language</MenuItem>
                   <MenuItem value="Mathematics">Mathematics</MenuItem>
-                  <MenuItem value="Faculty">Faculty</MenuItem>
+
 
                 </TextField>
 

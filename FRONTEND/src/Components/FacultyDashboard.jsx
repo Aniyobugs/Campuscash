@@ -180,9 +180,8 @@ const FacultyDashboard = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [studentChartFilter, setStudentChartFilter] = useState('Monthly'); // Daily, Weekly, Monthly, Yearly
-    const [yearFilter, setYearFilter] = useState('All'); // NEW: Year Filter State
+    const [yearFilter, setYearFilter] = useState('All'); // NEW: Year Filter Staters
 
-    // Derived options
     // Derived options
     const yearOptions = ["All", "Year 1", "Year 2", "Year 3", "Year 4"];
 

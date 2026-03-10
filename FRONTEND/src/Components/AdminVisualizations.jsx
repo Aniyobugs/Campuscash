@@ -66,15 +66,16 @@ export const PointsPieChart = ({ users = [], isDark }) => {
 export const StudentBarChart = ({ users = [], isDark }) => {
     if (!users || !Array.isArray(users) || users.length === 0) return null;
 
-    // Determine grouping key similar to Pie Chart
-    const uniqueYears = new Set(users.map(u => u.yearClassDept).filter(Boolean));
-    const uniqueDepts = new Set(users.map(u => u.department).filter(Boolean));
-    const groupBy = (uniqueYears.size <= 1 && uniqueDepts.size > 1) ? 'department' : 'yearClassDept';
-    const label = groupBy === 'department' ? 'Students by Department' : 'Students by Year';
+    // Force grouping by Year and filter for specific years
+    const groupBy = 'yearClassDept';
+    const label = 'Students by Year';
 
     const dataMap = users.reduce((acc, user) => {
-        const key = user[groupBy] || "Unknown";
-        acc[key] = (acc[key] || 0) + 1;
+        const key = user[groupBy];
+        // Only include Year 1, Year 2, Year 3, Year 4
+        if (['Year 1', 'Year 2', 'Year 3', 'Year 4'].includes(key)) {
+            acc[key] = (acc[key] || 0) + 1;
+        }
         return acc;
     }, {});
 

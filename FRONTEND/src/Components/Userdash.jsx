@@ -344,7 +344,7 @@ const Userdash = () => {
           name: user.fname || user.fullName,
           email: user.email,
           department: user.department || "General",
-          year: user.yearClassDept || "Student",
+          year: (user.yearClassDept && user.yearClassDept !== user.department) ? user.yearClassDept : "Student",
           avatar: user.profilePic ? `${baseurl}${user.profilePic}` : null,
           rank: myRank,
         },

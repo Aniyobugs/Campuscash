@@ -21,6 +21,7 @@ const ProfileUpdate = ({ userId: propUserId }) => {
   const [form, setForm] = useState({
     fullName: "",
     yearClassDept: "",
+    department: "",
     currentPassword: "",
     newPassword: "",
   });
@@ -46,11 +47,12 @@ const ProfileUpdate = ({ userId: propUserId }) => {
     axios
       .get(`${baseurl}/api/${userId}`)
       .then((res) => {
-        const { fname, yearClassDept, profilePic } = res.data;
+        const { fname, yearClassDept, department, profilePic } = res.data;
         setForm((prev) => ({
           ...prev,
           fullName: fname || "",
           yearClassDept: yearClassDept || "",
+          department: department || "",
         }));
         if (profilePic) setPreview(`${baseurl}${profilePic}`);
       })
@@ -80,6 +82,7 @@ const ProfileUpdate = ({ userId: propUserId }) => {
       const formData = new FormData();
       formData.append("fullName", form.fullName);
       formData.append("yearClassDept", form.yearClassDept);
+      formData.append("department", form.department);
       if (form.currentPassword) formData.append("currentPassword", form.currentPassword);
       if (form.newPassword) formData.append("newPassword", form.newPassword);
       if (profilePic) formData.append("profilePic", profilePic);
@@ -154,13 +157,31 @@ const ProfileUpdate = ({ userId: propUserId }) => {
           sx={{ mt: 3 }}
         />
 
-        {/* Faculty Department Dropdown */}
+        {/* Year / Class Dropdown */}
         <FormControl fullWidth sx={{ mt: 3 }}>
-          <InputLabel>Faculty Department</InputLabel>
+          <InputLabel>Year / Class</InputLabel>
           <Select
-            label="Faculty Department"
+            label="Year / Class"
             name="yearClassDept"
             value={form.yearClassDept}
+            onChange={handleChange}
+          >
+            <MenuItem value="">Select</MenuItem>
+            <MenuItem value="Year 1">Year 1</MenuItem>
+            <MenuItem value="Year 2">Year 2</MenuItem>
+            <MenuItem value="Year 3">Year 3</MenuItem>
+            <MenuItem value="Year 4">Year 4</MenuItem>
+            <MenuItem value="Faculty">Faculty</MenuItem>
+          </Select>
+        </FormControl>
+
+        {/* Department Dropdown (New) */}
+        <FormControl fullWidth sx={{ mt: 3 }}>
+          <InputLabel>Department</InputLabel>
+          <Select
+            label="Department"
+            name="department" // You might need to add this to state if not present, checking... it's not in initial state but handleChange handles generic names.
+            value={form.department || ""} // generic handle change should work if we add to state allow
             onChange={handleChange}
           >
             <MenuItem value="">Select</MenuItem>
@@ -175,6 +196,7 @@ const ProfileUpdate = ({ userId: propUserId }) => {
             <MenuItem value="Management">Management</MenuItem>
             <MenuItem value="Languages">Language</MenuItem>
             <MenuItem value="Mathematics">Mathematics</MenuItem>
+            <MenuItem value="Faculty">Faculty</MenuItem>
           </Select>
         </FormControl>
 
