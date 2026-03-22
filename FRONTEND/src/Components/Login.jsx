@@ -1,55 +1,38 @@
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  IconButton,
-  InputAdornment,
-  Stack,
-  Divider,
-  Avatar,
-  Snackbar,
-  Alert,
-  Checkbox,
-  FormControlLabel,
-  Paper,
-  useMediaQuery
-} from '@mui/material';
-import axios from 'axios';
 import React, { useState } from 'react';
+import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import GoogleIcon from '@mui/icons-material/Google';
-import GitHubIcon from '@mui/icons-material/GitHub';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Mail, Lock, Eye, EyeOff, X, ArrowRight, Github, Chrome } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
-const Login = () => {
+export default function Login() {
   const [input, setInput] = useState({});
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState("");
 
-  const baseurl = import.meta.env.VITE_API_BASE_URL;
+  const baseurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
   const navigate = useNavigate();
   const { login } = useAuth();
   const { isDark } = useTheme();
-  const isMobile = useMediaQuery('(max-width:900px)');
 
-  const inpuHandler = (e) => {
-    setInput({ ...input, [e.target.name]: e.target.value });
-    if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: null });
+  const inputHandler = (e) => {
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    setInput({ ...input, [e.target.name]: value });
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: null });
+    }
   };
 
-  const addhandler = async () => {
-    const next = {};
-    if (!input.ename) next.ename = 'Please enter email';
-    if (!input.password) next.password = 'Please enter password';
-    setErrors(next);
-    if (Object.keys(next).length) return;
+  const handleLogin = async () => {
+    const nextErrors = {};
+    if (!input.ename) nextErrors.ename = 'Please enter your email or ID';
+    if (!input.password) nextErrors.password = 'Please enter your password';
+    setErrors(nextErrors);
+    
+    if (Object.keys(nextErrors).length > 0) return;
 
     setLoading(true);
     try {
@@ -61,259 +44,183 @@ const Login = () => {
         if (login) login(res.data.user, res.data.token);
         if (res.data.token) sessionStorage.setItem('token', res.data.token);
 
-        // Add a small delay for animation if desired, or navigate immediately
         const role = res.data.user.role;
-        if (role === 'admin') navigate('/admin');
-        else if (role === 'store') navigate('/store');
-        else if (role === 'faculty') navigate('/faculty');
-        else navigate('/user');
+        setTimeout(() => {
+          if (role === 'admin') navigate('/admin');
+          else if (role === 'store') navigate('/store');
+          else if (role === 'faculty') navigate('/faculty');
+          else navigate('/user');
+        }, 1000); // 1s delay for beautiful success animation
       }
     } catch (err) {
       setLoading(false);
-      setErrors({ form: err.response?.data?.message || 'Invalid credentials' });
+      setErrors({ form: err.response?.data?.message || 'Invalid credentials. Please try again.' });
     }
   };
 
-  // Styles
-  const gradientBg = isDark
-    ? 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)'
-    : 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 60%, #f0f9ff 100%)'; // Fresh green/blue tint for Campus Cash
-
   return (
-    <Box sx={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: gradientBg,
-      position: 'relative',
-      overflow: 'hidden',
-      p: 2
-    }}>
-      {/* Decorative Background Elements */}
-      <Box sx={{
-        position: 'absolute',
-        top: -100,
-        left: -100,
-        width: 400,
-        height: 400,
-        borderRadius: '50%',
-        background: isDark ? 'rgba(99, 102, 241, 0.15)' : 'rgba(74, 222, 128, 0.2)',
-        filter: 'blur(80px)',
-        zIndex: 0
-      }} />
-      <Box sx={{
-        position: 'absolute',
-        bottom: -50,
-        right: -50,
-        width: 300,
-        height: 300,
-        borderRadius: '50%',
-        background: isDark ? 'rgba(139, 92, 246, 0.15)' : 'rgba(56, 189, 248, 0.2)',
-        filter: 'blur(60px)',
-        zIndex: 0
-      }} />
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center relative overflow-hidden px-4 py-20">
+      
+      {/* Abstract Glowing Backgrounds */}
+      <div className="absolute top-[20%] -left-20 w-96 h-96 bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[20%] -right-20 w-96 h-96 bg-purple-500/20 rounded-full blur-[120px] pointer-events-none" />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        style={{ width: '100%', maxWidth: 1000, position: 'relative', zIndex: 1 }}
+        className="w-full max-w-5xl relative z-10"
       >
-        <Paper elevation={24} sx={{
-          display: 'flex',
-          borderRadius: 4,
-          overflow: 'hidden',
-          bgcolor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(20px)',
-          border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)'}`,
-          boxShadow: isDark ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)' : '0 25px 50px -12px rgba(0, 0, 0, 0.15)'
-        }}>
-
-          {/* Left Side - Image & Hero */}
-          {!isMobile && (
-            <Box sx={{
-              flex: 1,
-              position: 'relative',
-              background: 'url("https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop")',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'flex-end',
-              p: 6
-            }}>
-              <Box sx={{
-                position: 'absolute',
-                inset: 0,
-                background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.2) 100%)'
-              }} />
-
-              <Box sx={{ position: 'relative', zIndex: 2, color: 'white' }}>
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <Avatar sx={{ width: 56, height: 56, bgcolor: 'primary.main', mb: 3, boxShadow: '0 4px 14px 0 rgba(0,0,0,0.3)' }}>CC</Avatar>
-                  <Typography variant="h3" fontWeight="800" gutterBottom sx={{ letterSpacing: -1 }}>
-                    Campus Cash.
-                  </Typography>
-                  <Typography variant="h6" fontWeight="400" sx={{ opacity: 0.9, lineHeight: 1.6, maxWidth: 350 }}>
-                    The smart way to verify, redeem, and manage campus rewards seamlessly.
-                  </Typography>
-                </motion.div>
-              </Box>
-            </Box>
-          )}
+        <div className="bg-card border border-border hover:border-border/80 transition-all shadow-2xl rounded-3xl overflow-hidden flex flex-col md:flex-row">
+          
+          {/* Left Side - Image/Branding (Hidden on mobile) */}
+          <div className="hidden md:flex md:w-1/2 relative bg-zinc-900 flex-col justify-end p-12 overflow-hidden">
+            <img 
+              src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop" 
+              alt="Campus" 
+              className="absolute inset-0 w-full h-full object-cover opacity-50 transition-transform duration-1000 hover:scale-110"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10" />
+            
+            <div className="relative z-20 text-white">
+              <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-2xl font-black mb-6 shadow-lg shadow-primary/30">
+                CC
+              </div>
+              <h2 className="text-4xl font-black mb-4 tracking-tight leading-tight">
+                Welcome back to <br/> Campus Cash.
+              </h2>
+              <p className="text-zinc-300 text-lg max-w-sm leading-relaxed">
+                The smart way to verify, redeem, and manage your campus rewards seamlessly.
+              </p>
+            </div>
+          </div>
 
           {/* Right Side - Form */}
-          <Box sx={{
-            flex: 1,
-            p: { xs: 4, md: 6 },
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center'
-          }}>
-            <Stack spacing={4}>
-              <Box>
-                <Typography variant="h4" fontWeight="800" color="text.primary" gutterBottom>
-                  Welcome Back
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  Please enter your details to sign in
-                </Typography>
-              </Box>
+          <div className="w-full md:w-1/2 p-8 md:p-12 lg:p-16 flex flex-col justify-center">
+            <div className="mb-10 text-center md:text-left">
+              <h3 className="text-3xl font-black mb-2 tracking-tight">Sign In</h3>
+              <p className="text-muted-foreground">Please enter your details to continue.</p>
+            </div>
 
-              <Stack spacing={3}>
-                <TextField
-                  fullWidth
-                  label="Email or Student ID"
-                  name="ename"
-                  value={input.ename || ''}
-                  onChange={inpuHandler}
-                  error={!!errors.ename}
-                  helperText={errors.ename}
-                  variant="outlined"
-                  InputProps={{
-                    sx: { borderRadius: 2 }
-                  }}
-                />
-
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={input.password || ''}
-                    onChange={inpuHandler}
-                    error={!!errors.password}
-                    helperText={errors.password}
-                    variant="outlined"
-                    InputProps={{
-                      sx: { borderRadius: 2 },
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      )
-                    }}
-                  />
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-                    <FormControlLabel
-                      control={<Checkbox name="remember" size="small" />}
-                      label={<Typography variant="body2" color="text.secondary">Remember me</Typography>}
-                    />
-                    <Link to="/forgot-password" style={{ textDecoration: 'none' }}>
-                      <Typography variant="body2" color="primary" fontWeight="600">
-                        Forgot Password?
-                      </Typography>
-                    </Link>
-                  </Box>
-                </Box>
-              </Stack>
-
-              {errors.form && (
-                <Alert severity="error" sx={{ borderRadius: 2 }}>
-                  {errors.form}
-                  {typeof errors.form === 'string' && errors.form.toLowerCase().includes('inactive') && (
-                    <Box sx={{ mt: 1 }}>
-                      <Link to="/contact" style={{ color: 'inherit', textDecoration: 'underline', fontWeight: 'bold' }}>
-                        Contact Admin
-                      </Link>
-                    </Box>
-                  )}
-                </Alert>
+            {/* Alert / Errors */}
+            <AnimatePresence>
+              {alert && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-between"
+                >
+                  <span className="font-semibold">{alert}</span>
+                  <button onClick={() => setAlert('')}><X className="w-4 h-4" /></button>
+                </motion.div>
               )}
+              {errors.form && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="mb-6 p-4 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl"
+                >
+                  <span className="font-semibold block mb-1">{errors.form}</span>
+                  {errors.form.toLowerCase().includes('inactive') && (
+                    <Link to="/contact" className="text-sm underline font-bold opacity-80 hover:opacity-100">Contact Admin for help</Link>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-              <Button
-                onClick={addhandler}
+            <div className="space-y-6">
+              {/* Email / ID Field */}
+              <div>
+                <label className="text-sm font-semibold mb-2 block">Email or Student ID</label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input 
+                    type="text" 
+                    name="ename" 
+                    value={input.ename || ''} 
+                    onChange={inputHandler}
+                    placeholder="student@college.edu or ID"
+                    className={`w-full bg-background border ${errors.ename ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-primary'} rounded-xl py-4 pl-12 pr-4 focus:outline-none focus:ring-2 transition-all`}
+                  />
+                </div>
+                {errors.ename && <p className="text-destructive text-sm mt-1">{errors.ename}</p>}
+              </div>
+
+              {/* Password Field */}
+              <div>
+                <label className="text-sm font-semibold mb-2 block">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input 
+                    type={showPassword ? 'text' : 'password'} 
+                    name="password" 
+                    value={input.password || ''} 
+                    onChange={inputHandler}
+                    placeholder="••••••••"
+                    className={`w-full bg-background border ${errors.password ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-primary'} rounded-xl py-4 pl-12 pr-12 focus:outline-none focus:ring-2 transition-all`}
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)} 
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {errors.password && <p className="text-destructive text-sm mt-1">{errors.password}</p>}
+                
+                <div className="flex items-center justify-between mt-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      name="remember" 
+                      onChange={inputHandler}
+                      className="w-4 h-4 rounded border-border text-primary focus:ring-primary bg-background"
+                    />
+                    <span className="text-sm text-muted-foreground font-medium">Remember me</span>
+                  </label>
+                  <Link to="/forgot-password" className="text-sm font-bold text-primary hover:underline">
+                    Forgot Password?
+                  </Link>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button 
+                onClick={handleLogin}
                 disabled={loading}
-                fullWidth
-                variant="contained"
-                size="large"
-                sx={{
-                  py: 1.8,
-                  borderRadius: 2,
-                  fontSize: '1rem',
-                  fontWeight: '700',
-                  textTransform: 'none',
-                  boxShadow: '0 8px 20px -4px rgba(99, 102, 241, 0.5)',
-                  background: 'linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%)',
-                  '&:hover': {
-                    background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)',
-                    boxShadow: '0 12px 24px -4px rgba(99, 102, 241, 0.6)',
-                  }
-                }}
+                className="w-full py-4 mt-2 bg-gradient-to-r from-primary to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/40 flex items-center justify-center gap-2 transition-all disabled:opacity-70 disabled:cursor-wait hover:scale-[1.02]"
               >
-                {loading ? 'Signing in...' : 'Sign In'}
-              </Button>
+                {loading ? 'Authenticating...' : 'Sign In'}
+                {!loading && <ArrowRight className="w-5 h-5 group-hover:translate-x-1" />}
+              </button>
 
-              <Divider sx={{ color: 'text.secondary', typography: 'caption' }}>OR CONTINUE WITH</Divider>
+              {/* Social Login */}
+              <div className="mt-8">
+                <div className="relative flex items-center py-4">
+                  <div className="flex-grow border-t border-border"></div>
+                  <span className="flex-shrink-0 mx-4 text-xs font-semibold text-muted-foreground uppercase tracking-widest">Or continue with</span>
+                  <div className="flex-grow border-t border-border"></div>
+                </div>
 
-              <Stack direction="row" spacing={2}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<GoogleIcon />}
-                  sx={{ borderRadius: 2, textTransform: 'none', borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' }}
-                >
-                  Google
-                </Button>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<GitHubIcon />}
-                  sx={{ borderRadius: 2, textTransform: 'none', borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' }}
-                >
-                  GitHub
-                </Button>
-              </Stack>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <button className="flex items-center justify-center gap-2 py-3 border border-border rounded-xl hover:bg-muted/50 transition-colors font-semibold text-sm">
+                    <Chrome className="w-5 h-5" /> Google
+                  </button>
+                  <button className="flex items-center justify-center gap-2 py-3 border border-border rounded-xl hover:bg-muted/50 transition-colors font-semibold text-sm">
+                    <Github className="w-5 h-5" /> GitHub
+                  </button>
+                </div>
+              </div>
 
-              <Typography variant="body2" align="center" color="text.secondary">
-                Don't have an account?{' '}
-                <Link to="/s" style={{ textDecoration: 'none' }}>
-                  <Typography component="span" fontWeight="700" color="primary">
-                    Sign up
-                  </Typography>
-                </Link>
-              </Typography>
-            </Stack>
-          </Box>
-        </Paper>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-center text-sm font-medium text-muted-foreground mt-8">
+          Don't have an account yet?{' '}
+          <Link to="/s" className="text-primary hover:underline font-bold">Sign up instantly</Link>
+        </p>
+
       </motion.div>
-
-      {/* Snackbar Feedback */}
-      <Snackbar open={!!alert} autoHideDuration={3000} onClose={() => setAlert('')} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-        <Alert severity="success" variant="filled" onClose={() => setAlert('')} sx={{ borderRadius: 3 }}>
-          {alert}
-        </Alert>
-      </Snackbar>
-    </Box>
+    </div>
   );
-};
-
-export default Login;
+}

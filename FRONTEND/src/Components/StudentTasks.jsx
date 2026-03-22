@@ -1,57 +1,19 @@
-
 import React, { useState, useEffect } from 'react';
-import {
-    Box, Container, Typography, Grid, Card, CardContent, Button,
-    Chip, Dialog, DialogTitle, DialogContent, TextField, Select,
-    MenuItem, FormControl, InputLabel, LinearProgress, Stack,
-    IconButton, Radio, RadioGroup, FormControlLabel, FormLabel
-} from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTheme } from '../contexts/ThemeContext';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import QuizIcon from '@mui/icons-material/Quiz';
-import TimerIcon from '@mui/icons-material/Timer';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import CloseIcon from '@mui/icons-material/Close';
+import { 
+    CheckCircle2, AlertCircle, X, CloudUpload, 
+    BookOpen, HelpCircle, Trophy, Clock, Search
+} from 'lucide-react';
 import axios from 'axios';
 import Confetti from 'react-confetti';
 
-// --- Animations ---
-const SUCCESS_SOUND_URL = "https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3"; // Cheerful chime
-
-const fadeInUp = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
-};
-
-const staggerContainer = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.1
-        }
-    }
-};
-
-const cardHover = {
-    hover: {
-        y: -8,
-        boxShadow: "0px 12px 30px rgba(0,0,0,0.15)",
-        transition: { duration: 0.3 }
-    }
-};
-
 const StudentTasks = () => {
-    const { isDark } = useTheme();
     const baseurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
     // State
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('All'); // All, Assignment, Quiz
+    const [filter, setFilter] = useState('All');
     const [userId, setUserId] = useState(null);
     const [userYear, setUserYear] = useState(null);
 
@@ -73,10 +35,9 @@ const StudentTasks = () => {
     const [message, setMessage] = useState({ text: '', type: '' });
     const [showConfetti, setShowConfetti] = useState(false);
     const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
-
     const [mySubmissions, setMySubmissions] = useState({});
 
-    // --- Init ---
+    // Init
     useEffect(() => {
         const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
         window.addEventListener('resize', handleResize);
@@ -88,14 +49,10 @@ const StudentTasks = () => {
         if (stored) {
             const u = JSON.parse(stored);
             setUserId(u.id);
-            // Fetch full user details to get year
             axios.get(`${baseurl}/api/${u.id}`).then(res => {
-                const user = res.data;
-                setUserYear(user.yearClassDept);
-                fetchTasks(user.yearClassDept);
+                setUserYear(res.data.yearClassDept);
+                fetchTasks(res.data.yearClassDept);
             }).catch(() => fetchTasks(null));
-
-            // Fetch my submissions
             fetchMySubmissions(u.id);
         }
     }, []);
@@ -103,12 +60,9 @@ const StudentTasks = () => {
     const fetchMySubmissions = async (uid) => {
         try {
             const res = await axios.get(`${baseurl}/api/submissions/user/${uid}`);
-            // Map task ID to submission status
             const subMap = {};
             res.data.forEach(sub => {
-                if (sub.task) { // ensure task exists
-                    subMap[sub.task] = sub; // store full submission obj
-                }
+                if (sub.task) subMap[sub.task] = sub;
             });
             setMySubmissions(subMap);
         } catch (err) {
@@ -119,9 +73,7 @@ const StudentTasks = () => {
     const fetchTasks = async (year) => {
         try {
             setLoading(true);
-            const params = year ? { year } : {};
-            const res = await axios.get(`${baseurl}/api/tasks/active`, { params });
-            // Filter future tasks
+            const res = await axios.get(`${baseurl}/api/tasks/active`, { params: year ? { year } : {} });
             const now = new Date();
             const active = (res.data || []).filter(t => new Date(t.dueDate) >= now);
             setTasks(active);
@@ -132,34 +84,37 @@ const StudentTasks = () => {
         }
     };
 
-    // --- Actions ---
+    const displayMessage = (text, type) => {
+        setMessage({ text, type });
+        setTimeout(() => setMessage({ text: '', type: '' }), 4000);
+    };
+
+    // Actions
     const handleOpenSubmit = (task) => {
         setSelectedTask(task);
         if (task.category === 'Quiz') {
             if (task.quiz?.questions?.length > 0) {
-                setQuizAnswers(Array(task.quiz?.questions?.length || 0).fill(null));
+                setQuizAnswers(Array(task.quiz.questions.length).fill(null));
                 setCurrentQuestion(0);
                 setQuizOpen(true);
             } else {
-                setMessage({ text: "This quiz has no questions configured.", type: "error" });
+                displayMessage("This quiz has no questions configured.", "error");
             }
         } else {
             setSubmitOpen(true);
         }
     };
 
-    // --- Audio Helper ---
     const playSuccessSound = () => {
         try {
-            const audio = new Audio(SUCCESS_SOUND_URL);
+            const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3");
             audio.volume = 0.5;
-            audio.play().catch(e => console.error("Audio play failed:", e));
-        } catch (e) {
-            console.error("Audio setup failed:", e);
-        }
+            audio.play().catch(() => {});
+        } catch (e) {}
     };
 
-    const handleSubmission = async () => {
+    const handleSubmission = async (e) => {
+        e.preventDefault();
         try {
             setSubmitting(true);
             const fd = new FormData();
@@ -173,15 +128,16 @@ const StudentTasks = () => {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
-            setMessage({ text: 'Assignment Submitted Successfully! 🎉', type: 'success' });
+            displayMessage('Assignment Submitted Successfully! 🎉', 'success');
             playSuccessSound();
             setShowConfetti(true);
-            setTimeout(() => setShowConfetti(false), 6000); // Blast for 6 seconds
+            setTimeout(() => setShowConfetti(false), 6000);
+            
             setSubmitOpen(false);
             setSubLink(''); setSubText(''); setSubFile(null);
-            fetchMySubmissions(userId); // Refresh status
+            fetchMySubmissions(userId);
         } catch (err) {
-            setMessage({ text: err.response?.data?.message || 'Submission failed', type: 'error' });
+            displayMessage(err.response?.data?.message || 'Submission failed', 'error');
         } finally {
             setSubmitting(false);
         }
@@ -189,306 +145,302 @@ const StudentTasks = () => {
 
     const handleQuizSubmit = async () => {
         if (quizAnswers.some(a => a === null)) {
-            setMessage({ text: 'Please answer all questions', type: 'error' });
+            displayMessage('Please answer all questions', 'error');
             return;
         }
         try {
             setSubmitting(true);
-            const payload = { type: 'quiz', userId, answers: quizAnswers };
-            const res = await axios.post(`${baseurl}/api/tasks/${selectedTask._id}/submit`, payload);
-            const score = res.data.submission.score;
-            const isPassed = res.data.submission.passed;
-
-            setMessage({
-                text: `Quiz Complete! You scored ${score}% ${isPassed ? '🎉' : '😔'}`,
-                type: isPassed ? 'success' : 'warning'
+            const res = await axios.post(`${baseurl}/api/tasks/${selectedTask._id}/submit`, {
+                type: 'quiz', userId, answers: quizAnswers
             });
+            const { score, passed } = res.data.submission;
 
-            if (isPassed) {
+            displayMessage(`Quiz Complete! You scored ${score}% ${passed ? '🎉' : '😔'}`, passed ? 'success' : 'error');
+
+            if (passed) {
                 playSuccessSound();
                 setShowConfetti(true);
-                setTimeout(() => setShowConfetti(false), 8000); // Celebration blast!
+                setTimeout(() => setShowConfetti(false), 8000);
             }
 
             setQuizOpen(false);
-            fetchMySubmissions(userId); // Refresh status (even if failed, logic says only single attempt? or allow retry? User req says "only one time submission")
+            fetchMySubmissions(userId);
         } catch (err) {
-            setMessage({ text: 'Quiz submission failed', type: 'error' });
+            displayMessage('Quiz submission failed', 'error');
         } finally {
             setSubmitting(false);
         }
     };
 
-    // --- Filtering ---
-    const filteredTasks = tasks.filter(t => {
-        if (filter === 'All') return true;
-        if (filter === 'Quiz') return t.category === 'Quiz';
-        return t.category !== 'Quiz';
-    });
+    const filteredTasks = tasks.filter(t => filter === 'All' ? true : (filter === 'Quiz' ? t.category === 'Quiz' : t.category !== 'Quiz'));
 
     return (
-        <Box sx={{ minHeight: '100vh', bgcolor: isDark ? '#0f172a' : '#f8fafc', py: 6, transition: 'background-color 0.3s' }}>
-            {showConfetti && (
-                <Confetti
-                    width={windowSize.width}
-                    height={windowSize.height}
-                    recycle={false}
-                    numberOfPieces={500}
-                    gravity={0.2}
-                />
-            )}
-            <Container maxWidth="lg">
-
+        <div className="min-h-screen bg-background text-foreground pt-24 pb-20 font-sans selection:bg-primary/30 relative">
+            {showConfetti && <Confetti width={windowSize.width} height={windowSize.height} recycle={false} numberOfPieces={500} gravity={0.2} style={{ zIndex: 100 }} />}
+            
+            {/* Background Gradients */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 blur-[150px] mix-blend-screen rounded-full pointer-events-none" />
+            
+            <div className="container mx-auto px-4 md:px-8 relative z-10">
+                
                 {/* Header */}
-                <motion.div initial="hidden" animate="visible" variants={fadeInUp}>
-                    <Box sx={{ mb: 6, textAlign: 'center' }}>
-                        <Typography variant="h3" fontWeight="900" sx={{ background: 'linear-gradient(45deg, #6366f1, #8b5cf6)', backgroundClip: 'text', WebkitTextFillColor: 'transparent', mb: 2 }}>
-                            Assignments & Request
-                        </Typography>
-                        <Typography variant="h6" sx={{ color: isDark ? 'text.secondary' : '#475569' }}>
-                            Complete tasks, challenge yourself with quizzes, and earn rewards.
-                        </Typography>
-                    </Box>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center max-w-2xl mx-auto mb-12">
+                    <h1 className="text-4xl md:text-5xl font-black mb-4 bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
+                        Assignments & Quizzes
+                    </h1>
+                    <p className="text-muted-foreground text-lg">
+                        Complete tasks, challenge yourself with quizzes, and earn rewards to level up your tier.
+                    </p>
                 </motion.div>
 
                 {/* Filters */}
-                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 6 }}>
+                <div className="flex flex-wrap justify-center gap-3 mb-12">
                     {['All', 'Assignment', 'Quiz'].map((f) => (
-                        <Button
+                        <button
                             key={f}
                             onClick={() => setFilter(f)}
-                            variant={filter === f ? 'contained' : 'outlined'}
-                            sx={{
-                                borderRadius: 10,
-                                px: 4,
-                                py: 1,
-                                textTransform: 'none',
-                                fontWeight: 'bold',
-                                boxShadow: filter === f ? '0 4px 14px 0 rgba(99, 102, 241, 0.39)' : 'none',
-                                color: filter === f ? '#fff' : (isDark ? '#e2e8f0' : '#1e293b'),
-                                borderColor: filter === f ? 'transparent' : (isDark ? 'rgba(255,255,255,0.2)' : '#94a3b8')
-                            }}
+                            className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all shadow-sm ${
+                                filter === f 
+                                ? 'bg-primary text-primary-foreground shadow-primary/25 scale-105' 
+                                : 'bg-card border border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+                            }`}
                         >
                             {f}
-                        </Button>
+                        </button>
                     ))}
-                </Box>
+                </div>
 
                 {/* Task Grid */}
                 {loading ? (
-                    <LinearProgress />
+                    <div className="flex justify-center items-center py-20">
+                        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
                 ) : (
-                    <motion.div variants={staggerContainer} initial="hidden" animate="visible">
-                        <Grid container spacing={3}>
-                            <AnimatePresence>
-                                {filteredTasks.map((task) => (
-                                    <Grid item xs={12} md={6} lg={4} key={task._id}>
-                                        <motion.div variants={fadeInUp} whileHover="hover">
-                                            <motion.div variants={cardHover} style={{ height: '100%' }}>
-                                                <Card sx={{
-                                                    height: '100%',
-                                                    borderRadius: 4,
-                                                    border: '1px solid',
-                                                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                                                    background: isDark ? '#1e293b' : '#ffffff',
-                                                    position: 'relative',
-                                                    overflow: 'visible'
-                                                }}>
-                                                    {/* Badge */}
-                                                    <Box sx={{
-                                                        position: 'absolute', top: -12, right: 20,
-                                                        bgcolor: task.category === 'Quiz' ? '#f43f5e' : '#3b82f6',
-                                                        color: 'white', px: 2, py: 0.5, borderRadius: 2,
-                                                        fontWeight: 'bold', fontSize: '0.8rem',
-                                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                                                    }}>
-                                                        {task.category}
-                                                    </Box>
+                    <>
+                        <motion.div 
+                            initial="hidden" animate="visible"
+                            variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } }}
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                        >
+                            {filteredTasks.map((task) => {
+                                const isQuiz = task.category === 'Quiz';
+                                const submitted = mySubmissions[task._id];
+                                
+                                return (
+                                    <motion.div 
+                                        key={task._id} 
+                                        variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }}
+                                        whileHover={{ y: -5 }}
+                                        className="bg-card/50 backdrop-blur-sm border border-border hover:border-primary/50 rounded-3xl p-6 relative overflow-hidden group shadow-lg transition-colors flex flex-col"
+                                    >
+                                        <div className={`absolute top-0 right-0 px-4 py-1.5 rounded-bl-2xl font-black text-[10px] uppercase tracking-wider ${isQuiz ? 'bg-purple-500 text-white' : 'bg-blue-500 text-white'}`}>
+                                            {task.category}
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-3 mb-4 mt-2">
+                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${isQuiz ? 'bg-purple-500/10 text-purple-500' : 'bg-blue-500/10 text-blue-500'}`}>
+                                                {isQuiz ? <HelpCircle className="w-6 h-6" /> : <BookOpen className="w-6 h-6" />}
+                                            </div>
+                                            <h3 className="text-xl font-black text-foreground line-clamp-2">{task.title}</h3>
+                                        </div>
+                                        
+                                        <p className="text-muted-foreground text-sm flex-1 mb-6 line-clamp-3">
+                                            {task.description || "No description provided."}
+                                        </p>
 
-                                                    <CardContent sx={{ p: 3, pt: 4 }}>
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, color: task.category === 'Quiz' ? '#f43f5e' : '#3b82f6' }}>
-                                                            {task.category === 'Quiz' ? <QuizIcon fontSize="large" /> : <AssignmentIcon fontSize="large" />}
-                                                            <Typography variant="h6" fontWeight="bold" sx={{ ml: 1, color: isDark ? '#fff' : '#1e293b' }}>
-                                                                {task.title}
-                                                            </Typography>
-                                                        </Box>
+                                        <div className="space-y-4 mt-auto">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs font-bold">
+                                                    <Trophy className="w-3.5 h-3.5" />
+                                                    {task.points} pts
+                                                </div>
+                                                <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-muted text-muted-foreground border border-border text-xs font-bold">
+                                                    <Clock className="w-3.5 h-3.5" />
+                                                    {new Date(task.dueDate).toLocaleDateString()}
+                                                </div>
+                                            </div>
 
-                                                        <Typography variant="body2" sx={{ mb: 3, minHeight: 40, lineHeight: 1.6, color: isDark ? 'text.secondary' : '#334155' }}>
-                                                            {task.description || "No description provided."}
-                                                        </Typography>
-
-                                                        <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-                                                            <Chip icon={<EmojiEventsIcon />} label={`${task.points} pts`} size="small" color="warning" variant="outlined" />
-                                                            <Chip icon={<TimerIcon />} label={new Date(task.dueDate).toLocaleDateString()} size="small" variant="outlined" sx={{ color: isDark ? 'inherit' : '#334155', borderColor: isDark ? 'inherit' : '#94a3b8' }} />
-                                                        </Stack>
-
-                                                        {mySubmissions[task._id] ? (
-                                                            <Button
-                                                                fullWidth
-                                                                variant="outlined"
-                                                                disabled
-                                                                startIcon={<CheckCircleIcon />}
-                                                                sx={{
-                                                                    borderRadius: 3,
-                                                                    py: 1.5,
-                                                                    borderColor: 'green',
-                                                                    color: 'green',
-                                                                    '&.Mui-disabled': { borderColor: 'rgba(76, 175, 80, 0.5)', color: 'rgba(76, 175, 80, 0.7)' }
-                                                                }}
-                                                            >
-                                                                {mySubmissions[task._id].type === 'quiz'
-                                                                    ? `Score: ${mySubmissions[task._id].score}%`
-                                                                    : 'Submitted'}
-                                                            </Button>
-                                                        ) : (
-                                                            <Button
-                                                                fullWidth
-                                                                variant="contained"
-                                                                onClick={() => handleOpenSubmit(task)}
-                                                                sx={{
-                                                                    borderRadius: 3,
-                                                                    py: 1.5,
-                                                                    bgcolor: task.category === 'Quiz' ? '#f43f5e' : '#3b82f6',
-                                                                    '&:hover': { bgcolor: task.category === 'Quiz' ? '#e11d48' : '#2563eb' }
-                                                                }}
-                                                            >
-                                                                {task.category === 'Quiz' ? 'Start Quiz' : 'Submit Assignment'}
-                                                            </Button>
-                                                        )}
-                                                    </CardContent>
-                                                </Card>
-                                            </motion.div>
-                                        </motion.div>
-                                    </Grid>
-                                ))}
-                            </AnimatePresence>
-                        </Grid>
+                                            {submitted ? (
+                                                <div className="w-full py-3.5 rounded-xl border-2 border-emerald-500/20 bg-emerald-500/10 text-emerald-500 font-black text-center flex items-center justify-center gap-2">
+                                                    <CheckCircle2 className="w-5 h-5" />
+                                                    {submitted.type === 'quiz' ? `Score: ${submitted.score}%` : 'Submitted'}
+                                                </div>
+                                            ) : (
+                                                <button 
+                                                    onClick={() => handleOpenSubmit(task)}
+                                                    className={`w-full py-3.5 rounded-xl font-black text-white shadow-lg transition-transform active:scale-95 ${isQuiz ? 'bg-purple-500 hover:bg-purple-600 shadow-purple-500/25' : 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/25'}`}
+                                                >
+                                                    {isQuiz ? 'Start Quiz' : 'Submit Now'}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </motion.div>
+                        
                         {filteredTasks.length === 0 && (
-                            <Typography textAlign="center" sx={{ mt: 8, opacity: 0.5 }}>No active tasks found in this category.</Typography>
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-24 text-muted-foreground">
+                                <Search className="w-16 h-16 opacity-20 mb-4" />
+                                <h3 className="text-xl font-black">No Active Tasks</h3>
+                                <p className="opacity-70">Check back later for new {filter.toLowerCase()}s.</p>
+                            </motion.div>
                         )}
-                    </motion.div>
+                    </>
+                )}
+            </div>
+
+            {/* --- Modals --- */}
+            <AnimatePresence>
+                {/* Assignment Submission Modal */}
+                {submitOpen && selectedTask && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} 
+                            className="w-full max-w-lg bg-card border border-border shadow-2xl rounded-3xl overflow-hidden flex flex-col"
+                        >
+                            <div className="p-6 border-b border-border flex justify-between items-center bg-muted/30">
+                                <h2 className="text-xl font-black text-foreground truncate pl-2">{selectedTask.title}</h2>
+                                <button onClick={() => setSubmitOpen(false)} className="p-2 hover:bg-muted rounded-full transition-colors"><X className="w-5 h-5 text-muted-foreground" /></button>
+                            </div>
+                            <form onSubmit={handleSubmission} className="p-6 space-y-6">
+                                <div>
+                                    <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Submission Type</label>
+                                    <select 
+                                        value={subType} onChange={(e) => setSubType(e.target.value)}
+                                        className="w-full bg-background border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none"
+                                    >
+                                        <option value="link">Link (Google Doc, Github, etc.)</option>
+                                        <option value="text">Direct Text Entry</option>
+                                        <option value="file">File Upload (.pdf, .zip, etc.)</option>
+                                    </select>
+                                </div>
+
+                                {subType === 'link' && (
+                                    <div>
+                                        <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Project URL</label>
+                                        <input type="url" required value={subLink} onChange={(e) => setSubLink(e.target.value)} placeholder="https://..." className="w-full bg-background border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all" />
+                                    </div>
+                                )}
+                                {subType === 'text' && (
+                                    <div>
+                                        <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Your Answer</label>
+                                        <textarea required rows={4} value={subText} onChange={(e) => setSubText(e.target.value)} placeholder="Write your submission here..." className="w-full bg-background border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all resize-none" />
+                                    </div>
+                                )}
+                                {subType === 'file' && (
+                                    <div>
+                                        <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Attach File</label>
+                                        <label className="w-full border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-colors rounded-xl px-4 py-8 flex flex-col items-center justify-center cursor-pointer">
+                                            <CloudUpload className="w-8 h-8 text-primary mb-2 opacity-80" />
+                                            <span className="font-bold text-sm">{subFile ? subFile.name : "Click or drag to attach file"}</span>
+                                            <input type="file" hidden required onChange={(e) => setSubFile(e.target.files[0])} />
+                                        </label>
+                                    </div>
+                                )}
+
+                                <button 
+                                    type="submit" disabled={submitting}
+                                    className="w-full bg-primary text-primary-foreground font-black py-4 rounded-xl shadow-lg hover:bg-primary/90 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                                >
+                                    {submitting ? 'Submitting...' : 'Confirm Submission'}
+                                </button>
+                            </form>
+                        </motion.div>
+                    </div>
                 )}
 
-                {/* --- Assignment Submission Dialog --- */}
-                <Dialog open={submitOpen} onClose={() => setSubmitOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 4 } }}>
-                    <DialogTitle sx={{ fontWeight: 'bold' }}>Submit Assignment: {selectedTask?.title}</DialogTitle>
-                    <DialogContent>
-                        <Box sx={{ mt: 2 }}>
-                            <FormControl fullWidth sx={{ mb: 3 }}>
-                                <InputLabel>Submission Type</InputLabel>
-                                <Select label="Submission Type" value={subType} onChange={(e) => setSubType(e.target.value)}>
-                                    <MenuItem value="link">Link (Google Doc/Drive)</MenuItem>
-                                    <MenuItem value="text">Text Entry</MenuItem>
-                                    <MenuItem value="file">File Upload</MenuItem>
-                                </Select>
-                            </FormControl>
-
-                            {subType === 'link' && (
-                                <TextField fullWidth label="Paste Link" variant="outlined" value={subLink} onChange={(e) => setSubLink(e.target.value)} />
-                            )}
-                            {subType === 'text' && (
-                                <TextField fullWidth multiline rows={4} label="Your Answeer" variant="outlined" value={subText} onChange={(e) => setSubText(e.target.value)} />
-                            )}
-                            {subType === 'file' && (
-                                <Button component="label" variant="outlined" startIcon={<CloudUploadIcon />} fullWidth sx={{ height: 56 }}>
-                                    {subFile ? subFile.name : "Choose File"}
-                                    <input type="file" hidden onChange={(e) => setSubFile(e.target.files[0])} />
-                                </Button>
-                            )}
-
-                            <Button fullWidth variant="contained" size="large" sx={{ mt: 4, borderRadius: 3 }} onClick={handleSubmission} disabled={submitting}>
-                                {submitting ? <LinearProgress sx={{ width: '100%' }} /> : 'Submit'}
-                            </Button>
-                        </Box>
-                    </DialogContent>
-                </Dialog>
-
-                {/* --- Quiz Dialog --- */}
-                <Dialog open={quizOpen} fullScreen TransitionComponent={React.forwardRef(function Transition(props, ref) { return <motion.div ref={ref} {...props} />; })}>
-                    <Box sx={{ minHeight: '100vh', bgcolor: isDark ? '#0f172a' : '#f8fafc', p: 4 }}>
-                        <Container maxWidth="md">
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-                                <Typography variant="h4" fontWeight="bold">{selectedTask?.title}</Typography>
-                                <IconButton onClick={() => setQuizOpen(false)}><CloseIcon /></IconButton>
-                            </Box>
+                {/* Quiz Full Screen Modal */}
+                {quizOpen && selectedTask && selectedTask.quiz?.questions && (
+                    <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-xl flex flex-col">
+                        <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} className="flex-1 flex flex-col max-w-3xl w-full mx-auto p-4 md:p-8">
+                            <div className="flex justify-between items-center py-4 mb-4 border-b border-border">
+                                <h2 className="text-xl md:text-2xl font-black text-purple-500 line-clamp-1 pr-4">{selectedTask.title}</h2>
+                                <button onClick={() => setQuizOpen(false)} className="p-2 bg-muted hover:bg-destructive/20 hover:text-destructive rounded-full transition-colors shrink-0"><X className="w-5 h-5" /></button>
+                            </div>
 
                             {/* Progress */}
-                            <LinearProgress variant="determinate" value={((currentQuestion + 1) / (selectedTask?.quiz?.questions?.length || 1)) * 100} sx={{ mb: 6, height: 10, borderRadius: 5 }} />
+                            <div className="w-full bg-muted rounded-full h-2.5 mb-8 overflow-hidden">
+                                <div className="bg-gradient-to-r from-primary to-purple-500 h-2.5 rounded-full transition-all duration-300" style={{ width: `${((currentQuestion + 1) / selectedTask.quiz.questions.length) * 100}%` }}></div>
+                            </div>
 
-                            {selectedTask?.quiz?.questions && selectedTask.quiz.questions.length > 0 ? (
-                                <Card sx={{ borderRadius: 4, p: 4, mb: 4 }}>
-                                    <Typography variant="h6" color="text.secondary" gutterBottom>
-                                        Question {currentQuestion + 1} of {selectedTask.quiz.questions.length}
-                                    </Typography>
-                                    <Typography variant="h5" fontWeight="bold" sx={{ mb: 4 }}>
-                                        {selectedTask.quiz.questions[currentQuestion].text}
-                                    </Typography>
+                            <div className="flex-1 overflow-y-auto pb-20 scrollbar-hide">
+                                <span className="inline-block px-3 py-1 bg-purple-500/10 text-purple-500 font-bold text-xs uppercase tracking-widest rounded-lg mb-4">
+                                    Question {currentQuestion + 1} of {selectedTask.quiz.questions.length}
+                                </span>
+                                <h3 className="text-2xl md:text-4xl font-black text-foreground mb-8 leading-tight">
+                                    {selectedTask.quiz.questions[currentQuestion].text}
+                                </h3>
 
-                                    <RadioGroup
-                                        value={quizAnswers[currentQuestion] !== null ? quizAnswers[currentQuestion] : ''}
-                                        onChange={(e) => {
-                                            const newAns = [...quizAnswers];
-                                            newAns[currentQuestion] = Number(e.target.value);
-                                            setQuizAnswers(newAns);
-                                        }}
+                                <div className="space-y-3 md:space-y-4">
+                                    {selectedTask.quiz.questions[currentQuestion].options.map((opt, idx) => {
+                                        const isSelected = quizAnswers[currentQuestion] === idx;
+                                        return (
+                                            <button
+                                                key={idx}
+                                                onClick={() => {
+                                                    const newAns = [...quizAnswers];
+                                                    newAns[currentQuestion] = idx;
+                                                    setQuizAnswers(newAns);
+                                                }}
+                                                className={`w-full text-left p-4 md:p-6 rounded-2xl border-2 transition-all font-bold md:text-lg flex items-center justify-between group ${
+                                                    isSelected 
+                                                    ? 'border-purple-500 bg-purple-500/10 text-purple-500 shadow-lg shadow-purple-500/10' 
+                                                    : 'border-border bg-card hover:border-purple-500/50 hover:bg-purple-500/5 text-foreground'
+                                                }`}
+                                            >
+                                                <span>{String.fromCharCode(65 + idx)}. {opt}</span>
+                                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center p-1 transition-all ${isSelected ? 'border-purple-500' : 'border-muted-foreground group-hover:border-purple-500/50'}`}>
+                                                    {isSelected && <div className="w-full h-full bg-purple-500 rounded-full" />}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="py-4 mt-auto flex justify-between gap-4 border-t border-border bg-background/80 backdrop-blur-md">
+                                <button 
+                                    disabled={currentQuestion === 0} 
+                                    onClick={() => setCurrentQuestion(curr => curr - 1)}
+                                    className="px-6 py-4 rounded-xl font-bold text-muted-foreground hover:bg-muted disabled:opacity-30 transition-all"
+                                >
+                                    Previous
+                                </button>
+                                {currentQuestion < selectedTask.quiz.questions.length - 1 ? (
+                                    <button 
+                                        onClick={() => setCurrentQuestion(curr => curr + 1)}
+                                        className="px-8 py-4 bg-primary text-primary-foreground font-black rounded-xl hover:bg-primary/90 shadow-lg transition-all"
                                     >
-                                        <Stack spacing={2}>
-                                            {selectedTask.quiz.questions[currentQuestion].options.map((opt, idx) => (
-                                                <FormControlLabel
-                                                    key={idx}
-                                                    value={idx}
-                                                    control={<Radio />}
-                                                    label={opt}
-                                                    sx={{
-                                                        border: '1px solid',
-                                                        borderColor: 'divider',
-                                                        borderRadius: 2,
-                                                        p: 1,
-                                                        bgcolor: quizAnswers[currentQuestion] === idx ? (isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.05)') : 'transparent',
-                                                        transition: 'background-color 0.2s',
-                                                        '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }
-                                                    }}
-                                                />
-                                            ))}
-                                        </Stack>
-                                    </RadioGroup>
+                                        Next Question
+                                    </button>
+                                ) : (
+                                    <button 
+                                        disabled={submitting}
+                                        onClick={handleQuizSubmit}
+                                        className="px-10 py-4 bg-purple-500 text-white font-black rounded-xl hover:bg-purple-600 shadow-xl shadow-purple-500/20 transition-all disabled:opacity-70 flex items-center gap-2"
+                                    >
+                                        {submitting ? 'Submitting...' : 'Submit Quiz 🔥'}
+                                    </button>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
-                                    <Box sx={{ mt: 6, display: 'flex', justifyContent: 'space-between' }}>
-                                        <Button disabled={currentQuestion === 0} onClick={() => setCurrentQuestion(curr => curr - 1)}>Previous</Button>
-                                        {currentQuestion < selectedTask.quiz.questions.length - 1 ? (
-                                            <Button variant="contained" onClick={() => setCurrentQuestion(curr => curr + 1)}>Next Question</Button>
-                                        ) : (
-                                            <Button variant="contained" color="success" size="large" onClick={handleQuizSubmit} disabled={submitting}>Submit Quiz</Button>
-                                        )}
-                                    </Box>
-                                </Card>
-                            ) : (
-                                <Typography>No questions found for this quiz.</Typography>
-                            )}
-                        </Container>
-                    </Box>
-                </Dialog>
-
-                {/* Feedback Toast */}
+            {/* Toasts */}
+            <AnimatePresence>
                 {message.text && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        style={{ position: 'fixed', bottom: 30, right: 30, zIndex: 9999 }}
-                    >
-                        <Card sx={{ bgcolor: message.type === 'success' ? '#10b981' : '#ef4444', color: 'white', px: 3, py: 2 }}>
-                            <Stack direction="row" spacing={2} alignItems="center">
-                                {message.type === 'success' && <CheckCircleIcon />}
-                                <Typography fontWeight="bold">{message.text}</Typography>
-                                <IconButton size="small" color="inherit" onClick={() => setMessage({ text: '', type: '' })}><CloseIcon /></IconButton>
-                            </Stack>
-                        </Card>
+                    <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="fixed bottom-6 right-6 z-[200]">
+                        <div className={`p-4 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-md ${message.type === 'success' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-500' : 'bg-rose-500/10 border border-rose-500/20 text-rose-500'}`}>
+                            {message.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                            <span className="font-bold">{message.text}</span>
+                        </div>
                     </motion.div>
                 )}
-
-            </Container>
-        </Box>
+            </AnimatePresence>
+        </div>
     );
 };
 

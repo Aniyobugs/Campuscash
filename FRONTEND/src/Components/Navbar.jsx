@@ -1,36 +1,14 @@
-// CustomAppBar.js
 import React, { useState, useEffect } from "react";
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Button,
-  Container,
-  IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemText,
-  Box,
-  ListItemButton,
-  Tooltip,
-} from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
-import HomeIcon from "@mui/icons-material/Home";
-import Brightness4Icon from "@mui/icons-material/Brightness4";
-import Brightness7Icon from "@mui/icons-material/Brightness7";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
 import Notifications from "./Notifications";
+import { Menu, Home, Sun, Moon, X, LogOut } from "lucide-react";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   const menuItems = [
     { label: "How It Works", id: "how" },
@@ -43,9 +21,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -61,403 +37,196 @@ export default function Navbar() {
       scrollToId(id);
       setMobileOpen(false);
     } else {
-      // navigate to home and request a scroll via location.state
       navigate("/", { state: { scrollTo: id } });
       setMobileOpen(false);
     }
   };
 
-  // use AuthContext for role/user and logout
   const { role, user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
 
-  useEffect(() => {
-    // keep local UI in sync with sessionStorage as a fallback
-    const onStorage = () => {
-      // no-op, React will re-render when context updates
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  const drawer = (
-    <Box sx={{ width: 250 }} onClick={handleDrawerToggle}>
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton component={Link} to="/">
-            <ListItemText primary="Home" />
-          </ListItemButton>
-        </ListItem>
-
-        {role ? (
-          <ListItem>
-            <ListItemText primary={role.toUpperCase()} sx={{ fontWeight: 'bold' }} />
-          </ListItem>
-        ) : null}
-
-        {!role &&
-          menuItems.map((item) => (
-            <ListItem disablePadding key={item.label}>
-              <ListItemButton onClick={() => handleNav(item.id)}>
-                <ListItemText primary={item.label} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-
-        {!role && (
-          <ListItem disablePadding>
-            <ListItemButton component={Link} to="/events">
-              <ListItemText primary="Event" />
-            </ListItemButton>
-          </ListItem>
-        )}
-
-        {role === "admin" && (
-          <>
-            <ListItem disablePadding>
-              <ListItemButton component={Link} to="/admin">
-                <ListItemText primary="Admin" />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton component={Link} to="/tsk">
-                <ListItemText primary="Assign" />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton component={Link} to="/admin/roles">
-                <ListItemText primary="Roles" />
-              </ListItemButton>
-            </ListItem>
-          </>
-        )}
-
-        {role === "store" && (
-          <ListItem disablePadding>
-            <ListItemButton component={Link} to="/store">
-              <ListItemText primary="Store" />
-            </ListItemButton>
-          </ListItem>
-        )}
-
-        {role === "faculty" && (
-          <ListItem disablePadding>
-            <ListItemButton component={Link} to="/faculty">
-              <ListItemText primary="Faculty" />
-            </ListItemButton>
-          </ListItem>
-        )}
-
-        {role === "user" && (
-          <ListItem disablePadding>
-            <ListItemButton component={Link} to="/events">
-              <ListItemText primary="Event" />
-            </ListItemButton>
-          </ListItem>
-        )}
-
-        {/* Profile / Auth Actions */}
-        {role ? (
-          <>
-            <ListItem disablePadding>
-              <ListItemButton component={Link} to="/profile">
-                <ListItemText primary="Profile" />
-              </ListItemButton>
-            </ListItem>
-
-            <ListItem disablePadding>
-              <ListItemButton onClick={logout}>
-                <ListItemText primary="Logout" />
-              </ListItemButton>
-            </ListItem>
-
-            {user && (
-              <ListItem disablePadding>
-                <ListItemButton component={Link} to="/profile">
-                  <ListItemText primary={user.fname || user.ename || user.email} />
-                </ListItemButton>
-              </ListItem>
-            )}
-          </>
-        ) : (
-          <>
-            <ListItem disablePadding>
-              <ListItemButton component={Link} to="/L">
-                <ListItemText primary="Login" />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton component={Link} to="/s">
-                <ListItemText primary="Get Started" />
-              </ListItemButton>
-            </ListItem>
-          </>
-        )}
-
-      </List>
-    </Box>
-  );
-
-  // Dynamic check for Home page transparency
   const isHome = location.pathname === "/";
   const isTransparent = isHome && !scrolled;
 
+  const headerClass = `fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
+    isTransparent
+      ? "bg-transparent text-foreground"
+      : "bg-background/95 backdrop-blur-md border-b border-border shadow-sm text-foreground"
+  }`;
+
   return (
     <>
-      <AppBar
-        position={isHome ? "fixed" : "sticky"}
-        elevation={isTransparent ? 0 : 4}
-        sx={{
-          background: isTransparent
-            ? 'transparent'
-            : (isDark ? "rgba(26, 26, 26, 0.95)" : "rgba(255, 255, 255, 0.95)"),
-          color: isDark ? "#ffffff" : "#212121",
-          borderBottom: isTransparent ? 'none' : `1px solid ${isDark ? "#333333" : "#e0e0e0"}`,
-          transition: 'all 0.3s ease-in-out',
-          backdropFilter: isTransparent ? 'none' : 'blur(10px)',
-          width: '100%',
-          top: 0,
-          left: 0,
-          zIndex: 1100, // Ensure it stays on top
-        }}>
-        <Container maxWidth="lg">
-          <Toolbar disableGutters sx={{ width: "100%", px: 0 }}>
-            {/* Home Button */}
-            <Tooltip title="Home">
-              <IconButton component={Link} to="/" sx={{ color: isDark ? '#ffffff' : '#212121', mr: 1 }}>
-                <HomeIcon />
-              </IconButton>
-            </Tooltip>
-            {/* Brand Name */}
-            <Typography
-              variant="h5"
-              sx={{
-                flexGrow: 1,
-                fontWeight: "bold",
-                letterSpacing: 1,
-                color: isDark ? '#8866ff' : '#6444e6',
-              }}
-            >
-              Campus Cash
-            </Typography>
+      <header className={headerClass}>
+        <div className="container mx-auto px-4 lg:max-w-7xl">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-2">
+              <Link to="/" className="p-2 transition-colors hover:text-primary">
+                <Home className="w-5 h-5" />
+              </Link>
+              <h1 className="text-xl font-bold tracking-wide text-primary" style={{ color: "var(--primary)" }}>
+                Campus Cash
+              </h1>
+            </div>
 
-            {/* Desktop Menu */}
-            <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center" }}>
-              {/* Common links (show only to guests) */}
-              {!role &&
-                menuItems.map((item) => (
-                  <Button
-                    key={item.label}
-                    color="inherit"
-                    sx={{
-                      mx: 1,
-                      textTransform: "none",
-                      color: isDark ? '#ffffff' : '#212121',
-                      '&:hover': {
-                        color: isDark ? '#8866ff' : '#6444e6',
-                      }
-                    }}
-                    onClick={() => handleNav(item.id)}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center gap-4">
+              {/* Common links */}
+              {!role && menuItems.map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => handleNav(item.id)}
+                  className="px-3 py-2 text-sm font-medium transition-colors hover:text-primary"
+                >
+                  {item.label}
+                </button>
+              ))}
 
               {!role && (
-                <Button
-                  color="inherit"
-                  component={Link}
-                  to="/events"
-                  sx={{
-                    mx: 1,
-                    textTransform: "none",
-                    color: isDark ? '#ffffff' : '#212121',
-                    '&:hover': {
-                      color: isDark ? '#8866ff' : '#6444e6',
-                    }
-                  }}
-                >
+                <Link to="/events" className="px-3 py-2 text-sm font-medium transition-colors hover:text-primary">
                   Event
-                </Button>
+                </Link>
               )}
 
               {/* Role-specific links */}
               {role === "admin" && (
                 <>
-                  <Button color="inherit" component={Link} to="/admin" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
-                    Admin
-                  </Button>
-                  <Button color="inherit" component={Link} to="/tsk" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
-                    Assign
-                  </Button>
-                  <Button color="inherit" component={Link} to="/admin/roles" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
-                    Roles
-                  </Button>
-                  <Button color="inherit" component={Link} to="/events" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
-                    Event
-                  </Button>
+                  <Link to="/admin" className="px-3 py-2 text-sm font-medium hover:text-primary">Admin</Link>
+                  <Link to="/tsk" className="px-3 py-2 text-sm font-medium hover:text-primary">Assign</Link>
+                  <Link to="/admin/roles" className="px-3 py-2 text-sm font-medium hover:text-primary">Roles</Link>
+                  <Link to="/events" className="px-3 py-2 text-sm font-medium hover:text-primary">Event</Link>
                 </>
               )}
 
               {role === "store" && (
-                <Button color="inherit" component={Link} to="/store" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
-                  Store
-                </Button>
+                <Link to="/store" className="px-3 py-2 text-sm font-medium hover:text-primary">Store</Link>
               )}
 
               {role === "faculty" && (
                 <>
-                  <Button color="inherit" component={Link} to="/faculty" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
-                    Faculty
-                  </Button>
-                  <Button color="inherit" component={Link} to="/events" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
-                    Event
-                  </Button>
+                  <Link to="/faculty" className="px-3 py-2 text-sm font-medium hover:text-primary">Faculty</Link>
+                  <Link to="/events" className="px-3 py-2 text-sm font-medium hover:text-primary">Event</Link>
                 </>
               )}
 
               {role === "user" && (
                 <>
-                  <Button color="inherit" component={Link} to="/user" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
-                    Dashboard
-                  </Button>
-                  <Button color="inherit" component={Link} to="/tasks" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
-                    Tasks
-                  </Button>
-                  <Button color="inherit" component={Link} to="/events" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
-                    Event
-                  </Button>
-                  {/* Coupons is part of dashboard now per design, but keeping a mental note if direct link needed. 
-                      Design just shows "Coupons" in top nav, so adding it. */}
-                  <Button color="inherit" component={Link} to="/user" state={{ scrollTo: 'coupons' }} sx={{ color: isDark ? '#ffffff' : '#212121' }}>
-                    Coupons
-                  </Button>
-                  <Button color="inherit" component={Link} to="/profile" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
-                    Profile
-                  </Button>
+                  <Link to="/user" className="px-3 py-2 text-sm font-medium hover:text-primary">Dashboard</Link>
+                  <Link to="/tasks" className="px-3 py-2 text-sm font-medium hover:text-primary">Tasks</Link>
+                  <Link to="/events" className="px-3 py-2 text-sm font-medium hover:text-primary">Event</Link>
+                  <Link to="/profile" className="px-3 py-2 text-sm font-medium hover:text-primary">Profile</Link>
                 </>
               )}
 
-              {/* Notifications */}
-              {role && (
-                <Notifications />
-              )}
+              {role && <Notifications />}
 
-              {/* Theme Toggle Button */}
-              <Tooltip title={isDark ? "Light Mode" : "Dark Mode"}>
-                <IconButton color="inherit" onClick={toggleTheme} sx={{
-                  mx: 1,
-                  color: isDark ? '#8866ff' : '#6444e6',
-                  '&:hover': {
-                    backgroundColor: isDark ? 'rgba(136, 102, 255, 0.1)' : 'rgba(100, 68, 230, 0.1)',
-                  }
-                }}>
-                  <AnimatePresence mode='wait' initial={false}>
-                    <motion.div
-                      style={{ display: 'inline-flex' }}
-                      key={isDark ? 'dark' : 'light'}
-                      initial={{ y: -20, opacity: 0, rotate: -90 }}
-                      animate={{ y: 0, opacity: 1, rotate: 0 }}
-                      exit={{ y: 20, opacity: 0, rotate: 90 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      {isDark ? <Brightness7Icon /> : <Brightness4Icon />}
-                    </motion.div>
-                  </AnimatePresence>
-                </IconButton>
-              </Tooltip>
-
-              {/* Auth actions */}
-              {!role ? (
-                <>
-                  <Button component={Link} to="/L" sx={{ color: isDark ? '#ffffff' : '#212121' }}>
-                    Login
-                  </Button>
-                  <Button
-                    variant="contained"
-                    component={Link}
-                    to="/s"
-                    sx={{
-                      ml: 2,
-                      borderRadius: 20,
-                      textTransform: "none",
-                      fontWeight: "bold",
-                      px: 3,
-                      py: 1,
-                      backgroundColor: isDark ? '#6444e6' : '#6444e6',
-                      color: '#ffffff',
-                      '&:hover': {
-                        backgroundColor: isDark ? '#8866ff' : '#7d5ae6',
-                      }
-                    }}
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-full hover:bg-accent transition-colors text-primary ml-2"
+                aria-label="Toggle Theme"
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={isDark ? "dark" : "light"}
+                    initial={{ y: -20, opacity: 0, rotate: -90 }}
+                    animate={{ y: 0, opacity: 1, rotate: 0 }}
+                    exit={{ y: 20, opacity: 0, rotate: 90 }}
+                    transition={{ duration: 0.2 }}
                   >
+                    {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                  </motion.div>
+                </AnimatePresence>
+              </button>
+
+              {!role ? (
+                <div className="flex items-center gap-3">
+                  <Link to="/L" className="px-4 py-2 text-sm font-medium hover:text-primary">
+                    Login
+                  </Link>
+                  <Link to="/s" className="px-5 py-2 text-sm font-bold text-primary-foreground bg-primary hover:bg-primary/90 rounded-full transition-colors">
                     Get Started
-                  </Button>
-                </>
+                  </Link>
+                </div>
               ) : (
-                <>
-                  {/* Role badge */}
-                  <Button disabled sx={{
-                    color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(33, 33, 33, 0.7)',
-                    textTransform: 'none',
-                    ml: 1
-                  }}>
-                    {role && role.toUpperCase()}
-                  </Button>
-
-                  <Button color="inherit" onClick={logout} sx={{
-                    ml: 2,
-                    color: isDark ? '#ffffff' : '#212121',
-                    '&:hover': {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-                    }
-                  }}>
-                    Logout
-                  </Button>
+                <div className="flex items-center gap-2 md:gap-4 ml-2 pl-2 md:pl-4 border-l border-border shrink-0">
+                  <span className="hidden xl:inline-block px-2 py-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground bg-muted rounded-md">
+                    {role}
+                  </span>
                   {user && (
-                    <Button color="inherit" component={Link} to="/profile" sx={{
-                      ml: 1,
-                      color: isDark ? '#ffffff' : '#212121',
-                    }}>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1 }}>
-                        <Typography variant="body2" fontWeight="bold">{user.fname || user.ename || user.email}</Typography>
-                        {(user.department || user.yearClassDept) && (
-                          <Typography variant="caption" sx={{ opacity: 0.8, fontSize: '0.7rem' }}>
-                            {user.department || user.yearClassDept}
-                          </Typography>
-                        )}
-                      </Box>
-                    </Button>
+                    <Link to="/profile" className="flex items-center gap-2 hover:text-primary transition-colors group">
+                       <div className="w-8 h-8 rounded-full bg-primary/20 text-primary font-bold flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
+                         {user.fname ? user.fname[0].toUpperCase() : 'U'}
+                       </div>
+                       <span className="hidden lg:inline-block text-sm font-bold truncate max-w-[120px]">
+                         {user.fname || user.email}
+                       </span>
+                    </Link>
                   )}
-                </>
+                  <button onClick={logout} className="p-2 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-full transition-colors shrink-0" title="Logout">
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
               )}
-            </Box>
+            </nav>
 
-            {/* Mobile Menu Button */}
-            <IconButton
-              edge="end"
-              color="inherit"
-              aria-label="menu"
-              onClick={handleDrawerToggle}
-              sx={{ display: { xs: "flex", md: "none" } }}
-            >
-              <MenuIcon />
-            </IconButton>
-          </Toolbar>
-        </Container>
-      </AppBar>
+            <button className="md:hidden p-2" onClick={handleDrawerToggle}>
+              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
+        </div>
+      </header>
 
       {/* Mobile Drawer */}
-      <Drawer
-        anchor="right"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true, // Better mobile performance
-        }}
-      >
-        {drawer}
-      </Drawer>
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: "100%" }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed inset-0 z-40 bg-background flex flex-col pt-20 px-6 gap-4"
+          >
+            <Link to="/" onClick={handleDrawerToggle} className="text-lg font-medium py-2 border-b border-border">Home</Link>
+            
+            {!role && menuItems.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => handleNav(item.id)}
+                className="text-left py-2 text-lg font-medium border-b border-border"
+              >
+                {item.label}
+              </button>
+            ))}
+            {!role && <Link to="/events" onClick={handleDrawerToggle} className="py-2 text-lg font-medium border-b border-border">Event</Link>}
+
+            {/* Same role menus... */}
+            {role === "admin" && (
+                <>
+                  <Link to="/admin" onClick={handleDrawerToggle} className="py-2 text-lg font-medium border-b border-border">Admin</Link>
+                  <Link to="/tsk" onClick={handleDrawerToggle} className="py-2 text-lg font-medium border-b border-border">Assign</Link>
+                  <Link to="/admin/roles" onClick={handleDrawerToggle} className="py-2 text-lg font-medium border-b border-border">Roles</Link>
+                </>
+            )}
+
+            {!role ? (
+              <div className="flex flex-col gap-3 mt-4">
+                <Link to="/L" onClick={handleDrawerToggle} className="py-3 text-center border border-border rounded-lg font-medium">Login</Link>
+                <Link to="/s" onClick={handleDrawerToggle} className="py-3 text-center bg-primary text-primary-foreground rounded-lg font-bold">Get Started</Link>
+              </div>
+            ) : (
+                <button onClick={() => { logout(); handleDrawerToggle(); }} className="py-3 text-center bg-destructive text-destructive-foreground rounded-lg font-bold mt-4">Logout</button>
+            )}
+
+            {/* Mobile Theme Toggle */}
+             <button
+                onClick={toggleTheme}
+                className="flex items-center gap-2 py-3 mt-auto mb-8 border-t border-border w-full text-left"
+              >
+                  {isDark ? <Sun className="w-5 h-5 text-primary" /> : <Moon className="w-5 h-5 text-primary" />}
+                  <span className="font-medium text-lg">{isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}</span>
+              </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

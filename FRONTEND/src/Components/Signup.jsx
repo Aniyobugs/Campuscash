@@ -1,84 +1,45 @@
-import {
-  Button,
-  TextField,
-  Typography,
-  Checkbox,
-  FormControlLabel,
-  MenuItem,
-  IconButton,
-  InputAdornment,
-  LinearProgress,
-  Snackbar,
-  Alert,
-  Stack,
-  Divider,
-  Avatar,
-  Box,
-  Paper,
-  useMediaQuery,
-  alpha
-} from "@mui/material";
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import GoogleIcon from '@mui/icons-material/Google';
-import GitHubIcon from '@mui/icons-material/GitHub';
-import SchoolIcon from '@mui/icons-material/School';
-import axios from "axios";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from 'framer-motion';
+import axios from "axios";
+import { motion, AnimatePresence } from 'framer-motion';
+import Confetti from 'react-confetti';
+import { 
+  User, Mail, Lock, CheckCircle, ChevronRight, ChevronLeft, 
+  Eye, EyeOff, GraduationCap, Building, IdCard, Sparkles
+} from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
-const Signup = () => {
-  const [input, setInput] = useState({
-    termsAccepted: false,
-  });
+const DEPARTMENTS = [
+  "English", "Food Technology", "Commerce", "Computer Science", 
+  "Multimedia", "Hotel Management", "Tourism Management", 
+  "Costume & Fashion Designing", "Management", "Languages", "Mathematics"
+];
+
+const YEARS = ["Year 1", "Year 2", "Year 3", "Year 4"];
+
+export default function Signup() {
+  const [step, setStep] = useState(1);
+  const [input, setInput] = useState({ termsAccepted: false });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [successMsg, setSuccessMsg] = useState("");
-  const [pwdStrength, setPwdStrength] = useState(0);
-
-  const baseurl = import.meta.env.VITE_API_BASE_URL;
+  const [success, setSuccess] = useState(false);
+  
+  const baseurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
   const navigate = useNavigate();
-  const { isDark } = useTheme();
-  const isMobile = useMediaQuery('(max-width:900px)');
+
+  // For Confetti
+  const [windowSize, setWindowSize] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 0,
+    height: typeof window !== 'undefined' ? window.innerHeight : 0,
+  });
 
   const inputHandler = (e) => {
-    const value =
-      e.target.type === "checkbox" ? e.target.checked : e.target.value;
-    setInput({ ...input, [e.target.name]: value });
-    if (e.target.name === 'password') setPwdStrength(calcStrength(value));
-    if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: null });
-  };
-
-  const addHandler = () => {
-    // frontend validation
-    const nextErrors = {};
-    if (!input.fname) nextErrors.fname = 'Full name is required';
-    if (!input.ename || !/^\S+@\S+\.\S+$/.test(input.ename)) nextErrors.ename = 'Enter a valid college email';
-    if (!input.password || input.password.length < 6) nextErrors.password = 'Password must be at least 6 characters';
-    if (input.yearClassDept !== 'Faculty' && !input.studentId) nextErrors.studentId = 'Student ID is required';
-    if (!input.yearClassDept) nextErrors.yearClassDept = 'Please select your year/class/department';
-    if (!input.department) nextErrors.department = 'Department is required';
-    if (!input.termsAccepted) nextErrors.termsAccepted = 'You must accept the Terms of Service';
-
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length) return;
-    setLoading(true);
-
-    axios
-      .post(`${baseurl}/api`, input)
-      .then((res) => {
-        setSuccessMsg(res.data.message || 'Account created successfully!');
-        setLoading(false);
-        setTimeout(() => navigate('/L'), 1500);
-      })
-      .catch((error) => {
-        setLoading(false);
-        const msg = error.response?.data?.message || 'Signup failed';
-        setErrors({ form: msg });
-      });
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setInput(prev => ({ ...prev, [e.target.name]: value }));
+    if (errors[e.target.name]) {
+      setErrors(prev => ({ ...prev, [e.target.name]: null }));
+    }
   };
 
   const calcStrength = (pwd) => {
@@ -91,329 +52,364 @@ const Signup = () => {
     return Math.min(100, score);
   };
 
-  const togglePassword = () => setShowPassword((s) => !s);
+  const pwdStrength = calcStrength(input.password);
 
-  // Styling Constants
-  const gradientBg = isDark
-    ? 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)'
-    : 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 60%, #f0f9ff 100%)';
+  const validateStep1 = () => {
+    const nextErrors = {};
+    if (!input.fname) nextErrors.fname = 'Full name is required';
+    if (!input.ename || !/^\S+@\S+\.\S+$/.test(input.ename)) nextErrors.ename = 'Enter a valid college email';
+    if (!input.password || input.password.length < 6) nextErrors.password = 'Password must be at least 6 characters';
+    
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length === 0) setStep(2);
+  };
 
-  const passwordColor = pwdStrength < 40 ? 'error' : pwdStrength < 80 ? 'warning' : 'success';
+  const validateStep2 = () => {
+    const nextErrors = {};
+    if (!input.yearClassDept) nextErrors.yearClassDept = 'Selecting your year/role is required';
+    if (!input.department) nextErrors.department = 'Department is required';
+    if (input.yearClassDept !== 'Faculty' && !input.studentId) nextErrors.studentId = 'Student ID is required';
+    
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length === 0) setStep(3);
+  };
+
+  const handleSubmit = async () => {
+    const nextErrors = {};
+    if (!input.termsAccepted) nextErrors.termsAccepted = 'You must accept the Terms of Service';
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
+    setLoading(true);
+    try {
+      const res = await axios.post(`${baseurl}/api`, input);
+      setSuccess(true);
+      setLoading(false);
+      setTimeout(() => navigate('/L'), 4000); // Wait for confetti
+    } catch (error) {
+      setLoading(false);
+      setErrors({ form: error.response?.data?.message || 'We could not create your account. Please try again.' });
+    }
+  };
+
+  // Animations
+  const variants = {
+    enter: (direction) => ({ x: direction > 0 ? 300 : -300, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (direction) => ({ x: direction < 0 ? 300 : -300, opacity: 0 }),
+  };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: gradientBg,
-        position: 'relative',
-        overflow: 'hidden',
-        p: 2
-      }}
-    >
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center relative overflow-hidden px-4 py-20">
+      {/* Confetti Explosion on Success */}
+      {success && <Confetti width={windowSize.width} height={windowSize.height} recycle={false} numberOfPieces={500} />}
+
       {/* Decorative Background Elements */}
-      <Box sx={{
-        position: 'absolute',
-        top: -100,
-        right: -100,
-        width: 400,
-        height: 400,
-        borderRadius: '50%',
-        background: isDark ? 'rgba(236, 72, 153, 0.15)' : 'rgba(244, 114, 182, 0.2)',
-        filter: 'blur(80px)',
-        zIndex: 0
-      }} />
-      <Box sx={{
-        position: 'absolute',
-        bottom: -50,
-        left: -50,
-        width: 300,
-        height: 300,
-        borderRadius: '50%',
-        background: isDark ? 'rgba(99, 102, 241, 0.15)' : 'rgba(96, 165, 250, 0.2)',
-        filter: 'blur(60px)',
-        zIndex: 0
-      }} />
+      <div className="absolute top-[10%] -left-20 w-96 h-96 bg-primary/20 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-[10%] -right-20 w-96 h-96 bg-purple-500/20 rounded-full blur-[100px] pointer-events-none" />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        style={{ width: '100%', maxWidth: 1100, position: 'relative', zIndex: 1 }}
+        className="w-full max-w-xl relative z-10"
       >
-        <Paper elevation={24} sx={{
-          display: 'flex',
-          borderRadius: 4,
-          overflow: 'hidden',
-          bgcolor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(20px)',
-          border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)'}`,
-          boxShadow: isDark ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)' : '0 25px 50px -12px rgba(0, 0, 0, 0.15)'
-        }}>
-
-          {/* Left Side - Hero Image */}
-          {!isMobile && (
-            <Box sx={{
-              flex: 1,
-              position: 'relative',
-              background: 'url("https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop")',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'flex-end',
-              p: 6
-            }}>
-              <Box sx={{
-                position: 'absolute',
-                inset: 0,
-                background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.2) 100%)'
-              }} />
-
-              <Box sx={{ position: 'relative', zIndex: 2, color: 'white' }}>
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
+        <div className="bg-card border border-border shadow-2xl rounded-3xl overflow-hidden p-8 md:p-12 relative">
+          
+          {/* Progress Bar */}
+          <div className="mb-10">
+            <div className="flex justify-between items-center relative z-10 mb-2">
+              {[1, 2, 3].map((num) => (
+                <div 
+                  key={num}
+                  className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm transition-all duration-300 border-2
+                    ${step > num ? 'bg-emerald-500 border-emerald-500 text-white' : 
+                      step === num ? 'bg-primary border-primary text-primary-foreground shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 
+                      'bg-muted border-border text-muted-foreground'}`}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                    <Avatar sx={{ width: 64, height: 64, bgcolor: 'primary.main', boxShadow: '0 4px 14px 0 rgba(0,0,0,0.3)' }}>
-                      <SchoolIcon fontSize="large" />
-                    </Avatar>
-                  </Box>
-                  <Typography variant="h3" fontWeight="800" gutterBottom sx={{ letterSpacing: -1, color: 'white' }}>
-                    Join the Community.
-                  </Typography>
-                  <Typography variant="h6" fontWeight="400" sx={{ opacity: 0.9, lineHeight: 1.6, maxWidth: 400, color: 'white' }}>
-                    Unlock exclusive student rewards, track your achievements, and level up your campus life.
-                  </Typography>
-                </motion.div>
-              </Box>
-            </Box>
-          )}
+                  {step > num ? <CheckCircle className="w-5 h-5" /> : num}
+                </div>
+              ))}
+            </div>
+            {/* Connecting lines */}
+            <div className="absolute top-[68px] md:top-[84px] left-[52px] right-[52px] md:left-[68px] md:right-[68px] h-[2px] bg-border -z-0">
+               <motion.div 
+                 className="h-full bg-primary" 
+                 initial={{ width: 0 }}
+                 animate={{ width: `${(step - 1) * 50}%` }}
+                 transition={{ duration: 0.4 }}
+               />
+            </div>
+            
+            <div className="flex justify-between text-xs font-semibold text-muted-foreground tracking-wider uppercase mt-4">
+              <span>Account</span>
+              <span>Details</span>
+              <span>Finalize</span>
+            </div>
+          </div>
 
-          {/* Right Side - Signup Form */}
-          <Box sx={{
-            flex: 1,
-            p: { xs: 4, md: 6 },
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center'
-          }}>
-            <Stack spacing={3}>
-              <Box>
-                <Typography variant="h4" fontWeight="800" color="text.primary" gutterBottom>
-                  Create Account
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  Join us today! Enter your details below.
-                </Typography>
-              </Box>
-
-              <Stack spacing={2.5}>
-                <TextField
-                  fullWidth
-                  label="Full Name"
-                  name="fname"
-                  value={input.fname || ''}
-                  onChange={inputHandler}
-                  error={!!errors.fname}
-                  helperText={errors.fname}
-                  variant="outlined"
-                  InputProps={{ sx: { borderRadius: 2 } }}
-                />
-
-                <TextField
-                  fullWidth
-                  label="College Email"
-                  name="ename"
-                  value={input.ename || ''}
-                  onChange={inputHandler}
-                  error={!!errors.ename}
-                  helperText={errors.ename}
-                  variant="outlined"
-                  InputProps={{ sx: { borderRadius: 2 } }}
-                />
-
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  {input.yearClassDept !== 'Faculty' && (
-                    <TextField
-                      fullWidth
-                      label="Student ID"
-                      name="studentId"
-                      value={input.studentId || ''}
-                      onChange={inputHandler}
-                      error={!!errors.studentId}
-                      helperText={errors.studentId}
-                      variant="outlined"
-                      InputProps={{ sx: { borderRadius: 2 } }}
-                    />
-                  )}
-                  <TextField
-                    select
-                    fullWidth
-                    label="Year"
-                    name="yearClassDept"
-                    value={input.yearClassDept || ''}
-                    onChange={inputHandler}
-                    error={!!errors.yearClassDept}
-                    helperText={errors.yearClassDept}
-                    variant="outlined"
-                    InputProps={{ sx: { borderRadius: 2 } }}
-                  >
-                    <MenuItem value="">Select</MenuItem>
-                    <MenuItem value="Year 1">Year 1</MenuItem>
-                    <MenuItem value="Year 2">Year 2</MenuItem>
-                    <MenuItem value="Year 3">Year 3</MenuItem>
-                    <MenuItem value="Year 4">Year 4</MenuItem>
-                   
-                  </TextField>
-                </Box>
-
-                <TextField
-                  select
-                  fullWidth
-                  label="Department"
-                  name="department"
-                  value={input.department || ''}
-                  onChange={inputHandler}
-                  error={!!errors.department}
-                  helperText={errors.department}
-                  variant="outlined"
-                  InputProps={{ sx: { borderRadius: 2 } }}
-                >
-                  <MenuItem value="">Select</MenuItem>
-                  <MenuItem value="English">English</MenuItem>
-                  <MenuItem value="Food Technologyy">Food Technology</MenuItem>
-                  <MenuItem value="Commerce">Commerce</MenuItem>
-                  <MenuItem value="Computer Science">Computer Science</MenuItem>
-                  <MenuItem value="Multimedia">Multimedia</MenuItem>
-                  <MenuItem value="Hotel Management">Hotel Management</MenuItem>
-                  <MenuItem value="Tourism Management">Tourism Management</MenuItem>
-                  <MenuItem value="Costume & Fashion Designing">Costume & Fashion Designing</MenuItem>
-                  <MenuItem value="Management">Management</MenuItem>
-                  <MenuItem value="Languages">Language</MenuItem>
-                  <MenuItem value="Mathematics">Mathematics</MenuItem>
-
-
-                </TextField>
-
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={input.password || ''}
-                    onChange={inputHandler}
-                    error={!!errors.password}
-                    helperText={errors.password}
-                    variant="outlined"
-                    InputProps={{
-                      sx: { borderRadius: 2 },
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton onClick={togglePassword} edge="end">
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      )
-                    }}
-                  />
-                  {input.password && (
-                    <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <LinearProgress
-                        variant="determinate"
-                        value={pwdStrength}
-                        color={passwordColor}
-                        sx={{ flex: 1, height: 6, borderRadius: 3, bgcolor: alpha(isDark ? '#fff' : '#000', 0.1) }}
-                      />
-                      <Typography variant="caption" fontWeight="bold" color={`${passwordColor}.main`}>
-                        {pwdStrength < 40 ? 'Weak' : pwdStrength < 80 ? 'Good' : 'Strong'}
-                      </Typography>
-                    </Box>
-                  )}
-                </Box>
-
-                <FormControlLabel
-                  control={<Checkbox name="termsAccepted" checked={!!input.termsAccepted} onChange={inputHandler} />}
-                  label={<Typography variant="body2" color="text.secondary">I agree to the Terms of Service</Typography>}
-                />
-              </Stack>
-
-              {errors.form && (
-                <Alert severity="error" sx={{ borderRadius: 2 }}>
-                  {errors.form}
-                </Alert>
-              )}
-
-              <Button
-                onClick={addHandler}
-                disabled={loading}
-                fullWidth
-                variant="contained"
-                size="large"
-                sx={{
-                  py: 1.8,
-                  borderRadius: 2,
-                  fontSize: '1rem',
-                  fontWeight: '700',
-                  textTransform: 'none',
-                  boxShadow: '0 8px 20px -4px rgba(99, 102, 241, 0.5)',
-                  background: 'linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%)',
-                  '&:hover': {
-                    background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)',
-                    boxShadow: '0 12px 24px -4px rgba(99, 102, 241, 0.6)',
-                  }
-                }}
+          <AnimatePresence mode="popLayout" initial={false} custom={step}>
+            
+            {/* STEP 1: ACCOUNT INFO */}
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                custom={1}
+                variants={variants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="flex flex-col gap-6"
               >
-                {loading ? 'Creating Account...' : 'Sign Up'}
-              </Button>
+                <div className="text-center mb-4">
+                  <h2 className="text-3xl font-black mb-2 tracking-tight">Create your account</h2>
+                  <p className="text-muted-foreground">Join the Campus Cash community today.</p>
+                </div>
 
-              <Divider sx={{ color: 'text.secondary', typography: 'caption' }}>OR SIGN UP WITH</Divider>
+                <div>
+                  <label className="text-sm font-semibold mb-2 block">Full Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <input 
+                      type="text" name="fname" value={input.fname || ''} onChange={inputHandler}
+                      placeholder="John Doe"
+                      className={`w-full bg-background border ${errors.fname ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-primary'} rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:ring-2 transition-all`}
+                    />
+                  </div>
+                  {errors.fname && <p className="text-destructive text-sm mt-1">{errors.fname}</p>}
+                </div>
 
-              <Stack direction="row" spacing={2}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<GoogleIcon />}
-                  sx={{ borderRadius: 2, textTransform: 'none', borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' }}
+                <div>
+                  <label className="text-sm font-semibold mb-2 block">College Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <input 
+                      type="email" name="ename" value={input.ename || ''} onChange={inputHandler}
+                      placeholder="student@college.edu"
+                      className={`w-full bg-background border ${errors.ename ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-primary'} rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:ring-2 transition-all`}
+                    />
+                  </div>
+                  {errors.ename && <p className="text-destructive text-sm mt-1">{errors.ename}</p>}
+                </div>
+
+                <div>
+                  <label className="text-sm font-semibold mb-2 block">Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <input 
+                      type={showPassword ? 'text' : 'password'} name="password" value={input.password || ''} onChange={inputHandler}
+                      placeholder="••••••••"
+                      className={`w-full bg-background border ${errors.password ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-primary'} rounded-xl py-3 pl-12 pr-12 focus:outline-none focus:ring-2 transition-all`}
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {errors.password && <p className="text-destructive text-sm mt-1">{errors.password}</p>}
+                  
+                  {input.password && (
+                    <div className="mt-3">
+                      <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-300 ${pwdStrength < 40 ? 'bg-destructive' : pwdStrength < 80 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                          style={{ width: `${pwdStrength}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-right mt-1 font-medium text-muted-foreground">
+                        {pwdStrength < 40 ? 'Weak' : pwdStrength < 80 ? 'Good' : 'Strong'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <button 
+                  onClick={validateStep1}
+                  className="w-full mt-4 py-4 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg hover:bg-primary/90 flex items-center justify-center gap-2 transition-all"
                 >
-                  Google
-                </Button>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<GitHubIcon />}
-                  sx={{ borderRadius: 2, textTransform: 'none', borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' }}
-                >
-                  GitHub
-                </Button>
-              </Stack>
+                  Continue <ChevronRight className="w-5 h-5" />
+                </button>
+              </motion.div>
+            )}
 
-              <Typography variant="body2" align="center" color="text.secondary">
+            {/* STEP 2: DETAILS */}
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                custom={1}
+                variants={variants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="flex flex-col gap-6"
+              >
+                <div className="text-center mb-4">
+                  <h2 className="text-3xl font-black mb-2 tracking-tight">Academic Details</h2>
+                  <p className="text-muted-foreground">Help us customize your dashboard.</p>
+                </div>
+
+                <div>
+                  <label className="text-sm font-semibold mb-2 block">Year or Role</label>
+                  <div className="relative">
+                    <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <select 
+                      name="yearClassDept" value={input.yearClassDept || ''} onChange={inputHandler}
+                      className={`w-full bg-background border ${errors.yearClassDept ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-primary'} rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:ring-2 transition-all appearance-none`}
+                    >
+                      <option value="" disabled>Select Year / Role</option>
+                      {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                  </div>
+                  {errors.yearClassDept && <p className="text-destructive text-sm mt-1">{errors.yearClassDept}</p>}
+                </div>
+
+                <div>
+                  <label className="text-sm font-semibold mb-2 block">Department</label>
+                  <div className="relative">
+                    <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <select 
+                      name="department" value={input.department || ''} onChange={inputHandler}
+                      className={`w-full bg-background border ${errors.department ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-primary'} rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:ring-2 transition-all appearance-none`}
+                    >
+                      <option value="" disabled>Select Department</option>
+                      {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </div>
+                  {errors.department && <p className="text-destructive text-sm mt-1">{errors.department}</p>}
+                </div>
+
+                {input.yearClassDept !== 'Faculty' && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                    <label className="text-sm font-semibold mb-2 block">Student ID</label>
+                    <div className="relative">
+                      <IdCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <input 
+                        type="text" name="studentId" value={input.studentId || ''} onChange={inputHandler}
+                        placeholder="e.g. 21BCE0001"
+                        className={`w-full bg-background border ${errors.studentId ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-primary'} rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:ring-2 transition-all`}
+                      />
+                    </div>
+                    {errors.studentId && <p className="text-destructive text-sm mt-1">{errors.studentId}</p>}
+                  </motion.div>
+                )}
+
+                <div className="flex gap-4 mt-4">
+                  <button 
+                    onClick={() => setStep(1)}
+                    className="w-1/3 py-4 bg-muted text-foreground font-bold rounded-xl hover:bg-muted/80 flex items-center justify-center transition-all"
+                  >
+                    <ChevronLeft className="w-5 h-5" /> Back
+                  </button>
+                  <button 
+                    onClick={validateStep2}
+                    className="w-2/3 py-4 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg hover:bg-primary/90 flex items-center justify-center gap-2 transition-all"
+                  >
+                    Continue <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* STEP 3: FINALIZE */}
+            {step === 3 && (
+              <motion.div
+                key="step3"
+                custom={1}
+                variants={variants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="flex flex-col gap-6 text-center"
+              >
+                {!success ? (
+                  <>
+                    <div className="mb-4">
+                      <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Sparkles className="w-10 h-10 text-primary" />
+                      </div>
+                      <h2 className="text-3xl font-black mb-2 tracking-tight">Almost there!</h2>
+                      <p className="text-muted-foreground">Review and accept the terms to unlock your new dashboard.</p>
+                    </div>
+
+                    <div className="bg-background border border-border rounded-xl p-6 text-left mb-4 shadow-inner">
+                      <p className="text-sm font-semibold mb-1 text-foreground">Account Summary:</p>
+                      <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">Name:</span> {input.fname}</p>
+                      <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">Email:</span> {input.ename}</p>
+                      <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">Role:</span> {input.yearClassDept}</p>
+                      <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">Dept:</span> {input.department}</p>
+                    </div>
+
+                    <label className="flex items-center gap-3 justify-center mb-4 cursor-pointer text-left mx-auto max-w-sm">
+                      <input 
+                        type="checkbox" 
+                        name="termsAccepted" 
+                        checked={!!input.termsAccepted} 
+                        onChange={inputHandler}
+                        className="w-5 h-5 rounded border-border text-primary focus:ring-primary bg-background"
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        I agree to the <a href="#" className="text-primary hover:underline">Terms of Service</a> and <a href="#" className="text-primary hover:underline">Privacy Policy</a>.
+                      </span>
+                    </label>
+                    {errors.termsAccepted && <p className="text-destructive text-sm -mt-3">{errors.termsAccepted}</p>}
+
+                    {errors.form && (
+                      <div className="bg-destructive/10 text-destructive border border-destructive/20 p-4 rounded-xl text-sm font-medium">
+                        {errors.form}
+                      </div>
+                    )}
+
+                    <div className="flex gap-4">
+                      <button 
+                        onClick={() => setStep(2)}
+                        disabled={loading}
+                        className="w-1/3 py-4 bg-muted text-foreground font-bold rounded-xl hover:bg-muted/80 flex items-center justify-center transition-all disabled:opacity-50"
+                      >
+                        <ChevronLeft className="w-5 h-5" /> Back
+                      </button>
+                      <button 
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        className="w-2/3 py-4 bg-gradient-to-r from-primary to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-primary/30 flex items-center justify-center gap-2 transition-all disabled:opacity-70 disabled:cursor-wait hover:scale-[1.02]"
+                      >
+                        {loading ? 'Creating...' : 'Create Account'}
+                        {!loading && <Sparkles className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="flex flex-col items-center justify-center py-10"
+                  >
+                    <div className="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mb-6">
+                      <CheckCircle className="w-12 h-12 text-emerald-500" />
+                    </div>
+                    <h2 className="text-4xl font-black mb-4 tracking-tight text-foreground">Welcome Aboard!</h2>
+                    <p className="text-lg text-muted-foreground">Your account has been successfully created.</p>
+                    <p className="text-sm font-medium text-emerald-500 mt-4 animate-pulse">Redirecting to login...</p>
+                  </motion.div>
+                )}
+              </motion.div>
+            )}
+
+          </AnimatePresence>
+
+          {!success && (
+            <div className="mt-8 pt-8 border-t border-border text-center">
+              <p className="text-sm font-medium text-muted-foreground">
                 Already have an account?{' '}
-                <Link to="/L" style={{ textDecoration: 'none' }}>
-                  <Typography component="span" fontWeight="700" color="primary">
-                    Log in
-                  </Typography>
+                <Link to="/L" className="text-primary hover:underline font-bold">
+                  Log in here
                 </Link>
-              </Typography>
-            </Stack>
-          </Box>
-        </Paper>
+              </p>
+            </div>
+          )}
+        </div>
       </motion.div>
-
-      {/* Snackbar Feedback */}
-      <Snackbar open={!!successMsg} autoHideDuration={3000} onClose={() => setSuccessMsg('')} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-        <Alert severity="success" variant="filled" onClose={() => setSuccessMsg('')} sx={{ borderRadius: 3 }}>
-          {successMsg}
-        </Alert>
-      </Snackbar>
-    </Box>
+    </div>
   );
-};
-
-export default Signup;
+}

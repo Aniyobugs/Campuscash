@@ -1,22 +1,17 @@
 import { useState } from 'react'
-import { Box } from '@mui/material'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
 import Signup from './Components/Signup'
 import Login from './Components/Login'
 import Home from './Components/Home'
 import Navbar from './Components/Navbar'
 import { AuthProvider } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
-import { useTheme } from './contexts/ThemeContext'
-import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles'
-import CssBaseline from '@mui/material/CssBaseline'
-import { lightTheme, darkTheme } from './theme/muiTheme'
 import ProtectedRoute from './Components/ProtectedRoute'
 import Userdash from './Components/Userdash'
-import { Task } from '@mui/icons-material'
+
 import AssignTask from './Components/AssignTask'
 import Awardpoints from './Components/Awardpoints'
 import ProfileUpdate from './Components/ProfileUpdate'
@@ -32,18 +27,16 @@ import StudentTasks from './Components/StudentTasks'
 import Events from './Components/Events'
 
 function AppContent() {
-  const { isDark } = useTheme()
-  const muiTheme = isDark ? darkTheme : lightTheme
+  const location = useLocation();
+  const isHome = location.pathname === '/';
 
   return (
-    <MuiThemeProvider theme={muiTheme}>
-      <CssBaseline />
-      <AuthProvider>
-        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-          <Navbar />
-          <Box sx={{ flex: 1 }}>
-            <Routes>
-              <Route path='/' element={<Home />} />
+    <AuthProvider>
+      <div className={`flex flex-col min-h-screen bg-background text-foreground transition-colors duration-300 ${!isHome ? 'pt-16' : ''}`}>
+        <Navbar />
+        <main className="flex-1">
+          <Routes>
+            <Route path='/' element={<Home />} />
               <Route path='/s' element={<Signup />} />
               <Route path='/L' element={<Login />} />
               <Route path='/about' element={<AboutUs />} />
@@ -58,12 +51,11 @@ function AppContent() {
               <Route path='/store' element={<ProtectedRoute allowedRoles={["store"]}><StoreVerify /></ProtectedRoute>} />
               <Route path="/admin/roles" element={<ProtectedRoute allowedRoles={["admin"]}><AdminRoleManager /></ProtectedRoute>} />
               <Route path="/tasks" element={<ProtectedRoute allowedRoles={["user"]}><StudentTasks /></ProtectedRoute>} />
-            </Routes>
-          </Box>
-          <Footer />
-        </Box>
-      </AuthProvider>
-    </MuiThemeProvider>
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </AuthProvider>
   )
 }
 

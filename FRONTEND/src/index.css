@@ -1,227 +1,98 @@
+@import "@fontsource-variable/geist";
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.488 0.243 264.376); /* Indigo-ish */
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.488 0.243 264.376);
+  --radius: 0.75rem;
 }
 
-body {
-  margin: 0;
-  /* display: flex; */
-  /* place-items: center; */
-  min-width: 320px;
-  min-height: 100vh;
-  width: 100%;
-  transition: background-color 0.4s ease, color 0.4s ease;
+.dark {
+  --background: oklch(0.10 0.02 270); /* Deep rich slate */
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.13 0.03 270);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.13 0.03 270);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.588 0.243 264.376);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.2 0.03 270);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.2 0.03 270);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.2 0.03 270);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.2 0.03 270);
+  --input: oklch(0.2 0.03 270);
+  --ring: oklch(0.588 0.243 264.376);
 }
 
-* {
-  transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease, fill 0.4s ease, stroke 0.4s ease, box-shadow 0.4s ease;
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-
-button:hover {
-  border-color: #646cff;
-}
-
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+@layer base {
+  * {
+    border-color: var(--border);
+    outline-color: var(--ring);
   }
-
-  a:hover {
-    color: #747bff;
-  }
-
-  button {
-    background-color: #f9f9f9;
-  }
-}
-
-/* --- Global Animations --- */
-
-/* Moving Background Gradient */
-@keyframes gradientBG {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    @apply font-sans antialiased;
   }
 }
 
-.animate-gradient-bg {
-  background-size: 400% 400%;
-  animation: gradientBG 15s ease infinite;
-}
-
-/* Moving Text Gradient */
-@keyframes textGradient {
-  0% {
-    background-position: 0% 50%;
+@layer utilities {
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
   }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-.animate-text-gradient {
-  background-size: 200% auto;
-  color: transparent;
-  -webkit-background-clip: text;
-  background-clip: text;
-  animation: textGradient 4s linear infinite;
-}
-
-/* --- Coffee Animation --- */
-@keyframes coffeeFloat {
-
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-
-  50% {
-    transform: translateY(-10px) rotate(2deg);
-  }
-}
-
-@keyframes steamRise {
-  0% {
-    transform: translateY(0) scale(1);
-    opacity: 0;
-  }
-
-  50% {
-    opacity: 0.6;
-  }
-
-  100% {
-    transform: translateY(-40px) scale(1.5);
-    opacity: 0;
-  }
-}
-
-.coffee-cup {
-  animation: coffeeFloat 3s ease-in-out infinite;
-}
-
-.steam-1 {
-  animation: steamRise 2s infinite;
-  animation-delay: 0.5s;
-}
-
-.steam-2 {
-  animation: steamRise 2s infinite;
-  animation-delay: 1s;
-}
-
-
-/* --- Moving Gradient Border Animation --- */
-@property --angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
-.gradient-border-card {
-  position: relative;
-  /* Use CSS variables for sizing or hardcode match; Card border-radius is 3 (12px) */
-  border-radius: 12px;
-  background: transparent !important;
-  /* Force transparent so pseudo bg shows */
-}
-
-/* Ensure content sits above the pseudo-element background */
-.gradient-border-card>* {
-  position: relative;
-  z-index: 1;
-}
-
-.gradient-border-card::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100%;
-  height: 100%;
-  padding: 3px;
-  /* Border width */
-  background: conic-gradient(from var(--angle), #ff4545, #ffe600, #00ff99, #006aff, #ff0095, #ff4545);
-  border-radius: 12px;
-  transform: translate(-50%, -50%);
-  z-index: -1;
-  animation: spin 3s linear infinite;
-}
-
-.gradient-border-card::before {
-  content: '';
-  position: absolute;
-  inset: 3px;
-  /* Width of border - must match padding of ::after to align inner edge */
-  background: var(--card-bg, #ffffff);
-  /* Fallback to white if var not set */
-  border-radius: 9px;
-  /* 12px - 3px */
-  z-index: 0;
-}
-
-@keyframes spin {
-  from {
-    --angle: 0deg;
-  }
-
-  to {
-    --angle: 360deg;
+  .hide-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
   }
 }

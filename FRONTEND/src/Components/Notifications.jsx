@@ -1,84 +1,57 @@
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import {
-    Menu,
-    MenuItem,
-    IconButton,
-    Badge,
-    Typography,
-    Box,
-    Divider,
-    Button,
-    Avatar,
-    CircularProgress
-} from "@mui/material";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bell, CheckCircle2, AlertCircle, Info, Loader2 } from "lucide-react";
 import axios from "axios";
-import { useAuth } from "../contexts/AuthContext"; // Ensure AuthContext provides token/headers if needed usually axios interceptor handles it
+import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 
-const NotificationItem = ({ note, markAsRead, isDark }) => {
+const NotificationItem = ({ note, markAsRead }) => {
     const isUnread = !note.isRead;
 
     const getIcon = () => {
         switch (note.type) {
-            case 'success': return <CheckCircleOutlineIcon color="success" fontSize="small" />;
-            case 'error': return <ErrorOutlineIcon color="error" fontSize="small" />;
-            default: return <InfoOutlinedIcon color="info" fontSize="small" />;
+            case 'success': return <CheckCircle2 className="w-5 h-5 text-green-500" />;
+            case 'error': return <AlertCircle className="w-5 h-5 text-red-500" />;
+            default: return <Info className="w-5 h-5 text-blue-400" />;
         }
     };
 
     return (
-        <MenuItem
+        <button
             onClick={() => isUnread && markAsRead(note._id)}
-            sx={{
-                whiteSpace: 'normal',
-                bgcolor: isUnread ? (isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.05)') : 'transparent',
-                borderLeft: isUnread ? '4px solid #3b82f6' : '4px solid transparent',
-                py: 2,
-                px: 2,
-                alignItems: 'flex-start',
-                gap: 2,
-                mb: "1px" // divider effect
-            }}
+            className={`w-full text-left flex items-start gap-3 p-4 border-b border-border transition-colors ${
+                isUnread ? 'bg-blue-500/10 border-l-4 border-l-blue-500' : 'hover:bg-accent border-l-4 border-l-transparent'
+            }`}
         >
-            <Box sx={{ mt: 0.5 }}>{getIcon()}</Box>
-            <Box sx={{ flex: 1 }}>
-                <Typography variant="body2" color={isDark ? "white" : "text.primary"} fontWeight={isUnread ? 600 : 400}>
+            <div className="mt-0.5 shrink-0">{getIcon()}</div>
+            <div className="flex-1 min-w-0">
+                <p className={`text-sm ${isUnread ? 'font-semibold' : 'font-normal'} text-foreground overflow-hidden text-ellipsis`}>
                     {note.message}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                </p>
+                <span className="text-xs text-muted-foreground block mt-1">
                     {new Date(note.createdAt).toLocaleString()}
-                </Typography>
-            </Box>
+                </span>
+            </div>
             {isUnread && (
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#3b82f6', mt: 1 }} />
+                <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0" />
             )}
-        </MenuItem>
+        </button>
     );
 };
 
 const Notifications = () => {
-    const [anchorEl, setAnchorEl] = useState(null);
+    const [isOpen, setIsOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(false);
     const { isDark } = useTheme();
-    // We assume specific axios config or baseurl is verified from other files. 
-    // Assuming axios interceptor attaches token as seen in other tasks, or we might need headers manually.
-    // Checking userRoute.js showing standard axios calls without explicit header passing usually implies global interceptor or it's handled.
-    // BUT notificationRoute uses `verifyToken` which needs `Authorization: Bearer <token>`.
-    // I will assume global interceptor exists or add it manually.
-    // Safest is to get token from storage.
+    const dropdownRef = useRef(null);
+
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     const baseurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
     const fetchNotifications = async () => {
         if (!token) return;
         try {
-            // Don't set loading on poll/background refresh, only initial
             if (notifications.length === 0) setLoading(true);
             const res = await axios.get(`${baseurl}/api/notifications/my`, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -97,16 +70,21 @@ const Notifications = () => {
         return () => clearInterval(interval);
     }, []);
 
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
     const unreadCount = notifications.filter(n => !n.isRead).length;
 
-    const handleOpen = (event) => {
-        setAnchorEl(event.currentTarget);
-        // Refresh on open
-        fetchNotifications();
-    };
-
-    const handleClose = () => {
-        setAnchorEl(null);
+    const handleToggle = () => {
+        if (!isOpen) fetchNotifications();
+        setIsOpen(!isOpen);
     };
 
     const handleMarkAsRead = async (id) => {
@@ -128,70 +106,69 @@ const Notifications = () => {
     };
 
     return (
-        <>
-            <IconButton
-                onClick={handleOpen}
-                sx={{
-                    color: isDark ? '#ffffff' : '#212121',
-                    mx: 1,
-                    '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
-                }}
+        <div className="relative" ref={dropdownRef}>
+            <button
+                onClick={handleToggle}
+                className="relative p-2 rounded-full text-foreground hover:bg-accent transition-colors mt-1"
+                aria-label="Notifications"
             >
-                <Badge badgeContent={unreadCount} color="error">
-                    <motion.div
-                        animate={unreadCount > 0 ? { rotate: [0, -10, 10, -10, 10, 0] } : {}}
-                        transition={{
-                            repeat: unreadCount > 0 ? Infinity : 0,
-                            repeatDelay: 2,
-                            duration: 0.5
-                        }}
-                    >
-                        <NotificationsIcon />
-                    </motion.div>
-                </Badge>
-            </IconButton>
-
-            <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleClose}
-                PaperProps={{
-                    sx: {
-                        width: 360,
-                        maxHeight: 480, // Scrollable
-                        mt: 1.5,
-                        borderRadius: 3,
-                        bgcolor: isDark ? '#1e293b' : '#ffffff',
-                        boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-                        border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`
-                    }
-                }}
-                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-            >
-                <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="h6" fontWeight="bold" color={isDark ? "white" : "text.primary"}>Notifications</Typography>
-                    {unreadCount > 0 && (
-                        <Button size="small" onClick={handleMarkAllRead} sx={{ fontSize: '0.75rem', textTransform: 'none' }}>
-                            Mark all read
-                        </Button>
-                    )}
-                </Box>
-                <Divider sx={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }} />
-
-                {loading && notifications.length === 0 ? (
-                    <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}><CircularProgress size={24} /></Box>
-                ) : notifications.length === 0 ? (
-                    <Box sx={{ p: 4, textAlign: 'center' }}>
-                        <Typography color="text.secondary" variant="body2">No notifications yet</Typography>
-                    </Box>
-                ) : (
-                    notifications.map(note => (
-                        <NotificationItem key={note._id} note={note} markAsRead={handleMarkAsRead} isDark={isDark} />
-                    ))
+                <motion.div
+                    animate={unreadCount > 0 ? { rotate: [0, -10, 10, -10, 10, 0] } : {}}
+                    transition={{
+                        repeat: unreadCount > 0 ? Infinity : 0,
+                        repeatDelay: 2,
+                        duration: 0.5
+                    }}
+                >
+                    <Bell className="w-5 h-5" />
+                </motion.div>
+                {unreadCount > 0 && (
+                    <span className="absolute top-0 right-0 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-red-500 rounded-full border-2 border-background">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
                 )}
-            </Menu>
-        </>
+            </button>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 mt-2 w-80 sm:w-96 bg-background rounded-xl shadow-lg border border-border overflow-hidden z-50 origin-top-right"
+                    >
+                        <div className="p-4 flex items-center justify-between border-b border-border bg-muted/30">
+                            <h3 className="font-semibold text-foreground">Notifications</h3>
+                            {unreadCount > 0 && (
+                                <button 
+                                    onClick={handleMarkAllRead} 
+                                    className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                                >
+                                    Mark all read
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="max-h-[min(480px,80vh)] overflow-y-auto overscroll-contain">
+                            {loading && notifications.length === 0 ? (
+                                <div className="p-8 flex justify-center items-center">
+                                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                                </div>
+                            ) : notifications.length === 0 ? (
+                                <div className="p-8 text-center text-muted-foreground text-sm">
+                                    No notifications yet
+                                </div>
+                            ) : (
+                                notifications.map(note => (
+                                    <NotificationItem key={note._id} note={note} markAsRead={handleMarkAsRead} />
+                                ))
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
     );
 };
 
