@@ -20,7 +20,7 @@ CampusCash modernizes campus engagement by:
 *   **Planning:** Defined four user roles (Admin, Faculty, Student, Store) and key features like Task Management and Point Redemption.
 *   **Analysis:** Designed a secure, real-time system with Role-Based Access Control and a robust database schema.
 *   **Implementation:** 
-    *   **Frontend:** React.js, Vite, Material UI.
+    *   **Frontend:** React.js, Vite, shadCN UI, tailwind css.
     *   **Backend:** Node.js, Express.js.
     *   **Database:** MongoDB.
     *   **Security:** JWT, BCrypt, Socket.io.
